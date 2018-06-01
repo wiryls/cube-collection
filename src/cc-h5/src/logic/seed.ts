@@ -1,4 +1,4 @@
-namespace core {
+namespace logic {
 /////////////////////////////////////////////////////////////////////////////
 
 export interface Seed
@@ -55,8 +55,8 @@ export namespace Seed
 
 export namespace Seed.Cube
 {
-    export import Type   = core.Cube.Type;
-    export import Action = core.Cube.Action;
+    export import Type   = logic.Cube.Type;
+    export import Action = logic.Cube.Action;
 
     export function toAction(src: string): Action
     {

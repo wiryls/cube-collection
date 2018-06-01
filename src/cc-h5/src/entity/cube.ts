@@ -1,17 +1,17 @@
 namespace entity {
 /////////////////////////////////////////////////////////////////////////////
 
-import ICubeFactory = core.ICubeFactory;
-import IBehavior = core.IBehavior;
-import Behavior = core.Behavior;
-import Action = core.Cube.Action;
-import Status = core.Cube.Status;
-import IWorld = core.IWorld;
-import ICube = core.ICube;
-import IUnit = core.IUnit;
-import IVec2 = core.IVec2;
-import Seed = core.Seed;
-import Type = core.Cube.Type;
+import ICubeFactory = logic.ICubeFactory;
+import IBehavior = logic.IBehavior;
+import Behavior = logic.Behavior;
+import Action = logic.Cube.Action;
+import Status = logic.Cube.Status;
+import IWorld = logic.IWorld;
+import ICube = logic.ICube;
+import IUnit = logic.IUnit;
+import IVec2 = logic.IVec2;
+import Seed = logic.Seed;
+import Type = logic.Cube.Type;
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -104,7 +104,11 @@ export class Cube extends egret.DisplayObjectContainer implements ICube
             o.entity.length = 0;
             o.status = Status.Stop;
         }
-        this.action_ = Behavior.create(others.concat(this).map(o => o.behavior));
+        this.action_ = Behavior.create(others
+            .filter(o => o.absorbable(this))
+            .concat(this)
+            .map   (o => o.behavior)
+        );
     }
 
     public commit(): void
@@ -137,12 +141,14 @@ export class Cube extends egret.DisplayObjectContainer implements ICube
 class Unit implements IUnit
 {
     private modify: boolean = false;
+    private moving: boolean = false;
+
     private action: Action|undefined = undefined;
     private status: Status|undefined = undefined;
     private shape: egret.Shape = new egret.Shape();
 
-    private gridx: number;
-    private gridy: number;
+    private x_: number;
+    private y_: number;
 
     constructor(
         x: number,
@@ -153,9 +159,10 @@ class Unit implements IUnit
         stage.addChild(this.shape);
         owner.entity.push(this);
 
-        this.x = x;
-        this.y = y;
-        this.color = Unit.toColor(this.owner.type);
+        this.x_ = x;
+        this.y_ = y;
+        this.onPlace();
+        this.onColor();
     }
 
     attach(target: ICube): void
@@ -168,92 +175,141 @@ class Unit implements IUnit
     {
         this.action = action;
         this.status = status;
+        this.moving = true;
     }
 
     commit(): void
     {
         if (this.modify === true) {
-            this.color = Unit.toColor(this.owner.type);
+            this.onColor();
             this.modify = false;
         }
 
-        if (this.action !== undefined && this.status !== undefined) {
-            if (this.action !== Action.Idle && this.status !== Status.Stop) {
+        if (this.moving === true) {
+            if (this.action !== undefined && this.action !== Action.Idle &&
+                this.status !== undefined && this.status !== Status.Stop)
+            {
                 const next = Action.toVec2(this.action).plus(this);
-                this.x = next.x;
-                this.y = next.y;
+                switch(this.status) {
+                case Status.Free:
+                    this.x_ = next.x;
+                    this.y_ = next.y;
+                    this.onAnimationMove();
+                    break;
+                case Status.Lock:
+                    this.onAnimationLock(next.x, next.y);
+                    break;
+                default:
+                    this.onPlace();
+                    break;
+                }
+            } else {
+                this.onPlace();
             }
 
             this.action = undefined;
             this.status = undefined;
+            this.moving = false;
         }
     }
 
     get x(): number
     {
-        return this.gridx;
+        return this.x_;
     }
 
     get y(): number
     {
-        return this.gridy;
+        return this.y_;
     }
 
     set x(value: number)
     {
-        this.gridx = value;
-
-        const col = this.owner.world.size. width;
-        const row = this.owner.world.size.height;
-        const wid = this.stage.stage.stageWidth;
-        const hgt = this.stage.stage.stageHeight;
-
-        const sid = Math.min(wid / col, hgt / row);
-        const tlx = (wid - col * sid) / 2;
-        
-        const x = tlx + this.x * sid;
-        egret.Tween
-            .get(this.shape)
-            .to({x: x}, 250)
-            ;
+        if (this.x !== value) {
+            this.x_ = value;
+            this.moving = true;
+        }
     }
 
     set y(value: number)
     {
-        this.gridy = value;
+        if (this.x !== value) {
+            this.y_ = value;
+            this.moving = true;
+        }
+    }
 
+    private onPlace(): void
+    {
         const col = this.owner.world.size. width;
         const row = this.owner.world.size.height;
         const wid = this.stage.stage.stageWidth;
         const hgt = this.stage.stage.stageHeight;
 
-        const sid = Math.min(wid / col, hgt / row);
-        const tly = (hgt - row * sid) / 2;
+        const len = Math.min(wid / col, hgt / row);
+        const tlx = (wid - col * len) / 2;
+        const tly = (hgt - row * len) / 2;
 
-        const y = tly + this.y * sid;
+        this.shape.x = tlx + this.x * len;
+        this.shape.y = tly + this.y * len;
+    }
+
+    private onAnimationMove(): void
+    {
+        const col = this.owner.world.size. width;
+        const row = this.owner.world.size.height;
+        const wid = this.stage.stage.stageWidth;
+        const hgt = this.stage.stage.stageHeight;
+
+        const len = Math.min(wid / col, hgt / row);
+        const tlx = (wid - col * len) / 2;
+        const tly = (hgt - row * len) / 2;
+
+        const x = tlx + this.x * len;
+        const y = tly + this.y * len;
         egret.Tween
             .get(this.shape)
-            .to({y: y}, 250)
+            .to({x: x, y: y}, 250)
             ;
     }
 
-    private set color(value: number)
+    private onAnimationLock(x: number, y: number): void
     {
         const col = this.owner.world.size. width;
         const row = this.owner.world.size.height;
         const wid = this.stage.stage.stageWidth;
         const hgt = this.stage.stage.stageHeight;
-        const sid = Math.min(wid / col, hgt / row);
 
-        this.shape.graphics.clear();
-        this.shape.graphics.beginFill(value);
-        this.shape.graphics.drawRect(0, 0, sid + 1, sid + 1);
-        this.shape.graphics.endFill();
+        const len = Math.min(wid / col, hgt / row);
+        const tlx = (wid - col * len) / 2;
+        const tly = (hgt - row * len) / 2;
+
+        const src_x = tlx + this.x * len;
+        const src_y = tly + this.y * len;
+        const dst_x = (src_x + tlx + x * len) / 2;
+        const dst_y = (src_y + tly + y * len) / 2;
+
+        egret.Tween
+            .get(this.shape)
+            .to({x: dst_x, y: dst_y}, 125)
+            .to({x: src_x, y: src_y}, 125)
+            ;
     }
 
-    private get color(): number
+    private onColor(): void
     {
-        return Unit.toColor(this.owner.type);
+        const val = Unit.toColor(this.owner.type);
+
+        const col = this.owner.world.size. width;
+        const row = this.owner.world.size.height;
+        const wid = this.stage.stage.stageWidth;
+        const hgt = this.stage.stage.stageHeight;
+        const len = Math.min(wid / col, hgt / row);
+
+        this.shape.graphics.clear();
+        this.shape.graphics.beginFill(val);
+        this.shape.graphics.drawRect(0, 0, len + 0.5, len + 0.5);
+        this.shape.graphics.endFill();
     }
 
     private static toColor(type: Type): number

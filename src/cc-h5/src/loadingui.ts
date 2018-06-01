@@ -3,15 +3,15 @@ namespace scene {
 
 export class LoadingUI extends egret.Sprite implements RES.PromiseTaskReporter
 {
+    private textField: egret.TextField;
+
     public constructor()
     {
         super();
-        this.createView();
+        this.onCreate();
     }
 
-    private textField: egret.TextField;
-
-    private createView(): void
+    private onCreate(): void
     {
         this.textField = new egret.TextField();
         this.addChild(this.textField);

@@ -1,4 +1,4 @@
-namespace core {
+namespace logic {
 /////////////////////////////////////////////////////////////////////////////
 
 export namespace Transform
@@ -88,9 +88,8 @@ export namespace Transform
                 n.cube.status = Status.Stop;
                 seed.push(n);
             } else {
-                // maybe not stop
-                foe .filter (o => o.cube.action === act)
-                    .forEach(o => o.node.push(n));
+                // maybe lock
+                foe.forEach(o => o.node.push(n));
             }
         }
 
@@ -102,33 +101,34 @@ export namespace Transform
             for(const v of edge.out(n.cube.entity, n.cube.action)) {
                 const foe = Action.Move
                     .map(a => {
-                        const o = item.get(Action.toVec2(a).plus(v));
-                        return(o === undefined
-                            || o.cube.status === Status.Stop
-                            || o.cube.action !== Action.opposite(a)
-                            )? undefined : o; })
+                        const  o = item.get(Action.toVec2(a).plus(v));
+                        return(o !== undefined
+                            && o.cube.status !== Status.Stop
+                            && o.cube.action === Action.opposite(a)
+                            )? o : undefined; })
                     .filter((o): o is Node => o !== undefined)
                     .map   (o => o as Node)
                     ;
 
-                const one = foe.find(n => n.cube.active && foe.every(o =>
-                    o === n ||
-                    o.cube.active &&
-                    o.cube.absorbable(n.cube) === false &&
-                    n.cube.absorbable(o.cube) === true
-                ));
+                if (foe.length > 1) {
+                    const one = foe.find(n => n.cube.active && foe.every(o =>
+                        o === n || (
+                        o.cube.active &&
+                        o.cube.absorbable(n.cube) === false &&
+                        n.cube.absorbable(o.cube) === true)
+                    ));
 
-                for (const o of foe.filter(o => o !== one)) {
-                    o.cube.status = Status.Lock;
-                    seed.push(o);
+                    for (const o of foe.filter(o => o !== one)) {
+                        o.cube.status = Status.Lock;
+                        seed.push(o);
+                    }
                 }
             }
         }
 
         // solve
         for(const src of seed) {
-            const act = Action.opposite(src.cube.action);
-            for(const que = new Array<Node>(src); que.length != 0; ) {
+            for(const que = new Array<Node>(src); que.length !== 0; ) {
                 const n = que.shift();
                 if (n === undefined)
                     break;
@@ -137,11 +137,11 @@ export namespace Transform
                     n.node
                         .filter (o => o.cube.active)
                         .filter (o => o.cube.absorbable(n.cube) || n.cube.absorbable(o.cube))
-                        .forEach(o => dset.join(n.index, o.index));
+                        .forEach(o => dset.join(n.index, o.index))
                         ;
 
                 for (const o of n.node.filter(o => o.cube.status < n.cube.status)) {
-                    o.cube.status = o.cube.status;
+                    o.cube.status = n.cube.status;
                     que.push(o);
                 }
             }

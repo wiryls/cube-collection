@@ -1,17 +1,17 @@
 namespace entity {
 /////////////////////////////////////////////////////////////////////////////
 
-import IWorld = core.IWorld;
-import ICube = core.ICube;
-import IVec2 = core.IVec2;
-import Vec2 = core.Vec2;
-import Type = core.Cube.Type;
+import IWorld = logic.IWorld;
+import ICube = logic.ICube;
+import IVec2 = logic.IVec2;
+import Vec2 = logic.Vec2;
+import Type = logic.Cube.Type;
 
 /////////////////////////////////////////////////////////////////////////////
 
 export class World extends egret.DisplayObjectContainer implements IWorld
 {
-    private seed_: core.Seed;
+    private seed_: logic.Seed;
     public cube: Array<ICube>;
     public dest: Array<IVec2>;
 
@@ -30,7 +30,7 @@ export class World extends egret.DisplayObjectContainer implements IWorld
         case input.Controller.Type.MOVE_RIGHT: {
             this.cube
                 .filter (c => c.type === Type.Blue)
-                .forEach(c => c.action = <core.Cube.Action><any>code)
+                .forEach(c => c.action = <logic.Cube.Action><any>code)
                 ;
             break;
         }
@@ -41,8 +41,8 @@ export class World extends egret.DisplayObjectContainer implements IWorld
 
     next(): void
     {
-        core.Transform.link(this.cube, this.size.width, this.size.height);
-        core.Transform.move(this.cube, this.size.width, this.size.height);
+        // logic.Transform.link(this.cube, this.size.width, this.size.height);
+        logic.Transform.move(this.cube, this.size.width, this.size.height);
         for (const c of this.cube)
             c.commit();
 
@@ -69,12 +69,12 @@ export class World extends egret.DisplayObjectContainer implements IWorld
             return { width: 0, height: 0 };
     }
 
-    get seed(): core.Seed
+    get seed(): logic.Seed
     {
         return this.seed_;
     }
 
-    set seed(value: core.Seed)
+    set seed(value: logic.Seed)
     {
         this.seed_ = value;
         this.build();

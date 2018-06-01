@@ -1,7 +1,7 @@
 namespace entity {
 /////////////////////////////////////////////////////////////////////////////
 
-export class Loader implements core.ILoader
+export class Loader implements logic.ILoader
 {
     constructor() { }
 
@@ -16,7 +16,7 @@ export class Loader implements core.ILoader
     }
 }
 
-export class Saver implements core.ISaver
+export class Saver implements logic.ISaver
 {
     constructor() { }
 
