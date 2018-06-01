@@ -1,0 +1,10 @@
+# Egret Wing
+/libs
+/manifest.json
+
+/node_modules
+/tools/node_modules
+/bin-*
+
+# Mac
+.DS_Store

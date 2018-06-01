@@ -1,0 +1,27 @@
+{
+    "compilerOptions": {
+        "target": "es5",
+        "outDir": "bin-debug",
+        "experimentalDecorators": true,
+        "noImplicitAny": false,
+        "noEmitOnError": true,
+        "importHelpers": true,
+        "strictNullChecks": true,
+        "lib": [
+            "es5",
+            "es6",
+            "dom",
+            "es2015.iterable",
+            "es2015.promise",
+            "es2015.core",
+            "es2015.collection",
+            "es2016.array.include",
+            "esnext"
+        ],
+        "types": []
+    },
+    "include": [
+        "src",
+        "libs"
+    ]
+}
