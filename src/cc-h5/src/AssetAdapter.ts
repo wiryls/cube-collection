@@ -27,25 +27,30 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////
 
-class LoadingUI extends egret.Sprite implements RES.PromiseTaskReporter {
 
-    public constructor() {
-        super();
-        this.createView();
-    }
-
-    private textField: egret.TextField;
-
-    private createView(): void {
-        this.textField = new egret.TextField();
-        this.addChild(this.textField);
-        this.textField.y = 300;
-        this.textField.width = 480;
-        this.textField.height = 100;
-        this.textField.textAlign = "center";
-    }
-
-    public onProgress(current: number, total: number): void {
-        this.textField.text = `Loading...${current}/${total}`;
+class AssetAdapter implements eui.IAssetAdapter {
+    /**
+     * @language zh_CN
+     * 解析素材
+     * @param source 待解析的新素材标识符
+     * @param compFunc 解析完成回调函数，示例：callBack(content:any,source:string):void;
+     * @param thisObject callBack的 this 引用
+     */
+    public getAsset(source: string, compFunc:Function, thisObject: any): void {
+        function onGetRes(data: any): void {
+            compFunc.call(thisObject, data, source);
+        }
+        if (RES.hasRes(source)) {
+            let data = RES.getRes(source);
+            if (data) {
+                onGetRes(data);
+            }
+            else {
+                RES.getResAsync(source, onGetRes, this);
+            }
+        }
+        else {
+            RES.getResByUrl(source, onGetRes, this, RES.ResourceItem.TYPE_IMAGE);
+        }
     }
 }

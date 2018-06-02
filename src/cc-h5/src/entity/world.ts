@@ -41,7 +41,7 @@ export class World extends egret.DisplayObjectContainer implements IWorld
 
     next(): void
     {
-        // logic.Transform.link(this.cube, this.size.width, this.size.height);
+        logic.Transform.link(this.cube, this.size.width, this.size.height);
         logic.Transform.move(this.cube, this.size.width, this.size.height);
         for (const c of this.cube)
             c.commit();

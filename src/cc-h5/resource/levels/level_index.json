@@ -1,0 +1,43 @@
+[
+    {
+        "name": "level_main",
+        "case": [
+            { "next": "level_silence_tutorial" },
+            { "cond": [1,0,0,0,0,0,0,0], "next": "level_silence_tutorial" },
+            { "cond": [0,1,0,0,0,0,0,0], "next": "level_silence_fishing" },
+            { "cond": [0,0,1,0,0,0,0,0], "next": "level_chase_sample" },
+            { "cond": [0,0,0,1,0,0,0,0], "next": "level_crossover_tetris" },
+            { "cond": [0,0,0,0,1,0,0,0], "next": "level_multiple_community" }
+        ]
+    },
+    {
+        "name": "level_silence_tutorial",
+        "case": [
+            { "next": "level_silence_fishing" }
+        ]
+    },
+    {
+        "name": "level_silence_fishing",
+        "case": [
+            { "next": "level_chase_sample" }
+        ]
+    },
+    {
+        "name": "level_chase_sample",
+        "case": [
+            { "next": "level_crossover_tetris" }
+        ]
+    },
+    {
+        "name": "level_crossover_tetris",
+        "case": [
+            { "next": "level_multiple_community" }
+        ]
+    },
+    {
+        "name": "level_multiple_community",
+        "case": [
+            { "next": "level_main" }
+        ]
+    }
+]

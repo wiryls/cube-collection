@@ -1,0 +1,16 @@
+namespace utils {
+/////////////////////////////////////////////////////////////////////////////
+
+import Sound = egret.Sound;
+
+export class Musician
+{
+    public static readonly BGM_01 = "";
+    public static readonly BGM_02 = "";
+
+    public static readonly EF_ACTION = "";
+
+}
+
+/////////////////////////////////////////////////////////////////////////////
+}
