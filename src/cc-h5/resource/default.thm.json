@@ -16,6 +16,7 @@
 	},
 	"autoGenerateExmlsList": true,
 	"exmls": [
+		"resource/custom_skins/startUISkin.exml",
 		"resource/skins/ButtonSkin.exml",
 		"resource/skins/CheckBoxSkin.exml",
 		"resource/skins/HScrollBarSkin.exml",

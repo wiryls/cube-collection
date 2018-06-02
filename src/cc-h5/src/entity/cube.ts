@@ -15,6 +15,20 @@ import Type = logic.Cube.Type;
 
 /////////////////////////////////////////////////////////////////////////////
 
+const CUBE_WHITE_TOP    = "object_cube_white_top";
+const CUBE_WHITE_BOTTOM = "object_cube_white_bottom";
+
+const CUBE_GREEN_TOP    = "object_cube_green_top";
+const CUBE_GREEN_BOTTOM = "object_cube_green_bottom";
+
+const CUBE_BLUE_TOP    = "object_cube_blue_top";
+const CUBE_BLUE_BOTTOM = "object_cube_blue_bottom";
+
+const CUBE_RED_TOP    = "object_cube_red_top";
+const CUBE_RED_BOTTOM = "object_cube_red_bottom";
+
+/////////////////////////////////////////////////////////////////////////////
+
 export class Cube extends egret.DisplayObjectContainer implements ICube
 {
     private type_: Type;
@@ -145,7 +159,9 @@ class Unit implements IUnit
 
     private action: Action|undefined = undefined;
     private status: Status|undefined = undefined;
-    private shape: egret.Shape = new egret.Shape();
+
+    private cube_top: egret.DisplayObjectContainer = new egret.DisplayObjectContainer();
+    private cube_btm: egret.DisplayObjectContainer = new egret.DisplayObjectContainer();
 
     private x_: number;
     private y_: number;
@@ -156,13 +172,14 @@ class Unit implements IUnit
         public owner: ICube,
         private readonly stage: egret.DisplayObjectContainer)
     {
-        stage.addChild(this.shape);
+        stage.addChild(this.cube_top);
+        stage.addChildAt(this.cube_btm, 0);
         owner.entity.push(this);
 
         this.x_ = x;
         this.y_ = y;
+        this.onPaint();
         this.onPlace();
-        this.onColor();
     }
 
     attach(target: ICube): void
@@ -181,7 +198,7 @@ class Unit implements IUnit
     commit(): void
     {
         if (this.modify === true) {
-            this.onColor();
+            this.onPaint();
             this.modify = false;
         }
 
@@ -250,8 +267,10 @@ class Unit implements IUnit
         const tlx = (wid - col * len) / 2;
         const tly = (hgt - row * len) / 2;
 
-        this.shape.x = tlx + this.x * len;
-        this.shape.y = tly + this.y * len;
+        this.cube_top.x = tlx + this.x * len;
+        this.cube_btm.x = tlx + this.x * len;
+        this.cube_top.y = tly + this.y * len;
+        this.cube_btm.y = tly + this.y * len;
     }
 
     private onAnimationMove(): void
@@ -267,8 +286,13 @@ class Unit implements IUnit
 
         const x = tlx + this.x * len;
         const y = tly + this.y * len;
+
         egret.Tween
-            .get(this.shape)
+            .get(this.cube_top)
+            .to({x: x, y: y}, 250)
+            ;
+        egret.Tween
+            .get(this.cube_btm)
             .to({x: x, y: y}, 250)
             ;
     }
@@ -290,36 +314,58 @@ class Unit implements IUnit
         const dst_y = (src_y + tly + y * len) / 2;
 
         egret.Tween
-            .get(this.shape)
+            .get(this.cube_top)
+            .to({x: dst_x, y: dst_y}, 125)
+            .to({x: src_x, y: src_y}, 125)
+            ;
+
+        egret.Tween
+            .get(this.cube_btm)
             .to({x: dst_x, y: dst_y}, 125)
             .to({x: src_x, y: src_y}, 125)
             ;
     }
 
-    private onColor(): void
+    private onPaint(): void
     {
-        const val = Unit.toColor(this.owner.type);
-
         const col = this.owner.world.size. width;
         const row = this.owner.world.size.height;
         const wid = this.stage.stage.stageWidth;
         const hgt = this.stage.stage.stageHeight;
         const len = Math.min(wid / col, hgt / row);
 
-        this.shape.graphics.clear();
-        this.shape.graphics.beginFill(val);
-        this.shape.graphics.drawRect(0, 0, len + 0.5, len + 0.5);
-        this.shape.graphics.endFill();
+        this.cube_top.removeChildren();
+        this.cube_btm.removeChildren();
+        const [bitmap_top, bitmap_btm] = Unit.toColor(this.owner.type).map(t => new egret.Bitmap(t));        
+        this.cube_top.addChild(bitmap_top);
+        this.cube_btm.addChild(bitmap_btm);
+
+        const anchor = len * 16.0 / 190.0;
+        const length = len * 256.0 / 190.0;
+
+        bitmap_top.width = length;
+        bitmap_top.height = length;
+        bitmap_btm.width = length;
+        bitmap_btm.height = length;
+
+        bitmap_top.anchorOffsetX = anchor;
+        bitmap_top.anchorOffsetY = anchor;
+        bitmap_btm.anchorOffsetX = anchor;
+        bitmap_btm.anchorOffsetY = anchor;
     }
 
-    private static toColor(type: Type): number
+    private static toColor(type: Type): [egret.Texture, egret.Texture]
     {
         switch(type) {
         default:
-        case Type.White: return 0xEAE9E8;
-        case Type.Red  : return 0xF33048;
-        case Type.Blue : return 0x75C6FF;
-        case Type.Green: return 0x75FF81;
+        case Type.White: return [RES.getRes(CUBE_WHITE_TOP), RES.getRes(CUBE_WHITE_BOTTOM)];
+        case Type.Green: return [RES.getRes(CUBE_GREEN_TOP), RES.getRes(CUBE_GREEN_BOTTOM)];
+        case Type.Blue : return [RES.getRes(CUBE_BLUE_TOP), RES.getRes(CUBE_BLUE_BOTTOM)];
+        case Type.Red  : return [RES.getRes(CUBE_RED_TOP), RES.getRes(CUBE_RED_BOTTOM)];
+        // case Type.White: return 0xEAE9E8;
+        // case Type.Red  : return 0xF33048;
+        // case Type.Blue : return 0x75C6FF;
+        // case Type.Green: return 0x75FF81;
         }
     }
 }
@@ -351,7 +397,7 @@ class Dest implements IVec2
         this.shape.y = tly + this.y * len;
 
         this.shape.graphics.clear();
-        this.shape.graphics.beginFill(0xffffff);
+        this.shape.graphics.beginFill(0x777777);
         this.shape.graphics.drawRect(0, 0, len + 0.5, len + 0.5);
         this.shape.graphics.endFill();
     }

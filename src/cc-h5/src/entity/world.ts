@@ -9,6 +9,11 @@ import Type = logic.Cube.Type;
 
 /////////////////////////////////////////////////////////////////////////////
 
+const Track = utils.Track;
+const Musician = utils.Musician.instance;
+
+/////////////////////////////////////////////////////////////////////////////
+
 export class World extends egret.DisplayObjectContainer implements IWorld
 {
     private seed_: logic.Seed;
@@ -23,11 +28,11 @@ export class World extends egret.DisplayObjectContainer implements IWorld
     command(code: number)
     {
         switch (code) {
-        case input.Controller.Type.MOVE_IDLE:
         case input.Controller.Type.MOVE_LEFT:
         case input.Controller.Type.MOVE_DOWN:
         case input.Controller.Type.MOVE_UP:
-        case input.Controller.Type.MOVE_RIGHT: {
+        case input.Controller.Type.MOVE_RIGHT:
+        case input.Controller.Type.MOVE_IDLE: {
             this.cube
                 .filter (c => c.type === Type.Blue)
                 .forEach(c => c.action = <logic.Cube.Action><any>code)
@@ -56,8 +61,8 @@ export class World extends egret.DisplayObjectContainer implements IWorld
         this.removeChildren();
         
         const creator = new CubeFactory(this, this);
-        this.cube = this.seed.cube.map(c => creator.create(c));
         this.dest = this.seed.dest.map(v => creator.create(v));
+        this.cube = this.seed.cube.map(c => creator.create(c));
     }
 
     get size(): { readonly width: number; readonly height: number; }

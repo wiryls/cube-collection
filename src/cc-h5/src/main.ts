@@ -6,6 +6,7 @@ const Director = utils.Director.instance;
 
 class Main extends eui.UILayer
 {
+    private loadingBg: egret.Bitmap;
     private static readonly Resources: ReadonlyArray<string> =
     [
         "loading", "ui", "level", "object", "sound"
@@ -48,7 +49,9 @@ class Main extends eui.UILayer
                 theme.addEventListener(eui.UIEvent.COMPLETE, () => resolve(), this);
             });
             await RES.loadGroup("loading", 0);
-
+            //add bg
+            //this.loadingBg = new egret.Bitmap(RES.getRes("loadingbg_png"));
+            //this.addChild( this.loadingBg );
             // load all other resources
             const loading = new LoadingUI(Main.Resources);
             this.addChild(loading);
@@ -56,7 +59,7 @@ class Main extends eui.UILayer
                 await RES.loadGroup(group, 0, loading);
                 loading.count();
             }
-            // this.removeChild(loading);
+            this.removeChild(loading);
         } catch (e) {
             console.error(e);
         }
@@ -67,6 +70,6 @@ class Main extends eui.UILayer
     protected onHelloWorld(): void
     {
         Director.main = this;
-        // Director.push();
+        Director.push(new scene.Start());
     }
 }

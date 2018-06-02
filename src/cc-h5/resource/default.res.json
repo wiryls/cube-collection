@@ -1,336 +1,366 @@
 {
-	"groups":[
+	"groups": [
 		{
-			"keys":"sound_effect_level_clear,sound_effect_level_fail,sound_effect_loop_01,sound_effect_loop_02,sound_effect_loop_03,sound_effect_note_01,sound_effect_note_02,sound_effect_note_03,sound_effect_note_04,sound_effect_note_05,sound_effect_note_06,sound_effect_note_07,sound_effect_note_08,sound_effect_note_09,sound_effect_note_10,sound_effect_note_connect,sound_effect_note_move,sound_effect_notes01,sound_effect_notes02,sound_effect_notes03,sound_music_heavy,sound_music_normal,sound_effect_enter,sound_effect_error_01,sound_effect_error_02,sound_effect_error_03",
-			"name":"sound"
+			"keys": "sound_effect_level_clear,sound_effect_level_fail,sound_effect_loop_01,sound_effect_loop_02,sound_effect_loop_03,sound_effect_note_01,sound_effect_note_02,sound_effect_note_03,sound_effect_note_04,sound_effect_note_05,sound_effect_note_06,sound_effect_note_07,sound_effect_note_08,sound_effect_note_09,sound_effect_note_10,sound_effect_note_connect,sound_effect_note_move,sound_effect_notes01,sound_effect_notes02,sound_effect_notes03,sound_music_heavy,sound_music_normal,sound_effect_enter,sound_effect_error_01,sound_effect_error_02,sound_effect_error_03",
+			"name": "sound"
 		},
 		{
-			"keys":"level_main,level_multiple_community,level_silence_fishing,level_silence_tutorial,level_chase_sample,level_crossover_tetris,level_debug_01,level_index",
-			"name":"level"
+			"keys": "level_main,level_multiple_community,level_silence_fishing,level_silence_tutorial,level_chase_sample,level_crossover_tetris,level_debug_01,level_index",
+			"name": "level"
 		},
 		{
-			"keys":"ui_button_down,ui_button_up,ui_checkbox_select_disabled,ui_checkbox_select_down,ui_checkbox_select_up,ui_checkbox_unselect,ui_selected,ui_border,ui_header,ui_thumb_pb,ui_track_pb,ui_radiobutton_select_disabled,ui_radiobutton_select_down,ui_radiobutton_select_up,ui_radiobutton_unselect,ui_roundthumb,ui_track_sb,ui_handle,ui_off,ui_on",
-			"name":"ui"
+			"keys": "ui_button_down,ui_button_up,ui_checkbox_select_disabled,ui_checkbox_select_down,ui_checkbox_select_up,ui_checkbox_unselect,ui_selected,ui_border,ui_header,ui_thumb_pb,ui_track_pb,ui_radiobutton_select_disabled,ui_radiobutton_select_down,ui_radiobutton_select_up,ui_radiobutton_unselect,ui_roundthumb,ui_track_sb,ui_handle,ui_off,ui_on,ui_start_up_png,ui_start_down_png,ui_select_up_png,ui_select_down_png",
+			"name": "ui"
 		},
 		{
-			"keys":"object_cube_white_top,object_cube_blue_bottom,object_cube_blue_top,object_cube_green_bottom,object_cube_green_top,object_cube_red_bottom,object_cube_red_top,object_cube_white_bottom",
-			"name":"object"
+			"keys": "object_cube_white_top,object_cube_blue_bottom,object_cube_blue_top,object_cube_green_bottom,object_cube_green_top,object_cube_red_bottom,object_cube_red_top,object_cube_white_bottom",
+			"name": "object"
 		},
 		{
-			"keys":"object_cube_white_top",
-			"name":"loading"
+			"keys": "loadingrun_png,loadingbg_png",
+			"name": "loading"
 		}
 	],
-	"resources":[
+	"resources": [
 		{
-			"name":"sound_effect_level_clear",
-			"type":"sound",
-			"url":"sounds/sound_effect_level_clear.mp3"
+			"url": "sounds/sound_effect_level_clear.mp3",
+			"type": "sound",
+			"name": "sound_effect_level_clear"
 		},
 		{
-			"name":"sound_effect_level_fail",
-			"type":"sound",
-			"url":"sounds/sound_effect_level_fail.mp3"
+			"url": "sounds/sound_effect_level_fail.mp3",
+			"type": "sound",
+			"name": "sound_effect_level_fail"
 		},
 		{
-			"name":"sound_effect_loop_01",
-			"type":"sound",
-			"url":"sounds/sound_effect_loop_01.mp3"
+			"url": "sounds/sound_effect_loop_01.mp3",
+			"type": "sound",
+			"name": "sound_effect_loop_01"
 		},
 		{
-			"name":"sound_effect_loop_02",
-			"type":"sound",
-			"url":"sounds/sound_effect_loop_02.mp3"
+			"url": "sounds/sound_effect_loop_02.mp3",
+			"type": "sound",
+			"name": "sound_effect_loop_02"
 		},
 		{
-			"name":"sound_effect_loop_03",
-			"type":"sound",
-			"url":"sounds/sound_effect_loop_03.mp3"
+			"url": "sounds/sound_effect_loop_03.mp3",
+			"type": "sound",
+			"name": "sound_effect_loop_03"
 		},
 		{
-			"name":"sound_effect_note_01",
-			"type":"sound",
-			"url":"sounds/sound_effect_note_01.mp3"
+			"url": "sounds/sound_effect_note_01.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_01"
 		},
 		{
-			"name":"sound_effect_note_02",
-			"type":"sound",
-			"url":"sounds/sound_effect_note_02.mp3"
+			"url": "sounds/sound_effect_note_02.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_02"
 		},
 		{
-			"name":"sound_effect_note_03",
-			"type":"sound",
-			"url":"sounds/sound_effect_note_03.mp3"
+			"url": "sounds/sound_effect_note_03.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_03"
 		},
 		{
-			"name":"sound_effect_note_04",
-			"type":"sound",
-			"url":"sounds/sound_effect_note_04.mp3"
+			"url": "sounds/sound_effect_note_04.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_04"
 		},
 		{
-			"name":"sound_effect_note_05",
-			"type":"sound",
-			"url":"sounds/sound_effect_note_05.mp3"
+			"url": "sounds/sound_effect_note_05.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_05"
 		},
 		{
-			"name":"sound_effect_note_06",
-			"type":"sound",
-			"url":"sounds/sound_effect_note_06.mp3"
+			"url": "sounds/sound_effect_note_06.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_06"
 		},
 		{
-			"name":"sound_effect_note_07",
-			"type":"sound",
-			"url":"sounds/sound_effect_note_07.mp3"
+			"url": "sounds/sound_effect_note_07.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_07"
 		},
 		{
-			"name":"sound_effect_note_08",
-			"type":"sound",
-			"url":"sounds/sound_effect_note_08.mp3"
+			"url": "sounds/sound_effect_note_08.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_08"
 		},
 		{
-			"name":"sound_effect_note_09",
-			"type":"sound",
-			"url":"sounds/sound_effect_note_09.mp3"
+			"url": "sounds/sound_effect_note_09.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_09"
 		},
 		{
-			"name":"sound_effect_note_10",
-			"type":"sound",
-			"url":"sounds/sound_effect_note_10.mp3"
+			"url": "sounds/sound_effect_note_10.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_10"
 		},
 		{
-			"name":"sound_effect_note_connect",
-			"type":"sound",
-			"url":"sounds/sound_effect_note_connect.mp3"
+			"url": "sounds/sound_effect_note_connect.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_connect"
 		},
 		{
-			"name":"sound_effect_note_move",
-			"type":"sound",
-			"url":"sounds/sound_effect_note_move.mp3"
+			"url": "sounds/sound_effect_note_move.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_move"
 		},
 		{
-			"name":"sound_effect_notes01",
-			"type":"sound",
-			"url":"sounds/sound_effect_notes01.mp3"
+			"url": "sounds/sound_effect_notes01.mp3",
+			"type": "sound",
+			"name": "sound_effect_notes01"
 		},
 		{
-			"name":"sound_effect_notes02",
-			"type":"sound",
-			"url":"sounds/sound_effect_notes02.mp3"
+			"url": "sounds/sound_effect_notes02.mp3",
+			"type": "sound",
+			"name": "sound_effect_notes02"
 		},
 		{
-			"name":"sound_effect_notes03",
-			"type":"sound",
-			"url":"sounds/sound_effect_notes03.mp3"
+			"url": "sounds/sound_effect_notes03.mp3",
+			"type": "sound",
+			"name": "sound_effect_notes03"
 		},
 		{
-			"name":"sound_music_heavy",
-			"type":"sound",
-			"url":"sounds/sound_music_heavy.mp3"
+			"url": "sounds/sound_music_heavy.mp3",
+			"type": "sound",
+			"name": "sound_music_heavy"
 		},
 		{
-			"name":"sound_music_normal",
-			"type":"sound",
-			"url":"sounds/sound_music_normal.mp3"
+			"url": "sounds/sound_music_normal.mp3",
+			"type": "sound",
+			"name": "sound_music_normal"
 		},
 		{
-			"name":"sound_effect_enter",
-			"type":"sound",
-			"url":"sounds/sound_effect_enter.mp3"
+			"url": "sounds/sound_effect_enter.mp3",
+			"type": "sound",
+			"name": "sound_effect_enter"
 		},
 		{
-			"name":"sound_effect_error_01",
-			"type":"sound",
-			"url":"sounds/sound_effect_error_01.mp3"
+			"url": "sounds/sound_effect_error_01.mp3",
+			"type": "sound",
+			"name": "sound_effect_error_01"
 		},
 		{
-			"name":"sound_effect_error_02",
-			"type":"sound",
-			"url":"sounds/sound_effect_error_02.mp3"
+			"url": "sounds/sound_effect_error_02.mp3",
+			"type": "sound",
+			"name": "sound_effect_error_02"
 		},
 		{
-			"name":"sound_effect_error_03",
-			"type":"sound",
-			"url":"sounds/sound_effect_error_03.mp3"
+			"url": "sounds/sound_effect_error_03.mp3",
+			"type": "sound",
+			"name": "sound_effect_error_03"
 		},
 		{
-			"name":"level_main",
-			"type":"json",
-			"url":"levels/level_main.json"
+			"url": "levels/level_main.json",
+			"type": "json",
+			"name": "level_main"
 		},
 		{
-			"name":"level_multiple_community",
-			"type":"json",
-			"url":"levels/level_multiple_community.json"
+			"url": "levels/level_multiple_community.json",
+			"type": "json",
+			"name": "level_multiple_community"
 		},
 		{
-			"name":"level_silence_fishing",
-			"type":"json",
-			"url":"levels/level_silence_fishing.json"
+			"url": "levels/level_silence_fishing.json",
+			"type": "json",
+			"name": "level_silence_fishing"
 		},
 		{
-			"name":"level_silence_tutorial",
-			"type":"json",
-			"url":"levels/level_silence_tutorial.json"
+			"url": "levels/level_silence_tutorial.json",
+			"type": "json",
+			"name": "level_silence_tutorial"
 		},
 		{
-			"name":"level_chase_sample",
-			"type":"json",
-			"url":"levels/level_chase_sample.json"
+			"url": "levels/level_chase_sample.json",
+			"type": "json",
+			"name": "level_chase_sample"
 		},
 		{
-			"name":"level_crossover_tetris",
-			"type":"json",
-			"url":"levels/level_crossover_tetris.json"
+			"url": "levels/level_crossover_tetris.json",
+			"type": "json",
+			"name": "level_crossover_tetris"
 		},
 		{
-			"name":"level_debug_01",
-			"type":"json",
-			"url":"levels/level_debug_01.json"
+			"url": "levels/level_debug_01.json",
+			"type": "json",
+			"name": "level_debug_01"
 		},
 		{
-			"name":"level_index",
-			"type":"json",
-			"url":"levels/level_index.json"
+			"url": "levels/level_index.json",
+			"type": "json",
+			"name": "level_index"
 		},
 		{
-			"name":"ui_button_down",
-			"type":"image",
-			"url":"assets/ui/Button/ui_button_down.png"
+			"url": "assets/ui/Button/ui_button_down.png",
+			"type": "image",
+			"name": "ui_button_down"
 		},
 		{
-			"name":"ui_button_up",
-			"type":"image",
-			"url":"assets/ui/Button/ui_button_up.png"
+			"url": "assets/ui/Button/ui_button_up.png",
+			"type": "image",
+			"name": "ui_button_up"
 		},
 		{
-			"name":"ui_checkbox_select_disabled",
-			"type":"image",
-			"url":"assets/ui/CheckBox/ui_checkbox_select_disabled.png"
+			"url": "assets/ui/CheckBox/ui_checkbox_select_disabled.png",
+			"type": "image",
+			"name": "ui_checkbox_select_disabled"
 		},
 		{
-			"name":"ui_checkbox_select_down",
-			"type":"image",
-			"url":"assets/ui/CheckBox/ui_checkbox_select_down.png"
+			"url": "assets/ui/CheckBox/ui_checkbox_select_down.png",
+			"type": "image",
+			"name": "ui_checkbox_select_down"
 		},
 		{
-			"name":"ui_checkbox_select_up",
-			"type":"image",
-			"url":"assets/ui/CheckBox/ui_checkbox_select_up.png"
+			"url": "assets/ui/CheckBox/ui_checkbox_select_up.png",
+			"type": "image",
+			"name": "ui_checkbox_select_up"
 		},
 		{
-			"name":"ui_checkbox_unselect",
-			"type":"image",
-			"url":"assets/ui/CheckBox/ui_checkbox_unselect.png"
+			"url": "assets/ui/CheckBox/ui_checkbox_unselect.png",
+			"type": "image",
+			"name": "ui_checkbox_unselect"
 		},
 		{
-			"name":"ui_selected",
-			"type":"image",
-			"url":"assets/ui/ItemRenderer/ui_selected.png"
+			"url": "assets/ui/ItemRenderer/ui_selected.png",
+			"type": "image",
+			"name": "ui_selected"
 		},
 		{
-			"name":"ui_border",
-			"type":"image",
-			"url":"assets/ui/Panel/ui_border.png"
+			"url": "assets/ui/Panel/ui_border.png",
+			"type": "image",
+			"name": "ui_border"
 		},
 		{
-			"name":"ui_header",
-			"type":"image",
-			"url":"assets/ui/Panel/ui_header.png"
+			"url": "assets/ui/Panel/ui_header.png",
+			"type": "image",
+			"name": "ui_header"
 		},
 		{
-			"name":"ui_thumb_pb",
-			"type":"image",
-			"url":"assets/ui/ProgressBar/ui_thumb_pb.png"
+			"url": "assets/ui/ProgressBar/ui_thumb_pb.png",
+			"type": "image",
+			"name": "ui_thumb_pb"
 		},
 		{
-			"name":"ui_track_pb",
-			"type":"image",
-			"url":"assets/ui/ProgressBar/ui_track_pb.png"
+			"url": "assets/ui/ProgressBar/ui_track_pb.png",
+			"type": "image",
+			"name": "ui_track_pb"
 		},
 		{
-			"name":"ui_radiobutton_select_disabled",
-			"type":"image",
-			"url":"assets/ui/RadioButton/ui_radiobutton_select_disabled.png"
+			"url": "assets/ui/RadioButton/ui_radiobutton_select_disabled.png",
+			"type": "image",
+			"name": "ui_radiobutton_select_disabled"
 		},
 		{
-			"name":"ui_radiobutton_select_down",
-			"type":"image",
-			"url":"assets/ui/RadioButton/ui_radiobutton_select_down.png"
+			"url": "assets/ui/RadioButton/ui_radiobutton_select_down.png",
+			"type": "image",
+			"name": "ui_radiobutton_select_down"
 		},
 		{
-			"name":"ui_radiobutton_select_up",
-			"type":"image",
-			"url":"assets/ui/RadioButton/ui_radiobutton_select_up.png"
+			"url": "assets/ui/RadioButton/ui_radiobutton_select_up.png",
+			"type": "image",
+			"name": "ui_radiobutton_select_up"
 		},
 		{
-			"name":"ui_radiobutton_unselect",
-			"type":"image",
-			"url":"assets/ui/RadioButton/ui_radiobutton_unselect.png"
+			"url": "assets/ui/RadioButton/ui_radiobutton_unselect.png",
+			"type": "image",
+			"name": "ui_radiobutton_unselect"
 		},
 		{
-			"name":"ui_roundthumb",
-			"type":"image",
-			"url":"assets/ui/ScrollBar/ui_roundthumb.png"
+			"url": "assets/ui/ScrollBar/ui_roundthumb.png",
+			"type": "image",
+			"name": "ui_roundthumb"
 		},
 		{
-			"name":"ui_track_sb",
-			"type":"image",
-			"url":"assets/ui/ScrollBar/ui_track_sb.png"
+			"url": "assets/ui/ScrollBar/ui_track_sb.png",
+			"type": "image",
+			"name": "ui_track_sb"
 		},
 		{
-			"name":"ui_handle",
-			"type":"image",
-			"url":"assets/ui/ToggleSwitch/ui_handle.png"
+			"url": "assets/ui/ToggleSwitch/ui_handle.png",
+			"type": "image",
+			"name": "ui_handle"
 		},
 		{
-			"name":"ui_off",
-			"type":"image",
-			"url":"assets/ui/ToggleSwitch/ui_off.png"
+			"url": "assets/ui/ToggleSwitch/ui_off.png",
+			"type": "image",
+			"name": "ui_off"
 		},
 		{
-			"name":"ui_on",
-			"type":"image",
-			"url":"assets/ui/ToggleSwitch/ui_on.png"
+			"url": "assets/ui/ToggleSwitch/ui_on.png",
+			"type": "image",
+			"name": "ui_on"
 		},
 		{
-			"name":"object_cube_white_top",
-			"type":"image",
-			"url":"assets/objects/object_cube_white_top.png"
+			"url": "assets/objects/object_cube_white_top.png",
+			"type": "image",
+			"name": "object_cube_white_top"
 		},
 		{
-			"name":"object_cube_blue_bottom",
-			"type":"image",
-			"url":"assets/objects/object_cube_blue_bottom.png"
+			"url": "assets/objects/object_cube_blue_bottom.png",
+			"type": "image",
+			"name": "object_cube_blue_bottom"
 		},
 		{
-			"name":"object_cube_blue_top",
-			"type":"image",
-			"url":"assets/objects/object_cube_blue_top.png"
+			"url": "assets/objects/object_cube_blue_top.png",
+			"type": "image",
+			"name": "object_cube_blue_top"
 		},
 		{
-			"name":"object_cube_green_bottom",
-			"type":"image",
-			"url":"assets/objects/object_cube_green_bottom.png"
+			"url": "assets/objects/object_cube_green_bottom.png",
+			"type": "image",
+			"name": "object_cube_green_bottom"
 		},
 		{
-			"name":"object_cube_green_top",
-			"type":"image",
-			"url":"assets/objects/object_cube_green_top.png"
+			"url": "assets/objects/object_cube_green_top.png",
+			"type": "image",
+			"name": "object_cube_green_top"
 		},
 		{
-			"name":"object_cube_red_bottom",
-			"type":"image",
-			"url":"assets/objects/object_cube_red_bottom.png"
+			"url": "assets/objects/object_cube_red_bottom.png",
+			"type": "image",
+			"name": "object_cube_red_bottom"
 		},
 		{
-			"name":"object_cube_red_top",
-			"type":"image",
-			"url":"assets/objects/object_cube_red_top.png"
+			"url": "assets/objects/object_cube_red_top.png",
+			"type": "image",
+			"name": "object_cube_red_top"
 		},
 		{
-			"name":"object_cube_white_bottom",
-			"type":"image",
-			"url":"assets/objects/object_cube_white_bottom.png"
+			"url": "assets/objects/object_cube_white_bottom.png",
+			"type": "image",
+			"name": "object_cube_white_bottom"
+		},
+		{
+			"url": "assets/ui/Background/loadingbg.png",
+			"type": "image",
+			"name": "loadingbg_png"
+		},
+		{
+			"url": "assets/ui/Background/loading2.png",
+			"type": "image",
+			"name": "loadingrun_png"
+		},
+		{
+			"url": "assets/ui/Button/ui_start_down.png",
+			"type": "image",
+			"name": "ui_start_down_png"
+		},
+		{
+			"url": "assets/ui/Button/ui_start_up.png",
+			"type": "image",
+			"name": "ui_start_up_png"
+		},
+		{
+			"url": "assets/ui/Button/ui_select_up.png",
+			"type": "image",
+			"name": "ui_select_up_png"
+		},
+		{
+			"url": "assets/ui/Button/ui_select_down.png",
+			"type": "image",
+			"name": "ui_select_down_png"
 		}
 	]
 }

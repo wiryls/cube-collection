@@ -1,19 +1,32 @@
-class LoadingUI extends egret.Sprite implements RES.PromiseTaskReporter
+class LoadingUI extends eui.Group implements RES.PromiseTaskReporter
 {
     private text: egret.TextField;
     private counter: number = 0;
-
+    private _txProgress: egret.TextField;
+    private _loadingRun: egret.Bitmap;
     public constructor(public groups: ReadonlyArray<string>)
     {
         super();
-        this.onCreateView();
     }
 
-    private onCreateView(): void
+    protected createChildren(): void
     {
+        super.createChildren();
+        this._loadingRun = new egret.Bitmap(RES.getRes("loadingrun_png"));
+        this.addChild( this._loadingRun );
+        this._loadingRun.anchorOffsetX = this._loadingRun.width * .5;
+        this._loadingRun.anchorOffsetY = this._loadingRun.height * .5;
+        this._loadingRun.x = this.stage.stageWidth * .5;
+        this._loadingRun.y = this.stage.stageHeight * .5;
+        egret.Tween
+            .get(this._loadingRun,{loop:true})
+            .to({rotation: 360}, 1000)
+            ;
+
         this.text = new egret.TextField();
         this.addChild(this.text);
-        this.text.y = 300;
+        this.text.x = this.stage.stageHeight * .5;        
+        this.text.y = this.stage.stageHeight * .5 -100;
         this.text.width = 480;
         this.text.height = 100;
         this.text.textAlign = "center";

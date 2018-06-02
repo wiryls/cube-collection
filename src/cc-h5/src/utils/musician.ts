@@ -32,7 +32,7 @@ export class Musician
     {
         const sound = this.tryToFind(name);
         if (sound !== undefined) {
-            sound.play();
+            sound.play(0, 1);
         } else {
             console.error("Musician: Cannot find sound", name);
         }
