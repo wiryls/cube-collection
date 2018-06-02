@@ -6,15 +6,19 @@
 		},
 		{
 			"keys":"sound_effect_level_clear,sound_effect_level_fail,sound_effect_loop_01,sound_effect_loop_02,sound_effect_loop_03,sound_effect_note_01,sound_effect_note_02,sound_effect_note_03,sound_effect_note_04,sound_effect_note_05,sound_effect_note_06,sound_effect_note_07,sound_effect_note_08,sound_effect_note_09,sound_effect_note_10,sound_effect_note_connect,sound_effect_note_move,sound_effect_notes01,sound_effect_notes02,sound_effect_notes03,sound_music_heavy,sound_music_normal,sound_effect_enter,sound_effect_error_01,sound_effect_error_02,sound_effect_error_03",
-			"name":"sounds"
+			"name":"sound"
 		},
 		{
 			"keys":"level_main,level_multiple_community,level_silence_fishing,level_silence_tutorial,level_chase_sample,level_crossover_tetris,level_debug_01,level_index",
-			"name":"levels"
+			"name":"level"
 		},
 		{
 			"keys":"ui_button_down,ui_button_up,ui_checkbox_select_disabled,ui_checkbox_select_down,ui_checkbox_select_up,ui_checkbox_unselect,ui_selected,ui_border,ui_header,ui_thumb_pb,ui_track_pb,ui_radiobutton_select_disabled,ui_radiobutton_select_down,ui_radiobutton_select_up,ui_radiobutton_unselect,ui_roundthumb,ui_track_sb,ui_handle,ui_off,ui_on",
 			"name":"ui"
+		},
+		{
+			"keys":"object_cube_white_top,object_cube_blue_bottom,object_cube_blue_top,object_cube_green_bottom,object_cube_green_top,object_cube_red_bottom,object_cube_red_top,object_cube_white_bottom",
+			"name":"object"
 		}
 	],
 	"resources":[
@@ -189,121 +193,6 @@
 			"url":"levels/level_index.json"
 		},
 		{
-			"name":"radiobutton_select_disabled",
-			"type":"image",
-			"url":"assets/ui/RadioButton/radiobutton_select_disabled.png"
-		},
-		{
-			"name":"radiobutton_select_down",
-			"type":"image",
-			"url":"assets/ui/RadioButton/radiobutton_select_down.png"
-		},
-		{
-			"name":"radiobutton_select_up",
-			"type":"image",
-			"url":"assets/ui/RadioButton/radiobutton_select_up.png"
-		},
-		{
-			"name":"radiobutton_unselect",
-			"type":"image",
-			"url":"assets/ui/RadioButton/radiobutton_unselect.png"
-		},
-		{
-			"name":"roundthumb",
-			"type":"image",
-			"url":"assets/ui/ScrollBar/roundthumb.png"
-		},
-		{
-			"name":"track_sb",
-			"type":"image",
-			"url":"assets/ui/ScrollBar/track_sb.png"
-		},
-		{
-			"name":"thumb",
-			"type":"image",
-			"url":"assets/ui/Slider/thumb.png"
-		},
-		{
-			"name":"track",
-			"type":"image",
-			"url":"assets/ui/Slider/track.png"
-		},
-		{
-			"name":"tracklight",
-			"type":"image",
-			"url":"assets/ui/Slider/tracklight.png"
-		},
-		{
-			"name":"handle",
-			"type":"image",
-			"url":"assets/ui/ToggleSwitch/handle.png"
-		},
-		{
-			"name":"off",
-			"type":"image",
-			"url":"assets/ui/ToggleSwitch/off.png"
-		},
-		{
-			"name":"on",
-			"type":"image",
-			"url":"assets/ui/ToggleSwitch/on.png"
-		},
-		{
-			"name":"button_down",
-			"type":"image",
-			"url":"assets/ui/Button/button_down.png"
-		},
-		{
-			"name":"button_up",
-			"type":"image",
-			"url":"assets/ui/Button/button_up.png"
-		},
-		{
-			"name":"checkbox_select_disabled",
-			"type":"image",
-			"url":"assets/ui/CheckBox/checkbox_select_disabled.png"
-		},
-		{
-			"name":"checkbox_select_down",
-			"type":"image",
-			"url":"assets/ui/CheckBox/checkbox_select_down.png"
-		},
-		{
-			"name":"checkbox_select_up",
-			"type":"image",
-			"url":"assets/ui/CheckBox/checkbox_select_up.png"
-		},
-		{
-			"name":"checkbox_unselect",
-			"type":"image",
-			"url":"assets/ui/CheckBox/checkbox_unselect.png"
-		},
-		{
-			"name":"selected",
-			"type":"image",
-			"url":"assets/ui/ItemRenderer/selected.png"
-		},
-		{
-			"name":"border",
-			"type":"image",
-			"url":"assets/ui/Panel/border.png"
-		},
-		{
-			"name":"header",
-			"type":"image",
-			"url":"assets/ui/Panel/header.png"
-		},
-		{
-			"name":"thumb_pb",
-			"type":"image",
-			"url":"assets/ui/ProgressBar/thumb_pb.png"
-		},
-		{
-			"name":"track_pb",
-			"type":"image",
-			"url":"assets/ui/ProgressBar/track_pb.png"
-		},
-		{
 			"name":"ui_button_down",
 			"type":"image",
 			"url":"assets/ui/Button/ui_button_down.png"
@@ -402,6 +291,46 @@
 			"name":"ui_on",
 			"type":"image",
 			"url":"assets/ui/ToggleSwitch/ui_on.png"
+		},
+		{
+			"name":"object_cube_white_top",
+			"type":"image",
+			"url":"assets/objects/object_cube_white_top.png"
+		},
+		{
+			"name":"object_cube_blue_bottom",
+			"type":"image",
+			"url":"assets/objects/object_cube_blue_bottom.png"
+		},
+		{
+			"name":"object_cube_blue_top",
+			"type":"image",
+			"url":"assets/objects/object_cube_blue_top.png"
+		},
+		{
+			"name":"object_cube_green_bottom",
+			"type":"image",
+			"url":"assets/objects/object_cube_green_bottom.png"
+		},
+		{
+			"name":"object_cube_green_top",
+			"type":"image",
+			"url":"assets/objects/object_cube_green_top.png"
+		},
+		{
+			"name":"object_cube_red_bottom",
+			"type":"image",
+			"url":"assets/objects/object_cube_red_bottom.png"
+		},
+		{
+			"name":"object_cube_red_top",
+			"type":"image",
+			"url":"assets/objects/object_cube_red_top.png"
+		},
+		{
+			"name":"object_cube_white_bottom",
+			"type":"image",
+			"url":"assets/objects/object_cube_white_bottom.png"
 		}
 	]
 }

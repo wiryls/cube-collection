@@ -53,12 +53,11 @@ export class World extends egret.DisplayObjectContainer implements IWorld
     {
         if (this.seed === undefined)
             return;
-
         this.removeChildren();
         
         const creator = new CubeFactory(this, this);
         this.cube = this.seed.cube.map(c => creator.create(c));
-        this.dest = this.seed.dest.map(v => new Vec2(v));
+        this.dest = this.seed.dest.map(v => creator.create(v));
     }
 
     get size(): { readonly width: number; readonly height: number; }

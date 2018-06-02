@@ -326,6 +326,39 @@ class Unit implements IUnit
 
 /////////////////////////////////////////////////////////////////////////////
 
+class Dest implements IVec2
+{
+    private shape: egret.Shape = new egret.Shape();
+
+    constructor(
+        public readonly x: number,
+        public readonly y: number,
+        private readonly owner: IWorld,
+        private readonly stage: egret.DisplayObjectContainer)
+    {
+        this.stage.addChild(this.shape);
+
+        const col = this.owner.size. width;
+        const row = this.owner.size.height;
+        const wid = this.stage.stage.stageWidth;
+        const hgt = this.stage.stage.stageHeight;
+
+        const len = Math.min(wid / col, hgt / row);
+        const tlx = (wid - col * len) / 2;
+        const tly = (hgt - row * len) / 2;
+
+        this.shape.x = tlx + this.x * len;
+        this.shape.y = tly + this.y * len;
+
+        this.shape.graphics.clear();
+        this.shape.graphics.beginFill(0xffffff);
+        this.shape.graphics.drawRect(0, 0, len + 0.5, len + 0.5);
+        this.shape.graphics.endFill();
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 export class CubeFactory implements ICubeFactory
 {
     constructor(
@@ -333,18 +366,25 @@ export class CubeFactory implements ICubeFactory
         private readonly stage: egret.DisplayObjectContainer)
     {}
 
-    create(src: Seed.Cube): ICube
+    create(src: Seed.Vec2): IVec2;
+    create(src: Seed.Cube): ICube;
+    create(src: Seed.Cube|Seed.Vec2): ICube|IVec2
     {
-        const type = Seed.Cube.toType(src.type);
-        const move
-            = (src.move === undefined)
-            ? (Behavior.create())
-            : (Behavior.create(src.move.loop, Seed.Cube.toActions(src.move.path)))
-            ;
-        const cube = new Cube(this.world, type, move);
-        const body = src.body.map(v => new Unit(v[0], v[1], cube, this.stage));
+        if (Array.isArray(src)) {
+            const dest = new Dest(src[0], src[1], this.world, this.stage);
+            return dest;
+        } else {
+            const type = Seed.Cube.toType(src.type);
+            const move
+                = (src.move === undefined)
+                ? (Behavior.create())
+                : (Behavior.create(src.move.loop, Seed.Cube.toActions(src.move.path)))
+                ;
+            const cube = new Cube(this.world, type, move);
+            const body = src.body.map(v => new Unit(v[0], v[1], cube, this.stage));
 
-        return cube;
+            return cube;
+        }
     }
 }
 

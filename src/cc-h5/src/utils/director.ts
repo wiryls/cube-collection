@@ -8,9 +8,8 @@ export class Director
     public  main: Main;
     private stack = new Array<Scene>();
 
-    private static instance_: Director;
     private constructor() { }
-
+    private static instance_: Director;
     public static get instance()
     {
         return this.instance_ || (this.instance_ = new this());
