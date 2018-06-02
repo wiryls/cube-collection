@@ -24,15 +24,23 @@ export namespace Transform
         }
 
         // find and mark linked.
-        link.forEach(l =>
-            item.get(edge.out(l.cube.entity)).filter(
-            r   => r.cube.active
-                && r.cube.absorbable(l.cube) === false
-                && l.cube.absorbable(r.cube) === true
-            ).forEach(o =>
-                dset.join(l.index, o.index)
-            )
-        );
+        for (const l of link) {
+            for(const que = new Array<Link>(l); que.length !== 0; ) {
+                const n = que.shift();
+                if (n === undefined)
+                    break;
+
+                item.get(edge.out(n.cube.entity)).filter(
+                r   => r.cube.active
+                    && r.cube.absorbable(l.cube) === false
+                    && l.cube.absorbable(r.cube) === true
+                    && dset.same(l, r) === false
+                ).forEach(o => {
+                    dset.join(l.index, o.index)
+                    que.push(o);
+                });
+            }
+        }
 
         // merge connected
         for(const foe of dset.groups())

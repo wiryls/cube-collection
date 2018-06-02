@@ -52,15 +52,40 @@ export class World extends eui.Component
 
     private onControl(event: input.Controller.Event): void
     {
-        console.log("Control", event.code);
-        if (input.Controller.Moves.includes(event.code)) {
-            if (event.code !== input.Controller.Type.MOVE_IDLE)
-                //////// Music ////////
-                Musician.sound(Track.CUBE_CONTROL);
-            this.moves = event.code;
-        } else {
-            if (event.code === input.Controller.Type.CTRL_RESTART) {
-                this.world.build();
+        // console.log("Control", event.code);
+
+        switch(event.code) {
+        case input.Controller.Type.CTRL_EXIT:
+        {
+            const seed = this.guide.zero();
+            if (seed !== undefined)
+                this.world.build(seed);
+            break;    
+        }
+        case input.Controller.Type.CTRL_RESTART:
+        {
+            this.world.build();
+            break;
+        }
+        case input.Controller.Type.CTRL_DONE:
+        {
+            const flag = this.world.status();
+            if (flag.some(n => n !== 0)) {
+                const seed = this.guide.next(flag);
+                if (seed !== undefined)
+                    this.world.build(seed);
+            }
+            break;
+        }
+        default:
+        {
+            if (input.Controller.Moves.includes(event.code)) {
+                if (event.code !== input.Controller.Type.MOVE_IDLE) {
+                    //////// Music ////////
+                    Musician.sound(Track.CUBE_CONTROL);
+                    this.press = true;
+                }
+                this.order = event.code;
             }
         }
     }

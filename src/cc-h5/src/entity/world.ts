@@ -51,6 +51,11 @@ export class World extends egret.DisplayObjectContainer implements IWorld
         for (const c of this.cube)
             c.commit();
 
+        for (const layer of this.layer)
+            layer.$children.sort((l, r) => 
+                (l.x + l.y) < (r.x + r.y) ? -1 : (l.x + l.y) > (r.x + r.y) ? +1 : 0
+            );
+
         this.cube = this.cube.filter(c => c.live);
     }
 

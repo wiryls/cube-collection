@@ -5,8 +5,8 @@
 			"name": "sound"
 		},
 		{
-			"keys": "level_main,level_multiple_community,level_silence_fishing,level_silence_tutorial,level_chase_sample,level_crossover_tetris,level_debug_01,level_index",
-			"name": "level"
+			"keys":"level_main,level_multiple_community,level_silence_fishing,level_silence_tutorial,level_chase_sample,level_crossover_tetris,level_debug_01,level_index,level_silence_relative,level_silence_spiral",
+			"name":"level"
 		},
 		{
 			"keys": "ui_button_down,ui_button_up,ui_checkbox_select_disabled,ui_checkbox_select_down,ui_checkbox_select_up,ui_checkbox_unselect,ui_selected,ui_border,ui_header,ui_thumb_pb,ui_track_pb,ui_radiobutton_select_disabled,ui_radiobutton_select_down,ui_radiobutton_select_up,ui_radiobutton_unselect,ui_roundthumb,ui_track_sb,ui_handle,ui_off,ui_on,ui_start_up_png,ui_start_down_png,ui_select_up_png,ui_select_down_png",
@@ -358,9 +358,19 @@
 			"name": "ui_select_up_png"
 		},
 		{
-			"url": "assets/ui/Button/ui_select_down.png",
-			"type": "image",
-			"name": "ui_select_down_png"
+			"name":"ui_image_loading",
+			"type":"image",
+			"url":"assets/ui/Background/ui_image_loading.png"
+		},
+		{
+			"name":"level_silence_relative",
+			"type":"json",
+			"url":"levels/level_silence_relative.json"
+		},
+		{
+			"name":"level_silence_spiral",
+			"type":"json",
+			"url":"levels/level_silence_spiral.json"
 		}
 	]
 }

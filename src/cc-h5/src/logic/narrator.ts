@@ -51,6 +51,14 @@ export class Narrator
         }
     }
 
+    zero(): undefined|Seed
+    {
+        if (this.node.length > 0)
+            return this.seed(this.node[0].name);
+        else
+            return undefined;
+    }
+
     tell(): undefined|Seed
     {
         return this.seed(this.data.milestone);
@@ -65,16 +73,14 @@ export class Narrator
             return undefined;
         }
 
-        let nxt = now.case.find(c => Narrator.match(c.cond, commit));
-        if (nxt === undefined)
-            nxt = now.case.find(c => c.cond === undefined);
-        if (nxt === undefined) {
-            console.error("Narrator: Missing Defualt at", pos);
-            return undefined;
-        }
+        let cas = now.case.find(c => Narrator.match(c.cond, commit));
+        if (cas === undefined)
+            cas = now.case.find(c => c.cond === undefined);
+        if (cas === undefined)
+            throw new Error(`Narrator: Missing Defualt at ${pos}`);
 
-        this.data.milestone = nxt.next;
-        return this.seed(nxt.next);
+        this.data.milestone = cas.next;
+        return this.seed(cas.next);
     }
 
     private seed(key: string): undefined|Seed
@@ -97,7 +103,7 @@ export class Narrator
     {
         if (lhs === undefined || rhs === undefined)
             return false;
-        if (Array.isArray(lhs) === false || Array.isArray(rhs))
+        if (Array.isArray(lhs) === false || Array.isArray(rhs) === false)
             return false;
         
         const n = Math.min(lhs.length, rhs.length);
