@@ -1,10 +1,6 @@
 {
 	"groups":[
 		{
-			"keys":"",
-			"name":"preload"
-		},
-		{
 			"keys":"sound_effect_level_clear,sound_effect_level_fail,sound_effect_loop_01,sound_effect_loop_02,sound_effect_loop_03,sound_effect_note_01,sound_effect_note_02,sound_effect_note_03,sound_effect_note_04,sound_effect_note_05,sound_effect_note_06,sound_effect_note_07,sound_effect_note_08,sound_effect_note_09,sound_effect_note_10,sound_effect_note_connect,sound_effect_note_move,sound_effect_notes01,sound_effect_notes02,sound_effect_notes03,sound_music_heavy,sound_music_normal,sound_effect_enter,sound_effect_error_01,sound_effect_error_02,sound_effect_error_03",
 			"name":"sound"
 		},
@@ -19,6 +15,10 @@
 		{
 			"keys":"object_cube_white_top,object_cube_blue_bottom,object_cube_blue_top,object_cube_green_bottom,object_cube_green_top,object_cube_red_bottom,object_cube_red_top,object_cube_white_bottom",
 			"name":"object"
+		},
+		{
+			"keys":"object_cube_white_top",
+			"name":"loading"
 		}
 	],
 	"resources":[
