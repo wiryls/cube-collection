@@ -41,6 +41,13 @@ class Main extends eui.UILayer
 
     private async onRunning()
     {
+        // if(!egret.Capabilities.isMobile) {
+        //     this.stage.scaleMode   = egret.StageScaleMode.SHOW_ALL;  
+        //     this.stage.orientation = egret.OrientationMode.LANDSCAPE_FLIPPED;    
+        // } else {
+        //     this.stage.orientation = egret.OrientationMode.PORTRAIT; 
+        // }
+
         try {
             // load config, theme and LoadingUI resources
             await RES.loadConfig("resource/default.res.json", "resource/");
