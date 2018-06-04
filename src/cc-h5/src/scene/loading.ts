@@ -53,8 +53,12 @@ export class Loading extends eui.Component implements RES.PromiseTaskReporter
     public count(delta: number = 1): void
     {
         this.progress += delta;
-        if (this.progress > this.groups.length)
+        if (this.progress >= this.groups.length) {
             this.progress = this.groups.length - 1;
+            this.text_progress.visible = false;
+        } else {
+            this.text_progress.visible = true;
+        }
     }
 
     public onProgress(current: number, total: number): void

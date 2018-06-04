@@ -48,24 +48,32 @@ class Main extends eui.UILayer
                 new eui.Theme("resource/default.thm.json", this.stage)
                     .addEventListener(eui.UIEvent.COMPLETE, () => resolve(), this);
             });
-            await RES.loadGroup("loading", 0);
-            //add bg
-            //this.loadingBg = new egret.Bitmap(RES.getRes("loadingbg_png"));
-            //this.addChild( this.loadingBg );
-            // load all other resources
-            const loading = new scene.Loading();
-            this.addChild(loading);
-            loading.track = Main.Resources;
-            for (const group of Main.Resources) {
-                await RES.loadGroup(group, 0, loading);
-                loading.count();
-            }
-            this.removeChild(loading);
+            await RES.loadGroup(Main.Resources[0], 0);
         } catch (e) {
             throw new Error(e);
         }
 
+        // load all other resources
+        const loading = new scene.Loading();
+        this.addChild(loading);
+        loading.track = Main.Resources;
+        for (const group of Main.Resources) {
+            try {
+                await RES.loadGroup(group, 0, loading);
+            } catch (e) {
+                throw new Error(e);
+            }
+            loading.count();
+        }
+
+        // load HelloWorld Scene
         this.onHelloWorld();
+        this.setChildIndex(loading, this.numChildren - 1);
+
+        // transition animation
+        egret.Tween.get(loading).to({alpha: 0}, 2000, egret.Ease.circOut).call(() => {
+            this.removeChild(loading);
+        });
     }
 
     protected onHelloWorld(): void

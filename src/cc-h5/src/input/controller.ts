@@ -50,10 +50,13 @@ export namespace Controller
     }
 
     export function create(src: input.KeyBoard): Controller;
-    export function create(src: input.KeyBoard): Controller
+    export function create(src: egret.DisplayObjectContainer): Controller;
+    export function create(src: input.KeyBoard|egret.DisplayObjectContainer): Controller
     {
         if (src instanceof input.KeyBoard) {
             return new KeyBoardController(src);
+        } else if (src instanceof egret.DisplayObjectContainer) {
+            return new TouchController(src);
         } else {
             return new DummyController();
         }
@@ -107,18 +110,20 @@ class KeyBoardController extends egret.EventDispatcher implements Controller
         if (o === undefined)
             return;
         
-        if (Controller.Moves.includes(o) && o != Controller.Type.MOVE_IDLE) {
+        if (Controller.Moves.includes(o) && o !== Controller.Type.MOVE_IDLE) {
             switch (o) {
-            case Controller.Type.MOVE_LEFT : this.force[0] -= 1; break;
-            case Controller.Type.MOVE_DOWN : this.force[1] += 1; break;
-            case Controller.Type.MOVE_UP   : this.force[1] -= 1; break;
-            case Controller.Type.MOVE_RIGHT: this.force[0] += 1; break;
+            case Controller.Type.MOVE_LEFT : this.force[0] = Math.max(this.force[0] - 1, -1); break;
+            case Controller.Type.MOVE_DOWN : this.force[1] = Math.min(this.force[1] + 1, +1); break;
+            case Controller.Type.MOVE_UP   : this.force[1] = Math.max(this.force[1] - 1, -1); break;
+            case Controller.Type.MOVE_RIGHT: this.force[0] = Math.min(this.force[0] + 1, +1); break;
             }
-            o = this.toMove();
+
+            const m = this.toMove();
+            if (m !== undefined)
+                o = m;
         }
 
-        const e = new Controller.Event(o, Controller.Event.ORDER, true, true);
-        this.dispatchEvent(e);
+        this.dispatchEvent(new Controller.Event(o, Controller.Event.ORDER, true, true));
     }
 
     private onKeyUp(event: input.Key.Event): void
@@ -127,18 +132,17 @@ class KeyBoardController extends egret.EventDispatcher implements Controller
         if (o === undefined)
             return;
         
-        if (Controller.Moves.includes(o) && o != Controller.Type.MOVE_IDLE) {
+        if (Controller.Moves.includes(o) && o !== Controller.Type.MOVE_IDLE) {
             switch (o) {
-            case Controller.Type.MOVE_LEFT : this.force[0] += 1; break;
-            case Controller.Type.MOVE_DOWN : this.force[1] -= 1; break;
-            case Controller.Type.MOVE_UP   : this.force[1] += 1; break;
-            case Controller.Type.MOVE_RIGHT: this.force[0] -= 1; break;
+            case Controller.Type.MOVE_LEFT : this.force[0] = Math.min(this.force[0] + 1, +1); break;
+            case Controller.Type.MOVE_DOWN : this.force[1] = Math.max(this.force[1] - 1, -1); break;
+            case Controller.Type.MOVE_UP   : this.force[1] = Math.min(this.force[1] + 1, +1); break;
+            case Controller.Type.MOVE_RIGHT: this.force[0] = Math.max(this.force[0] - 1, -1); break;
             }
-            o = this.toMove();
+            o = this.toMove() || Controller.Type.MOVE_IDLE;
         }
 
-        const e = new Controller.Event(o, Controller.Event.ORDER, true, true);
-        this.dispatchEvent(e);
+        this.dispatchEvent(new Controller.Event(o, Controller.Event.ORDER, true, true));
     }
 
     private mapper(key: input.Key): Controller.Type|undefined
@@ -158,16 +162,120 @@ class KeyBoardController extends egret.EventDispatcher implements Controller
         return map.get(key);
     }
 
-     private toMove(): Controller.Type
+     private toMove(): Controller.Type | undefined
      {
         let [x, y] = this.force;
         switch (true) {
-        default                  :
+        default                  : return undefined;
         case x ===  0 && y ===  0: return Controller.Type.MOVE_IDLE ;
         case x === -1 && y ===  0: return Controller.Type.MOVE_LEFT ;
         case x ===  0 && y ===  1: return Controller.Type.MOVE_DOWN ;
         case x ===  0 && y === -1: return Controller.Type.MOVE_UP   ;
         case x ===  1 && y ===  0: return Controller.Type.MOVE_RIGHT;
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
+class TouchController extends egret.EventDispatcher implements Controller
+{
+    private state: boolean = false;
+    private moved: boolean = false;
+    private begin: [number, number] = [0, 0];
+    private ctype: Controller.Type = Controller.Type.MOVE_IDLE;
+    private timer: number = 0;
+
+    constructor(private scene: egret.DisplayObjectContainer)
+    {
+        super();
+    }
+
+    set enable(state: boolean)
+    {
+        if (this.state === state)
+            return;
+
+        if (state) {
+            this.scene.touchEnabled = true;
+            this.scene.addEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onTouchBegin, this);
+            this.scene.addEventListener(egret.TouchEvent.TOUCH_END, this.onTouchEnd, this);
+        } else {
+            this.scene.removeEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onTouchBegin, this);
+            this.scene.removeEventListener(egret.TouchEvent.TOUCH_END, this.onTouchEnd, this);
+            this.scene.touchEnabled = false;
+            this.moved = false;
+            this.ctype = Controller.Type.MOVE_IDLE;
+        }
+
+        this.state = state;        
+    }
+
+    get enable(): boolean
+    {
+        return this.state;
+    }
+
+    private onTouchTap(event: egret.TouchEvent): void
+    {
+        const x = event.stageX / this.scene.stage.stageWidth;
+        const y = event.stageY / this.scene.stage.stageHeight;
+
+        let type = Controller.Type.CTRL_DONE;
+        if (x < 0.05 && y < 0.1)
+            type = Controller.Type.CTRL_RESTART;
+        else if (x > 0.95 && y < 0.1)
+            type = Controller.Type.CTRL_EXIT;
+
+        this.dispatchEvent(new Controller.Event(type, Controller.Event.ORDER, true, true));
+    }
+
+    private onTouchBegin(event: egret.TouchEvent): void
+    {
+        this.scene.stage.addEventListener(egret.TouchEvent.TOUCH_MOVE, this.onTouchMove, this);
+        this.begin = [event.stageX, event.stageY];
+        this.timer = Date.now();
+    }
+
+    private onTouchEnd(event: egret.TouchEvent): void
+    {
+        this.scene.stage.removeEventListener(egret.TouchEvent.TOUCH_MOVE, this.onTouchMove, this);
+
+        if (Date.now() - this.timer < 500 && this.moved === false) {
+            this.onTouchTap(event);
+        } else {
+            this.moved = false;
+            this.ctype = Controller.Type.MOVE_IDLE;
+            this.dispatchEvent(new Controller.Event(this.ctype, Controller.Event.ORDER, true, true));
+        }
+    }
+
+    private onTouchMove(event: egret.TouchEvent): void
+    {
+        let type = Controller.Type.MOVE_IDLE;
+
+        const scale = Math.min(this.scene.stage.stageWidth, this.scene.stage.stageHeight);
+        const dx = this.begin[0] - event.stageX;
+        const dy = this.begin[1] - event.stageY;
+        const x = Math.min(Math.max(dx / scale, -1), +1);
+        const y = Math.min(Math.max(dy / scale, -1), +1);
+
+        switch (true) {
+        case Math.abs(y) < Math.abs(x) && 0.1 < Math.abs(x):
+            type = x > 0 ? Controller.Type.MOVE_LEFT : Controller.Type.MOVE_RIGHT;
+            this.moved = true;
+            break;
+        case Math.abs(x) < Math.abs(y) && 0.1 < Math.abs(y):
+            type = y > 0 ? Controller.Type.MOVE_UP : Controller.Type.MOVE_DOWN;
+            this.moved = true;
+            break;
+        default:
+            break;
+        }
+
+        if (this.ctype !== type) {
+            this.ctype = type;
+            this.dispatchEvent(new Controller.Event(type, Controller.Event.ORDER, true, true));
         }
     }
 }

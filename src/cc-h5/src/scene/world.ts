@@ -8,16 +8,22 @@ const Musician = utils.Musician.instance;
 
 export class World extends eui.Component
 {
-    private input: input.KeyBoard = new input.KeyBoard();
-    private ctrlr: input.Controller = input.Controller.create(this.input);
-    private moves: input.Controller.Type = input.Controller.Type.MOVE_IDLE;
-    private world: entity.World;
+    private input: ReadonlyArray<input.Controller>;
+    private order: input.Controller.Type = input.Controller.Type.MOVE_IDLE;
+    private press: boolean = false;
+
+    private guide: logic.Narrator = new logic.Narrator(new utils.Loader(), new utils.Saver());
+    private world: entity.World = new entity.World();
     private timer: egret.Timer = new egret.Timer(250, 0);
 
     public constructor()
     {
         super();
         this.addEventListener(egret.Event.ADDED_TO_STAGE, this.onAddToStage, this);
+        this.input = [
+            input.Controller.create(this),
+            input.Controller.create(new input.KeyBoard()),
+        ];
     }
 
     private onAddToStage(): void
@@ -34,14 +40,17 @@ export class World extends eui.Component
         this.addChild(this.world);
         this.world.seed = raws;
 
-        this.ctrlr.enable = true;
-        this.ctrlr.addEventListener(input.Controller.Event.ORDER, this.onControl, this);
+        // begin
+        for (const i of this.input) {
+            i.enable = true;
+            i.addEventListener(input.Controller.Event.ORDER, this.onControl, this);
+        }
 
         this.timer.start();
-        this.timer.addEventListener(egret.TimerEvent.TIMER, this.onNext, this);
+        this.timer.addEventListener(egret.TimerEvent.TIMER, this.onTick, this);
     }
 
-    private onNext(event:egret.Event): void
+    private onTick(event:egret.Event): void
     {
         if (this.world === undefined)
             return;
@@ -53,7 +62,6 @@ export class World extends eui.Component
     private onControl(event: input.Controller.Event): void
     {
         // console.log("Control", event.code);
-
         switch(event.code) {
         case input.Controller.Type.CTRL_EXIT:
         {
@@ -72,8 +80,10 @@ export class World extends eui.Component
             const flag = this.world.status();
             if (flag.some(n => n !== 0)) {
                 const seed = this.guide.next(flag);
-                if (seed !== undefined)
+                if (seed !== undefined) {
+                    Musician.sound(Track.LEVEL_ENTER);
                     this.world.build(seed);
+                }
             }
             break;
         }
@@ -81,7 +91,6 @@ export class World extends eui.Component
         {
             if (input.Controller.Moves.includes(event.code)) {
                 if (event.code !== input.Controller.Type.MOVE_IDLE) {
-                    //////// Music ////////
                     Musician.sound(Track.CUBE_CONTROL);
                     this.press = true;
                 }
@@ -89,7 +98,6 @@ export class World extends eui.Component
             }
         }
     }
-
 }
 
 /////////////////////////////////////////////////////////////////////////////

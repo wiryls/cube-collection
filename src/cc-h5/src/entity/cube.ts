@@ -1,7 +1,6 @@
 namespace entity {
 /////////////////////////////////////////////////////////////////////////////
 
-import ICubeFactory = logic.ICubeFactory;
 import IBehavior = logic.IBehavior;
 import Behavior = logic.Behavior;
 import Action = logic.Cube.Action;
@@ -331,7 +330,7 @@ class Unit implements IUnit
 
 /////////////////////////////////////////////////////////////////////////////
 
-class Dest implements IVec2
+export class Dest implements IVec2
 {
     private parts: Array<egret.Shape>;
 
@@ -371,16 +370,16 @@ class Dest implements IVec2
 
 /////////////////////////////////////////////////////////////////////////////
 
-export class CubeFactory implements ICubeFactory
+export class CubeFactory
 {
     constructor(
         private readonly world: IWorld,
         private readonly stage: egret.DisplayObjectContainer)
     {}
 
-    create(src: Seed.Vec2): IVec2;
-    create(src: Seed.Cube): ICube;
-    create(src: Seed.Cube|Seed.Vec2): ICube|IVec2
+    create(src: Seed.Vec2): Dest;
+    create(src: Seed.Cube): Cube;
+    create(src: Seed.Cube|Seed.Vec2): Cube|Dest
     {
         if (Array.isArray(src)) {
             const dest = new Dest(src[0], src[1], this.world, this.stage);

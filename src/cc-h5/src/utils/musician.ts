@@ -12,7 +12,8 @@ export namespace Track
     export const CUBE_CONTROL = "sound_effect_note_move";
     export const CUBE_CONNECT = "sound_effect_note_connect";
     
-    export const LEVEL_CLEAR = "sound_effect_level_clear";    
+    export const LEVEL_ENTER = "sound_effect_note_01";
+    export const LEVEL_CLEAR = "sound_effect_level_clear";
 }
 
 export class Musician
@@ -30,7 +31,7 @@ export class Musician
     {
         const sound = this.tryToFind(name);
         if (sound !== undefined) {
-            sound.play(0, 1);
+            sound.play(0, 1).volume = 0.6;
         } else {
             console.error("Musician: Cannot find sound", name);
         }
@@ -41,7 +42,9 @@ export class Musician
         this.tryToStop(name);
         const sound = this.tryToFind(name);
         if (sound !== undefined) {
-            this.playing.set(name, sound.play(0, 0));
+            const channel = sound.play(0, 0);
+            channel.volume = 0.3;
+            this.playing.set(name, channel);
         } else {
             console.error("Musician: Cannot find music", name);
         }

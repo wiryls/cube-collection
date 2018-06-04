@@ -24,8 +24,8 @@ export class World extends egret.DisplayObjectContainer implements IWorld
     ];
     private seed: logic.Seed;
 
-    public  cube = new Array<ICube>();
-    public  dest = new Array<IVec2>();
+    public cube = new Array<Cube>();
+    public dest = new Array<Dest>();
 
     constructor()
     {
