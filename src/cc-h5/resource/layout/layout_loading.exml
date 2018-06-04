@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<e:Skin class="layout.Loading" width="1280" xmlns:e="http://ns.egret.com/eui" xmlns:w="http://ns.egret.com/wing" height="720">
+	<e:Rect id="rect_background" width="0" height="100%" anchorOffsetX="0" anchorOffsetY="0" verticalCenter="0" fillColor="0xffffff" left="0"/>
+</e:Skin>

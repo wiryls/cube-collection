@@ -16,9 +16,16 @@ const Musician = utils.Musician.instance;
 
 export class World extends egret.DisplayObjectContainer implements IWorld
 {
-    private seed_: logic.Seed;
-    public cube: Array<ICube>;
-    public dest: Array<IVec2>;
+    private layer: Array<egret.DisplayObjectContainer> = [
+        new egret.DisplayObjectContainer(),
+        new egret.DisplayObjectContainer(),
+        new egret.DisplayObjectContainer(),
+        new egret.DisplayObjectContainer()
+    ];
+    private seed: logic.Seed;
+
+    public  cube = new Array<ICube>();
+    public  dest = new Array<IVec2>();
 
     constructor()
     {
@@ -51,10 +58,11 @@ export class World extends egret.DisplayObjectContainer implements IWorld
         for (const c of this.cube)
             c.commit();
 
-        for (const layer of this.layer)
-            layer.$children.sort((l, r) => 
-                (l.x + l.y) < (r.x + r.y) ? -1 : (l.x + l.y) > (r.x + r.y) ? +1 : 0
+        for (const layer of this.layer) {
+            layer.$children.sort((l, r) =>
+                (l.x + l.y < r.x + r.y) ? -1 : (l.x + l.y > r.x + r.y) ? +1 : 0
             );
+        }
 
         this.cube = this.cube.filter(c => c.live);
     }

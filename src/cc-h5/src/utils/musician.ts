@@ -9,8 +9,6 @@ export namespace Track
     export const BGM_NORMAL = "sound_music_normal";
     export const BGM_HEAVY  = "sound_music_heavy";
 
-    export const UI_BUTTON_CLICK = "sound_effect_note_01";
-
     export const CUBE_CONTROL = "sound_effect_note_move";
     export const CUBE_CONNECT = "sound_effect_note_connect";
     

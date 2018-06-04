@@ -9,7 +9,7 @@ class Main extends eui.UILayer
     private loadingBg: egret.Bitmap;
     private static readonly Resources: ReadonlyArray<string> =
     [
-        "loading", "ui", "level", "object", "sound"
+        "loading", "level", "sound"
     ];
 
     protected createChildren(): void
@@ -41,34 +41,28 @@ class Main extends eui.UILayer
 
     private async onRunning()
     {
-        // if(!egret.Capabilities.isMobile) {
-        //     this.stage.scaleMode   = egret.StageScaleMode.SHOW_ALL;  
-        //     this.stage.orientation = egret.OrientationMode.LANDSCAPE_FLIPPED;    
-        // } else {
-        //     this.stage.orientation = egret.OrientationMode.PORTRAIT; 
-        // }
-
         try {
             // load config, theme and LoadingUI resources
             await RES.loadConfig("resource/default.res.json", "resource/");
             await new Promise((resolve, reject) => {
-                let theme = new eui.Theme("resource/default.thm.json", this.stage);
-                theme.addEventListener(eui.UIEvent.COMPLETE, () => resolve(), this);
+                new eui.Theme("resource/default.thm.json", this.stage)
+                    .addEventListener(eui.UIEvent.COMPLETE, () => resolve(), this);
             });
             await RES.loadGroup("loading", 0);
             //add bg
             //this.loadingBg = new egret.Bitmap(RES.getRes("loadingbg_png"));
             //this.addChild( this.loadingBg );
             // load all other resources
-            const loading = new LoadingUI(Main.Resources);
+            const loading = new scene.Loading();
             this.addChild(loading);
+            loading.track = Main.Resources;
             for (const group of Main.Resources) {
                 await RES.loadGroup(group, 0, loading);
                 loading.count();
             }
             this.removeChild(loading);
         } catch (e) {
-            console.error(e);
+            throw new Error(e);
         }
 
         this.onHelloWorld();
@@ -77,6 +71,6 @@ class Main extends eui.UILayer
     protected onHelloWorld(): void
     {
         Director.main = this;
-        Director.push(new scene.Start());
+        Director.push(new scene.World());
     }
 }

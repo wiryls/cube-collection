@@ -84,7 +84,8 @@ export interface IUnit extends IVec2
 
 export interface ICubeFactory
 {
-    create(cube: Seed.Cube): ICube;
+    create(src: Seed.Vec2): IVec2;
+    create(src: Seed.Cube): ICube;
 }
 
 /////////////////////////////////////////////////////////////////////////////

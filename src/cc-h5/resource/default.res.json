@@ -1,376 +1,198 @@
 {
 	"groups": [
 		{
-			"keys": "sound_effect_level_clear,sound_effect_level_fail,sound_effect_loop_01,sound_effect_loop_02,sound_effect_loop_03,sound_effect_note_01,sound_effect_note_02,sound_effect_note_03,sound_effect_note_04,sound_effect_note_05,sound_effect_note_06,sound_effect_note_07,sound_effect_note_08,sound_effect_note_09,sound_effect_note_10,sound_effect_note_connect,sound_effect_note_move,sound_effect_notes01,sound_effect_notes02,sound_effect_notes03,sound_music_heavy,sound_music_normal,sound_effect_enter,sound_effect_error_01,sound_effect_error_02,sound_effect_error_03",
-			"name": "sound"
+			"keys":"sound_effect_level_fail,sound_effect_loop_01,sound_effect_loop_02,sound_effect_loop_03,sound_effect_note_01,sound_effect_note_02,sound_effect_note_03,sound_effect_note_04,sound_effect_note_05,sound_effect_note_06,sound_effect_note_07,sound_effect_note_08,sound_effect_note_09,sound_effect_note_10,sound_effect_note_connect,sound_effect_note_move,sound_effect_notes01,sound_effect_notes02,sound_effect_notes03,sound_music_heavy,sound_music_normal,sound_effect_enter,sound_effect_error_01,sound_effect_error_02,sound_effect_error_03,sound_effect_level_clear",
+			"name":"sound"
 		},
 		{
-			"keys":"level_main,level_multiple_community,level_silence_fishing,level_silence_tutorial,level_chase_sample,level_crossover_tetris,level_debug_01,level_index,level_silence_relative,level_silence_spiral",
+			"keys":"level_silence_relative,level_silence_spiral,level_silence_tutorial,level_chase_sample,level_crossover_tetris,level_debug_01,level_index,level_main,level_multiple_community,level_silence_fishing",
 			"name":"level"
 		},
 		{
-			"keys": "ui_button_down,ui_button_up,ui_checkbox_select_disabled,ui_checkbox_select_down,ui_checkbox_select_up,ui_checkbox_unselect,ui_selected,ui_border,ui_header,ui_thumb_pb,ui_track_pb,ui_radiobutton_select_disabled,ui_radiobutton_select_down,ui_radiobutton_select_up,ui_radiobutton_unselect,ui_roundthumb,ui_track_sb,ui_handle,ui_off,ui_on,ui_start_up_png,ui_start_down_png,ui_select_up_png,ui_select_down_png",
-			"name": "ui"
-		},
-		{
-			"keys": "object_cube_white_top,object_cube_blue_bottom,object_cube_blue_top,object_cube_green_bottom,object_cube_green_top,object_cube_red_bottom,object_cube_red_top,object_cube_white_bottom",
-			"name": "object"
-		},
-		{
-			"keys": "loadingrun_png,loadingbg_png",
-			"name": "loading"
+			"keys":"sound_music_normal",
+			"name":"loading"
 		}
 	],
 	"resources": [
 		{
-			"url": "sounds/sound_effect_level_clear.mp3",
-			"type": "sound",
-			"name": "sound_effect_level_clear"
-		},
-		{
-			"url": "sounds/sound_effect_level_fail.mp3",
-			"type": "sound",
-			"name": "sound_effect_level_fail"
-		},
-		{
-			"url": "sounds/sound_effect_loop_01.mp3",
-			"type": "sound",
-			"name": "sound_effect_loop_01"
-		},
-		{
-			"url": "sounds/sound_effect_loop_02.mp3",
-			"type": "sound",
-			"name": "sound_effect_loop_02"
-		},
-		{
-			"url": "sounds/sound_effect_loop_03.mp3",
-			"type": "sound",
-			"name": "sound_effect_loop_03"
-		},
-		{
-			"url": "sounds/sound_effect_note_01.mp3",
-			"type": "sound",
-			"name": "sound_effect_note_01"
-		},
-		{
-			"url": "sounds/sound_effect_note_02.mp3",
-			"type": "sound",
-			"name": "sound_effect_note_02"
-		},
-		{
-			"url": "sounds/sound_effect_note_03.mp3",
-			"type": "sound",
-			"name": "sound_effect_note_03"
-		},
-		{
-			"url": "sounds/sound_effect_note_04.mp3",
-			"type": "sound",
-			"name": "sound_effect_note_04"
-		},
-		{
-			"url": "sounds/sound_effect_note_05.mp3",
-			"type": "sound",
-			"name": "sound_effect_note_05"
-		},
-		{
-			"url": "sounds/sound_effect_note_06.mp3",
-			"type": "sound",
-			"name": "sound_effect_note_06"
-		},
-		{
-			"url": "sounds/sound_effect_note_07.mp3",
-			"type": "sound",
-			"name": "sound_effect_note_07"
-		},
-		{
-			"url": "sounds/sound_effect_note_08.mp3",
-			"type": "sound",
-			"name": "sound_effect_note_08"
-		},
-		{
-			"url": "sounds/sound_effect_note_09.mp3",
-			"type": "sound",
-			"name": "sound_effect_note_09"
-		},
-		{
-			"url": "sounds/sound_effect_note_10.mp3",
-			"type": "sound",
-			"name": "sound_effect_note_10"
-		},
-		{
-			"url": "sounds/sound_effect_note_connect.mp3",
-			"type": "sound",
-			"name": "sound_effect_note_connect"
-		},
-		{
-			"url": "sounds/sound_effect_note_move.mp3",
-			"type": "sound",
-			"name": "sound_effect_note_move"
-		},
-		{
-			"url": "sounds/sound_effect_notes01.mp3",
-			"type": "sound",
-			"name": "sound_effect_notes01"
-		},
-		{
-			"url": "sounds/sound_effect_notes02.mp3",
-			"type": "sound",
-			"name": "sound_effect_notes02"
-		},
-		{
-			"url": "sounds/sound_effect_notes03.mp3",
-			"type": "sound",
-			"name": "sound_effect_notes03"
-		},
-		{
-			"url": "sounds/sound_music_heavy.mp3",
-			"type": "sound",
-			"name": "sound_music_heavy"
-		},
-		{
-			"url": "sounds/sound_music_normal.mp3",
-			"type": "sound",
-			"name": "sound_music_normal"
-		},
-		{
-			"url": "sounds/sound_effect_enter.mp3",
-			"type": "sound",
-			"name": "sound_effect_enter"
-		},
-		{
-			"url": "sounds/sound_effect_error_01.mp3",
-			"type": "sound",
-			"name": "sound_effect_error_01"
-		},
-		{
-			"url": "sounds/sound_effect_error_02.mp3",
-			"type": "sound",
-			"name": "sound_effect_error_02"
-		},
-		{
-			"url": "sounds/sound_effect_error_03.mp3",
-			"type": "sound",
-			"name": "sound_effect_error_03"
-		},
-		{
-			"url": "levels/level_main.json",
-			"type": "json",
-			"name": "level_main"
-		},
-		{
-			"url": "levels/level_multiple_community.json",
-			"type": "json",
-			"name": "level_multiple_community"
-		},
-		{
-			"url": "levels/level_silence_fishing.json",
-			"type": "json",
-			"name": "level_silence_fishing"
-		},
-		{
-			"url": "levels/level_silence_tutorial.json",
-			"type": "json",
-			"name": "level_silence_tutorial"
-		},
-		{
-			"url": "levels/level_chase_sample.json",
-			"type": "json",
-			"name": "level_chase_sample"
-		},
-		{
-			"url": "levels/level_crossover_tetris.json",
-			"type": "json",
-			"name": "level_crossover_tetris"
-		},
-		{
-			"url": "levels/level_debug_01.json",
-			"type": "json",
-			"name": "level_debug_01"
-		},
-		{
-			"url": "levels/level_index.json",
-			"type": "json",
-			"name": "level_index"
-		},
-		{
-			"url": "assets/ui/Button/ui_button_down.png",
-			"type": "image",
-			"name": "ui_button_down"
-		},
-		{
-			"url": "assets/ui/Button/ui_button_up.png",
-			"type": "image",
-			"name": "ui_button_up"
-		},
-		{
-			"url": "assets/ui/CheckBox/ui_checkbox_select_disabled.png",
-			"type": "image",
-			"name": "ui_checkbox_select_disabled"
-		},
-		{
-			"url": "assets/ui/CheckBox/ui_checkbox_select_down.png",
-			"type": "image",
-			"name": "ui_checkbox_select_down"
-		},
-		{
-			"url": "assets/ui/CheckBox/ui_checkbox_select_up.png",
-			"type": "image",
-			"name": "ui_checkbox_select_up"
-		},
-		{
-			"url": "assets/ui/CheckBox/ui_checkbox_unselect.png",
-			"type": "image",
-			"name": "ui_checkbox_unselect"
-		},
-		{
-			"url": "assets/ui/ItemRenderer/ui_selected.png",
-			"type": "image",
-			"name": "ui_selected"
-		},
-		{
-			"url": "assets/ui/Panel/ui_border.png",
-			"type": "image",
-			"name": "ui_border"
-		},
-		{
-			"url": "assets/ui/Panel/ui_header.png",
-			"type": "image",
-			"name": "ui_header"
-		},
-		{
-			"url": "assets/ui/ProgressBar/ui_thumb_pb.png",
-			"type": "image",
-			"name": "ui_thumb_pb"
-		},
-		{
-			"url": "assets/ui/ProgressBar/ui_track_pb.png",
-			"type": "image",
-			"name": "ui_track_pb"
-		},
-		{
-			"url": "assets/ui/RadioButton/ui_radiobutton_select_disabled.png",
-			"type": "image",
-			"name": "ui_radiobutton_select_disabled"
-		},
-		{
-			"url": "assets/ui/RadioButton/ui_radiobutton_select_down.png",
-			"type": "image",
-			"name": "ui_radiobutton_select_down"
-		},
-		{
-			"url": "assets/ui/RadioButton/ui_radiobutton_select_up.png",
-			"type": "image",
-			"name": "ui_radiobutton_select_up"
-		},
-		{
-			"url": "assets/ui/RadioButton/ui_radiobutton_unselect.png",
-			"type": "image",
-			"name": "ui_radiobutton_unselect"
-		},
-		{
-			"url": "assets/ui/ScrollBar/ui_roundthumb.png",
-			"type": "image",
-			"name": "ui_roundthumb"
-		},
-		{
-			"url": "assets/ui/ScrollBar/ui_track_sb.png",
-			"type": "image",
-			"name": "ui_track_sb"
-		},
-		{
-			"url": "assets/ui/ToggleSwitch/ui_handle.png",
-			"type": "image",
-			"name": "ui_handle"
-		},
-		{
-			"url": "assets/ui/ToggleSwitch/ui_off.png",
-			"type": "image",
-			"name": "ui_off"
-		},
-		{
-			"url": "assets/ui/ToggleSwitch/ui_on.png",
-			"type": "image",
-			"name": "ui_on"
-		},
-		{
-			"url": "assets/objects/object_cube_white_top.png",
-			"type": "image",
-			"name": "object_cube_white_top"
-		},
-		{
-			"url": "assets/objects/object_cube_blue_bottom.png",
-			"type": "image",
-			"name": "object_cube_blue_bottom"
-		},
-		{
-			"url": "assets/objects/object_cube_blue_top.png",
-			"type": "image",
-			"name": "object_cube_blue_top"
-		},
-		{
-			"url": "assets/objects/object_cube_green_bottom.png",
-			"type": "image",
-			"name": "object_cube_green_bottom"
-		},
-		{
-			"url": "assets/objects/object_cube_green_top.png",
-			"type": "image",
-			"name": "object_cube_green_top"
-		},
-		{
-			"url": "assets/objects/object_cube_red_bottom.png",
-			"type": "image",
-			"name": "object_cube_red_bottom"
-		},
-		{
-			"url": "assets/objects/object_cube_red_top.png",
-			"type": "image",
-			"name": "object_cube_red_top"
-		},
-		{
-			"url": "assets/objects/object_cube_white_bottom.png",
-			"type": "image",
-			"name": "object_cube_white_bottom"
-		},
-		{
-			"url": "assets/ui/Background/loadingbg.png",
-			"type": "image",
-			"name": "loadingbg_png"
-		},
-		{
-			"url": "assets/ui/Background/loading2.png",
-			"type": "image",
-			"name": "loadingrun_png"
-		},
-		{
-			"url": "assets/ui/Button/ui_start_down.png",
-			"type": "image",
-			"name": "ui_start_down_png"
-		},
-		{
-			"url": "assets/ui/Button/ui_start_up.png",
-			"type": "image",
-			"name": "ui_start_up_png"
-		},
-		{
-			"url": "assets/ui/Button/ui_select_up.png",
-			"type": "image",
-			"name": "ui_select_up_png"
-		},
-		{
-			"name":"ui_image_loading",
-			"type":"image",
-			"url":"assets/ui/Background/ui_image_loading.png"
-		},
-		{
 			"name":"level_silence_relative",
 			"type":"json",
-			"url":"levels/level_silence_relative.json"
+			"url":"level/level_silence_relative.json"
 		},
 		{
 			"name":"level_silence_spiral",
 			"type":"json",
-			"url":"levels/level_silence_spiral.json"
+			"url":"level/level_silence_spiral.json"
+		},
+		{
+			"name":"level_silence_tutorial",
+			"type":"json",
+			"url":"level/level_silence_tutorial.json"
+		},
+		{
+			"name":"level_chase_sample",
+			"type":"json",
+			"url":"level/level_chase_sample.json"
+		},
+		{
+			"name":"level_crossover_tetris",
+			"type":"json",
+			"url":"level/level_crossover_tetris.json"
+		},
+		{
+			"name":"level_debug_01",
+			"type":"json",
+			"url":"level/level_debug_01.json"
+		},
+		{
+			"name":"level_index",
+			"type":"json",
+			"url":"level/level_index.json"
+		},
+		{
+			"name":"level_main",
+			"type":"json",
+			"url":"level/level_main.json"
+		},
+		{
+			"name":"level_multiple_community",
+			"type":"json",
+			"url":"level/level_multiple_community.json"
+		},
+		{
+			"name":"level_silence_fishing",
+			"type":"json",
+			"url":"level/level_silence_fishing.json"
+		},
+		{
+			"name":"sound_effect_level_fail",
+			"type":"sound",
+			"url":"sound/sound_effect_level_fail.mp3"
+		},
+		{
+			"name":"sound_effect_loop_01",
+			"type":"sound",
+			"url":"sound/sound_effect_loop_01.mp3"
+		},
+		{
+			"name":"sound_effect_loop_02",
+			"type":"sound",
+			"url":"sound/sound_effect_loop_02.mp3"
+		},
+		{
+			"name":"sound_effect_loop_03",
+			"type":"sound",
+			"url":"sound/sound_effect_loop_03.mp3"
+		},
+		{
+			"name":"sound_effect_note_01",
+			"type":"sound",
+			"url":"sound/sound_effect_note_01.mp3"
+		},
+		{
+			"name":"sound_effect_note_02",
+			"type":"sound",
+			"url":"sound/sound_effect_note_02.mp3"
+		},
+		{
+			"name":"sound_effect_note_03",
+			"type":"sound",
+			"url":"sound/sound_effect_note_03.mp3"
+		},
+		{
+			"name":"sound_effect_note_04",
+			"type":"sound",
+			"url":"sound/sound_effect_note_04.mp3"
+		},
+		{
+			"name":"sound_effect_note_05",
+			"type":"sound",
+			"url":"sound/sound_effect_note_05.mp3"
+		},
+		{
+			"name":"sound_effect_note_06",
+			"type":"sound",
+			"url":"sound/sound_effect_note_06.mp3"
+		},
+		{
+			"name":"sound_effect_note_07",
+			"type":"sound",
+			"url":"sound/sound_effect_note_07.mp3"
+		},
+		{
+			"name":"sound_effect_note_08",
+			"type":"sound",
+			"url":"sound/sound_effect_note_08.mp3"
+		},
+		{
+			"name":"sound_effect_note_09",
+			"type":"sound",
+			"url":"sound/sound_effect_note_09.mp3"
+		},
+		{
+			"name":"sound_effect_note_10",
+			"type":"sound",
+			"url":"sound/sound_effect_note_10.mp3"
+		},
+		{
+			"name":"sound_effect_note_connect",
+			"type":"sound",
+			"url":"sound/sound_effect_note_connect.mp3"
+		},
+		{
+			"name":"sound_effect_note_move",
+			"type":"sound",
+			"url":"sound/sound_effect_note_move.mp3"
+		},
+		{
+			"name":"sound_effect_notes01",
+			"type":"sound",
+			"url":"sound/sound_effect_notes01.mp3"
+		},
+		{
+			"name":"sound_effect_notes02",
+			"type":"sound",
+			"url":"sound/sound_effect_notes02.mp3"
+		},
+		{
+			"name":"sound_effect_notes03",
+			"type":"sound",
+			"url":"sound/sound_effect_notes03.mp3"
+		},
+		{
+			"name":"sound_music_heavy",
+			"type":"sound",
+			"url":"sound/sound_music_heavy.mp3"
+		},
+		{
+			"name":"sound_music_normal",
+			"type":"sound",
+			"url":"sound/sound_music_normal.mp3"
+		},
+		{
+			"name":"sound_effect_enter",
+			"type":"sound",
+			"url":"sound/sound_effect_enter.mp3"
+		},
+		{
+			"name":"sound_effect_error_01",
+			"type":"sound",
+			"url":"sound/sound_effect_error_01.mp3"
+		},
+		{
+			"name":"sound_effect_error_02",
+			"type":"sound",
+			"url":"sound/sound_effect_error_02.mp3"
+		},
+		{
+			"name":"sound_effect_error_03",
+			"type":"sound",
+			"url":"sound/sound_effect_error_03.mp3"
+		},
+		{
+			"name":"sound_effect_level_clear",
+			"type":"sound",
+			"url":"sound/sound_effect_level_clear.mp3"
 		}
 	]
 }
