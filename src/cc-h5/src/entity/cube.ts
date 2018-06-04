@@ -323,8 +323,16 @@ class Unit implements IUnit
 
         for (const part of this.parts)
             part.graphics.clear();
+
+        let flag = 0;
+        for (const v of this.owner.entity) {
+            if (v.x === this.x_ - 1 && v.y === this.y_)
+                flag |= 1; // left
+            else if (v.x === this.x_ && v.y === this.y_ - 1)
+                flag |= 2; // up
+        }
         
-        setColor(this.parts[0], this.parts[1], len, this.owner.type);
+        setColor(this.parts[0], this.parts[1], len, this.owner.type, flag);
     }
 }
 
@@ -392,7 +400,12 @@ export class CubeFactory
                 : (Behavior.create(src.move.loop, Seed.Cube.toActions(src.move.path)))
                 ;
             const cube = new Cube(this.world, type, move);
-            const body = src.body.map(v => new Unit(v[0], v[1], cube, this.stage));
+
+            for (const v of src.body)
+                new Unit(v[0], v[1], cube, this.layer).attach(cube);
+
+            for (const e of cube.entity)
+                e.commit();
 
             return cube;
         }
@@ -401,9 +414,13 @@ export class CubeFactory
 
 /////////////////////////////////////////////////////////////////////////////
 
-function setColor(top: egret.Shape, bottom: egret.Shape, size: number, type?: Type): void
+function setColor(top: egret.Shape, bottom: egret.Shape, size: number, type: Type = Type.White, style: number = 0): void
 {
     const color = [0xFFFFFF, 0xFFFFFF];
+    const len = [0, size / 6, size, size * 7 / 6];
+    const rect = [1.3, 1.3, size - 0.8, size - 0.8];
+    
+    // color
     switch(type) {
     default:
     case Type.White: color[0] = 0xFFFFFF; color[1] = 0xD0D0D0; break;
@@ -416,10 +433,22 @@ function setColor(top: egret.Shape, bottom: egret.Shape, size: number, type?: Ty
     // Red   0xF33048;
     }
 
-    const len = [0, size / 6, size, size * 7 / 6];
+    // left
+    if ((style & 1) !== 0) {
+        rect[0] = 0;
+        rect[2] = size + 0.8;
+    }
+
+    // up
+    if ((style & 2) !== 0) {
+        rect[1] = 0;
+        rect[3] = size + 0.8;
+    }
 
     top.graphics.beginFill(color[0]);
-    top.graphics.drawRect(0, 0, len[2] + 0.8, len[2] + 0.8);
+
+    top.graphics.drawRect(rect[0], rect[1], rect[2], rect[3]);
+    
     top.graphics.endFill();
 
     bottom.graphics.beginFill(color[1]);
