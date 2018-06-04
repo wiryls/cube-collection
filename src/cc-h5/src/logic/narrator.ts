@@ -53,10 +53,11 @@ export class Narrator
 
     zero(): undefined|Seed
     {
-        if (this.node.length > 0)
-            return this.seed(this.node[0].name);
-        else
-            return undefined;
+        if (this.node.length < 0)
+            throw new Error("Narrator: Map is empty");
+
+        this.data.milestone = this.node[0].name;
+        return this.tell();
     }
 
     tell(): undefined|Seed
