@@ -416,42 +416,32 @@ export class CubeFactory
 
 function setColor(top: egret.Shape, bottom: egret.Shape, size: number, type: Type = Type.White, style: number = 0): void
 {
-    const color = [0xFFFFFF, 0xFFFFFF];
-    const len = [0, size / 6, size, size * 7 / 6];
-    const rect = [1.3, 1.3, size - 0.8, size - 0.8];
-    
+    const color = [0xFFFFFF, 0xFFFFFF];    
     // color
     switch(type) {
     default:
-    case Type.White: color[0] = 0xFFFFFF; color[1] = 0xD0D0D0; break;
-    case Type.Green: color[0] = 0xBBDBB9; color[1] = 0x6F9A6D; break;
-    case Type.Blue : color[0] = 0xAED3F1; color[1] = 0x6894B7; break;
-    case Type.Red  : color[0] = 0xFC9C9C; color[1] = 0xCB5B5B; break;
-    // White 0xEAE9E8;
-    // Green 0x75FF81;
-    // Blue  0x75C6FF;
-    // Red   0xF33048;
+    case Type.White: color[0] = 0xFFFFFF; color[1] = 0xD0D0D0; break; // White 0xEAE9E8;
+    case Type.Green: color[0] = 0xBBDBB9; color[1] = 0x6F9A6D; break; // Green 0x75FF81;
+    case Type.Blue : color[0] = 0xAED3F1; color[1] = 0x6894B7; break; // Blue  0x75C6FF;
+    case Type.Red  : color[0] = 0xFC9C9C; color[1] = 0xCB5B5B; break; // Red   0xF33048;
     }
 
-    // left
-    if ((style & 1) !== 0) {
-        rect[0] = 0;
-        rect[2] = size + 0.8;
-    }
-
-    // up
-    if ((style & 2) !== 0) {
-        rect[1] = 0;
-        rect[3] = size + 0.8;
-    }
+    // top
+    const gap = size * 0.03;
+    const rect = [gap, gap, size-gap*0.5, size-gap*0.5];
 
     top.graphics.beginFill(color[0]);
-
     top.graphics.drawRect(rect[0], rect[1], rect[2], rect[3]);
-    
+    if ((style & 1 /* left */) !== 0)
+        top.graphics.drawRect(rect[0]-gap, rect[1], gap*2, rect[3]);
+    if ((style & 2 /* up   */) !== 0)
+        top.graphics.drawRect(rect[0], rect[1]-gap, rect[2], gap*2);
     top.graphics.endFill();
 
+    const len = [gap*0.5, size / 6, size, size * 7 / 6];
+
     bottom.graphics.beginFill(color[1]);
+
     bottom.graphics.moveTo(len[2], len[0]);
     bottom.graphics.lineTo(len[3], len[1]);
     bottom.graphics.lineTo(len[3], len[3]);
