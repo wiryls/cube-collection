@@ -115,23 +115,28 @@ export class Cube extends egret.DisplayObjectContainer implements ICube
         if (!this.live)
             return;
 
-        if (this.moving) {
-            for (const e of this.entity)
-                e.change(this.action, this.status);
-
-            this.status = Status.Free;
-            this.behavior.next();
-        }
-
+        // color and shape
         if (this.modify_) {
-            for (const e of this.entity)
+            for (const e of this.entity_)
                 e.attach(this);
+
+            for (const e of this.entity)
+                e.commit();
 
             this.modify_ = false;
         }
 
-        for (const e of this.entity)
-            e.commit();
+        // move
+        if (this.moving) {
+            for (const e of this.entity_)
+                e.change(this.action, this.status);
+
+            for (const e of this.entity)
+                e.commit();
+
+            this.status = Status.Free;
+            this.behavior.next();
+        }
     }
 }
 

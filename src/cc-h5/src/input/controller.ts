@@ -185,6 +185,7 @@ class TouchController extends egret.EventDispatcher implements Controller
     private begin: [number, number] = [0, 0];
     private ctype: Controller.Type = Controller.Type.MOVE_IDLE;
     private timer: number = 0;
+    private arrow: egret.Shape = new egret.Shape();
 
     constructor(private scene: egret.DisplayObjectContainer)
     {
@@ -218,13 +219,16 @@ class TouchController extends egret.EventDispatcher implements Controller
 
     private onTouchTap(event: egret.TouchEvent): void
     {
-        const x = event.stageX / this.scene.stage.stageWidth;
-        const y = event.stageY / this.scene.stage.stageHeight;
+        const scale = Math.min(this.scene.stage.stageWidth, this.scene.stage.stageHeight);
+        const dx = this.begin[0] - event.stageX;
+        const dy = this.begin[1] - event.stageY;
+        const x = Math.min(Math.max(event.stageX / scale, 0), +1);
+        const y = Math.min(Math.max(event.stageY / scale, 0), +1);
 
         let type = Controller.Type.CTRL_DONE;
-        if (x < 0.05 && y < 0.1)
+        if (x < 0.1 && y < 0.1)
             type = Controller.Type.CTRL_RESTART;
-        else if (x > 0.95 && y < 0.1)
+        else if (x > 0.9 && y < 0.1)
             type = Controller.Type.CTRL_EXIT;
 
         this.dispatchEvent(new Controller.Event(type, Controller.Event.ORDER, true, true));
@@ -233,6 +237,7 @@ class TouchController extends egret.EventDispatcher implements Controller
     private onTouchBegin(event: egret.TouchEvent): void
     {
         this.scene.stage.addEventListener(egret.TouchEvent.TOUCH_MOVE, this.onTouchMove, this);
+        this.scene.stage.addChild(this.arrow);
         this.begin = [event.stageX, event.stageY];
         this.timer = Date.now();
     }
@@ -248,13 +253,16 @@ class TouchController extends egret.EventDispatcher implements Controller
             this.ctype = Controller.Type.MOVE_IDLE;
             this.dispatchEvent(new Controller.Event(this.ctype, Controller.Event.ORDER, true, true));
         }
+
+        this.arrow.graphics.clear();
+        this.scene.stage.removeChild(this.arrow);
     }
 
     private onTouchMove(event: egret.TouchEvent): void
     {
         let type = Controller.Type.MOVE_IDLE;
 
-        const scale = Math.min(this.scene.stage.stageWidth, this.scene.stage.stageHeight);
+        const scale = Math.min(this.scene.stage.stageWidth, this.scene.stage.stageHeight) / 2;
         const dx = this.begin[0] - event.stageX;
         const dy = this.begin[1] - event.stageY;
         const x = Math.min(Math.max(dx / scale, -1), +1);
@@ -271,6 +279,14 @@ class TouchController extends egret.EventDispatcher implements Controller
             break;
         default:
             break;
+        }
+
+        if (this.moved) {
+            this.arrow.graphics.clear();
+            this.arrow.graphics.lineStyle(64, 0xEEEEEE, 0.618);
+            this.arrow.graphics.moveTo(this.begin[0], this.begin[1]);
+            this.arrow.graphics.lineTo(event.stageX, event.stageY);
+            this.arrow.graphics.endFill();
         }
 
         if (this.ctype !== type) {
