@@ -16,12 +16,7 @@ const Musician = utils.Musician.instance;
 
 export class World extends egret.DisplayObjectContainer implements IWorld
 {
-    private layer: Array<egret.DisplayObjectContainer> = [
-        new egret.DisplayObjectContainer(),
-        new egret.DisplayObjectContainer(),
-        new egret.DisplayObjectContainer(),
-        new egret.DisplayObjectContainer()
-    ];
+    private layer: Array<egret.DisplayObjectContainer>;
     private seed: logic.Seed;
 
     public cube = new Array<Cube>();
@@ -30,9 +25,24 @@ export class World extends egret.DisplayObjectContainer implements IWorld
     constructor()
     {
         super();
+        this.addEventListener(egret.Event.ADDED_TO_STAGE, this.onAddToStage, this);
+        this.layer = Array.of(
+            new egret.DisplayObjectContainer(),
+            new egret.DisplayObjectContainer(),
+            new egret.DisplayObjectContainer(),
+            new egret.DisplayObjectContainer()
+        );
     }
 
-    command(code: number)
+    private onAddToStage(): void
+    {
+        for (const layer of this.layer)
+            this.addChildAt(layer, 0);
+
+        this.sort();
+    }
+
+    public command(code: number): void
     {
         switch (code) {
         case input.Controller.Type.MOVE_LEFT:
@@ -58,11 +68,7 @@ export class World extends egret.DisplayObjectContainer implements IWorld
         for (const c of this.cube)
             c.commit();
 
-        for (const layer of this.layer)
-            layer.$children.sort((l, r) =>
-                (l.x + l.y < r.x + r.y) ? -1 : (l.x + l.y > r.x + r.y) ? +1 : 0
-            );
-
+        this.sort();
         this.cube = this.cube.filter(c => c.live);
     }
 
@@ -85,15 +91,14 @@ export class World extends egret.DisplayObjectContainer implements IWorld
             return { width: 0, height: 0 };
     }
 
-    get seed(): logic.Seed
+    private sort(): void
     {
-        return this.seed_;
-    }
-
-    set seed(value: logic.Seed)
-    {
-        this.seed_ = value;
-        this.build();
+        for (const layer of this.layer) {
+            layer.$children.sort((l, r) =>
+                (l.x + l.y < r.x + r.y) ? -1 :
+                (l.x + l.y > r.x + r.y) ? +1 : 0
+            );
+        }
     }
 }
 

@@ -96,7 +96,7 @@ class KeyBoardController extends egret.EventDispatcher implements Controller
             this.input.removeEventListener(input.Key.Event.KEY_UP,   this.onKeyUp,   this);
         }
 
-        this.state = state;        
+        this.state = state;
     }
 
     get enable(): boolean
@@ -109,7 +109,7 @@ class KeyBoardController extends egret.EventDispatcher implements Controller
         let o = this.mapper(event.key);
         if (o === undefined)
             return;
-        
+
         if (Controller.Moves.includes(o) && o !== Controller.Type.MOVE_IDLE) {
             switch (o) {
             case Controller.Type.MOVE_LEFT : this.force[0] = Math.max(this.force[0] - 1, -1); break;
@@ -131,7 +131,7 @@ class KeyBoardController extends egret.EventDispatcher implements Controller
         let o = this.mapper(event.key);
         if (o === undefined)
             return;
-        
+
         if (Controller.Moves.includes(o) && o !== Controller.Type.MOVE_IDLE) {
             switch (o) {
             case Controller.Type.MOVE_LEFT : this.force[0] = Math.min(this.force[0] + 1, +1); break;
@@ -182,10 +182,9 @@ class TouchController extends egret.EventDispatcher implements Controller
 {
     private state: boolean = false;
     private moved: boolean = false;
-    private begin: [number, number] = [0, 0];
+    private point: [number, number] = [0, 0];
     private ctype: Controller.Type = Controller.Type.MOVE_IDLE;
-    private timer: number = 0;
-    private arrow: egret.Shape = new egret.Shape();
+    private begin: number = 0;
 
     constructor(private scene: egret.DisplayObjectContainer)
     {
@@ -202,14 +201,14 @@ class TouchController extends egret.EventDispatcher implements Controller
             this.scene.addEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onTouchBegin, this);
             this.scene.addEventListener(egret.TouchEvent.TOUCH_END, this.onTouchEnd, this);
         } else {
-            this.scene.removeEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onTouchBegin, this);
             this.scene.removeEventListener(egret.TouchEvent.TOUCH_END, this.onTouchEnd, this);
+            this.scene.removeEventListener(egret.TouchEvent.TOUCH_BEGIN, this.onTouchBegin, this);
             this.scene.touchEnabled = false;
             this.moved = false;
             this.ctype = Controller.Type.MOVE_IDLE;
         }
 
-        this.state = state;        
+        this.state = state;
     }
 
     get enable(): boolean
@@ -220,16 +219,13 @@ class TouchController extends egret.EventDispatcher implements Controller
     private onTouchTap(event: egret.TouchEvent): void
     {
         const scale = Math.min(this.scene.stage.stageWidth, this.scene.stage.stageHeight);
-        const dx = this.begin[0] - event.stageX;
-        const dy = this.begin[1] - event.stageY;
-        const x = Math.min(Math.max(event.stageX / scale, 0), +1);
-        const y = Math.min(Math.max(event.stageY / scale, 0), +1);
-
-        let type = Controller.Type.CTRL_DONE;
-        if (x < 0.1 && y < 0.1)
-            type = Controller.Type.CTRL_RESTART;
-        else if (x > 0.9 && y < 0.1)
-            type = Controller.Type.CTRL_EXIT;
+        const x = Math.min(Math.max(event.stageX / scale, 0), 1); /* [0, 1] */
+        const y = Math.min(Math.max(event.stageY / scale, 0), 1); /* [0, 1] */
+        const type
+            = (x < 0.1 && y < 0.1) ? Controller.Type.CTRL_RESTART
+            : (x > 0.9 && y < 0.1) ? Controller.Type.CTRL_EXIT
+            : Controller.Type.CTRL_DONE
+            ;
 
         this.dispatchEvent(new Controller.Event(type, Controller.Event.ORDER, true, true));
     }
@@ -237,25 +233,21 @@ class TouchController extends egret.EventDispatcher implements Controller
     private onTouchBegin(event: egret.TouchEvent): void
     {
         this.scene.stage.addEventListener(egret.TouchEvent.TOUCH_MOVE, this.onTouchMove, this);
-        this.scene.stage.addChild(this.arrow);
-        this.begin = [event.stageX, event.stageY];
-        this.timer = Date.now();
+        this.point = [event.stageX, event.stageY];
+        this.begin = Date.now();
     }
 
     private onTouchEnd(event: egret.TouchEvent): void
     {
         this.scene.stage.removeEventListener(egret.TouchEvent.TOUCH_MOVE, this.onTouchMove, this);
 
-        if (Date.now() - this.timer < 500 && this.moved === false) {
+        if (Date.now() - this.begin < 500 && this.moved === false) {
             this.onTouchTap(event);
         } else {
             this.moved = false;
             this.ctype = Controller.Type.MOVE_IDLE;
             this.dispatchEvent(new Controller.Event(this.ctype, Controller.Event.ORDER, true, true));
         }
-
-        this.arrow.graphics.clear();
-        this.scene.stage.removeChild(this.arrow);
     }
 
     private onTouchMove(event: egret.TouchEvent): void
@@ -263,11 +255,12 @@ class TouchController extends egret.EventDispatcher implements Controller
         let type = Controller.Type.MOVE_IDLE;
 
         const scale = Math.min(this.scene.stage.stageWidth, this.scene.stage.stageHeight) / 2;
-        const dx = this.begin[0] - event.stageX;
-        const dy = this.begin[1] - event.stageY;
+        const dx = this.point[0] - event.stageX;
+        const dy = this.point[1] - event.stageY;
         const x = Math.min(Math.max(dx / scale, -1), +1);
         const y = Math.min(Math.max(dy / scale, -1), +1);
 
+        let change = true;
         switch (true) {
         case Math.abs(y) < Math.abs(x) && 0.1 < Math.abs(x):
             type = x > 0 ? Controller.Type.MOVE_LEFT : Controller.Type.MOVE_RIGHT;
@@ -278,20 +271,16 @@ class TouchController extends egret.EventDispatcher implements Controller
             this.moved = true;
             break;
         default:
+            change = false;
             break;
         }
 
-        if (this.moved) {
-            this.arrow.graphics.clear();
-            this.arrow.graphics.lineStyle(64, 0xEEEEEE, 0.618);
-            this.arrow.graphics.moveTo(this.begin[0], this.begin[1]);
-            this.arrow.graphics.lineTo(event.stageX, event.stageY);
-            this.arrow.graphics.endFill();
-        }
-
-        if (this.ctype !== type) {
-            this.ctype = type;
-            this.dispatchEvent(new Controller.Event(type, Controller.Event.ORDER, true, true));
+        if (this.moved && change) {
+            this.point = [event.stageX, event.stageY];
+            if (this.ctype !== type) {
+                this.ctype = type;
+                this.dispatchEvent(new Controller.Event(type, Controller.Event.ORDER, true, true));
+            }
         }
     }
 }
