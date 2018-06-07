@@ -1,0 +1,10 @@
+{
+	"skins": {
+		"layout.Loading": "resource/layout/layout_loading.exml"
+	},
+	"autoGenerateExmlsList": true,
+	"exmls": [
+		"resource/layout/layout_loading.exml"
+	],
+	"path": "resource/default.thm.json"
+}
