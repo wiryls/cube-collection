@@ -9,8 +9,7 @@ const Musician = utils.Musician.instance;
 export class World extends eui.Component
 {
     private input: ReadonlyArray<input.Controller>;
-    private order: input.Controller.Type = input.Controller.Type.MOVE_IDLE;
-    private press: boolean = false;
+    private order: Array<input.Controller.Type> = new Array<input.Controller.Type>(3);
 
     private guide: logic.Narrator = new logic.Narrator(new utils.Loader(), new utils.Saver());
     private world: entity.World = new entity.World();
@@ -55,7 +54,28 @@ export class World extends eui.Component
         if (this.world === undefined)
             return;
 
-        this.world.command(this.moves as number);
+        const idle = input.Controller.Type.MOVE_IDLE;
+        if (this.order.some(o => o !== idle))
+        {
+            // this.order[0]: last valid order
+            // this.order[1]: current valid order
+            // this.order[2]: current order
+            const o
+                = this.order[0] === idle
+                ? this.order[1]
+                : this.order[2] === idle && this.order[1] === this.order[0]
+                ? this.order[2]
+                : this.order[1]
+                ;
+
+            if (o !== idle) {
+                this.world.command(o as number);
+            } else {
+                this.order[1] = o;
+            }
+            this.order[0] = o;
+        }
+
         this.world.next();
     }
 
@@ -92,9 +112,9 @@ export class World extends eui.Component
             if (input.Controller.Moves.includes(event.code)) {
                 if (event.code !== input.Controller.Type.MOVE_IDLE) {
                     Musician.sound(Track.CUBE_CONTROL);
-                    this.press = true;
+                    this.order[1] = event.code;
                 }
-                this.order = event.code;
+                this.order[2] = event.code;
             }
         }
     }

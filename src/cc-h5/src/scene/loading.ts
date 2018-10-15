@@ -8,6 +8,7 @@ export class Loading extends eui.Component implements RES.PromiseTaskReporter
     private groups: ReadonlyArray<string>;
     private progress: number = 0;
     private text_progress: egret.TextField = new egret.TextField();
+    private text_guide: egret.TextField = new egret.TextField();
 
     public constructor()
     {
@@ -42,6 +43,10 @@ export class Loading extends eui.Component implements RES.PromiseTaskReporter
         this.text_progress.width = 480;
         this.text_progress.height = 100;
         this.text_progress.textAlign = "center";
+
+        this.addChild(this.text_guide);
+        // TODO: add a guide.
+        // this.text_guide.text = "use arrow key to move, enter to commit, r to restart, esc yo exit."
     }
 
     public set track(groups: ReadonlyArray<string>)
