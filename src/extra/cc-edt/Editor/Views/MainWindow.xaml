@@ -1,0 +1,48 @@
+﻿<Window x:Class="Editor.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:it="clr-namespace:Editor.Properties"
+        xmlns:ap="clr-namespace:Editor.Views.AttachedProperties"
+        xmlns:local="clr-namespace:Editor.Views"
+        mc:Ignorable="d"
+        Title="Cube Collection Map Editor" Height="480" Width="640">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" IsMainMenu="True" Padding="0,4">
+            <MenuItem Header="{x:Static it:Resources.ItemFile}">
+                <MenuItem Header="{x:Static it:Resources.ItemFileNew}"  ap:Awesome.Icon="File"/>
+                <MenuItem Header="{x:Static it:Resources.ItemFileOpen}" ap:Awesome.Icon="FolderOpen"/>
+                <MenuItem Header="{x:Static it:Resources.ItemFileSave}" ap:Awesome.Icon="Save"/>
+                <Separator />
+                <MenuItem Header="{x:Static it:Resources.ItemFileExit}" ap:Awesome.Icon="Close"/>
+            </MenuItem>
+            <MenuItem Header="{x:Static it:Resources.ItemHelp}">
+                <MenuItem Header="{x:Static it:Resources.ItemHelpAbout}" ap:Awesome.Icon="Info"/>
+            </MenuItem>
+        </Menu>
+        <ToolBarTray DockPanel.Dock="Left" IsLocked="True" Orientation="Vertical">
+            <ToolBar FontSize="16" ap:OverflowButton.AutoHidden="True">
+                <Separator />
+                <RadioButton Foreground="#FF123456" ap:Awesome.Icon="MousePointer" ToolTip="{x:Static it:Resources.ToolCursor}" IsChecked="True"/>
+                <RadioButton Foreground="#FF123456" ap:Awesome.Icon="Eraser" ToolTip="{x:Static it:Resources.ToolEraser}"/>
+                <Separator />
+                <RadioButton Foreground="#FFDDDDDD" ap:Awesome.Icon="Cube" ToolTip="{x:Static it:Resources.ToolCubeWhite}"/>
+                <RadioButton Foreground="#FF4FBB49" ap:Awesome.Icon="Cube" ToolTip="{x:Static it:Resources.ToolCubeGreen}"/>
+                <RadioButton Foreground="#FF5AA1DA" ap:Awesome.Icon="Cube" ToolTip="{x:Static it:Resources.ToolCubeBlue}"/>
+                <RadioButton Foreground="#FFFB5B5B" ap:Awesome.Icon="Cube" ToolTip="{x:Static it:Resources.ToolCubeRed}"/>
+                <RadioButton Foreground="#FF8D3CF0" ap:Awesome.Icon="FlagCheckered" ToolTip="{x:Static it:Resources.ToolDestination}"/>
+            </ToolBar>
+        </ToolBarTray>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="0*"/>
+            </Grid.ColumnDefinitions>
+            <GridSplitter HorizontalAlignment="Right" Width="4"/>
+            <Canvas>
+            </Canvas>
+            
+        </Grid>
+    </DockPanel>
+</Window>
