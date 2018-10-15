@@ -1,9 +1,9 @@
 {
 	"initial": [
-		"js/egret.min_86bac23c.js",
-		"js/egret.web.min_6ba890da.js",
-		"js/eui.min_3abd2ff.js",
-		"js/assetsmanager.min_20ffd62d.js",
+		"js/egret.min_1d089e2d.js",
+		"js/egret.web.min_2dd0bd72.js",
+		"js/eui.min_4f767512.js",
+		"js/assetsmanager.min_70d22011.js",
 		"js/tween.min_6c5a88f9.js",
 		"js/game.min_45aa06f6.js",
 		"js/promise.min_83a6a5d.js"
