@@ -1,198 +1,228 @@
 {
 	"groups": [
 		{
-			"keys":"sound_effect_level_fail,sound_effect_loop_01,sound_effect_loop_02,sound_effect_loop_03,sound_effect_note_01,sound_effect_note_02,sound_effect_note_03,sound_effect_note_04,sound_effect_note_05,sound_effect_note_06,sound_effect_note_07,sound_effect_note_08,sound_effect_note_09,sound_effect_note_10,sound_effect_note_connect,sound_effect_note_move,sound_effect_notes01,sound_effect_notes02,sound_effect_notes03,sound_music_heavy,sound_music_normal,sound_effect_enter,sound_effect_error_01,sound_effect_error_02,sound_effect_error_03,sound_effect_level_clear",
-			"name":"sound"
+			"keys": "sound_effect_level_fail,sound_effect_loop_01,sound_effect_loop_02,sound_effect_loop_03,sound_effect_note_01,sound_effect_note_02,sound_effect_note_03,sound_effect_note_04,sound_effect_note_05,sound_effect_note_06,sound_effect_note_07,sound_effect_note_08,sound_effect_note_09,sound_effect_note_10,sound_effect_note_connect,sound_effect_note_move,sound_effect_notes01,sound_effect_notes02,sound_effect_notes03,sound_music_heavy,sound_music_normal,sound_effect_enter,sound_effect_error_01,sound_effect_error_02,sound_effect_error_03,sound_effect_level_clear",
+			"name": "sound"
 		},
 		{
-			"keys":"level_silence_relative,level_silence_spiral,level_silence_tutorial,level_chase_sample,level_crossover_tetris,level_debug_01,level_index,level_main,level_multiple_community,level_silence_fishing",
-			"name":"level"
+			"keys": "level_tutorial_commit,level_tutorial_color,level_silence_spiral,level_silence_palace,level_silence_fishing,level_old_main,level_old_index,level_old_debug,level_multiple_tetris,level_multiple_sacrifice,level_multiple_printer,level_multiple_haircut,level_multiple_community,level_index,level_chase_sample,level_chase_dodgeball",
+			"name": "level"
 		},
 		{
-			"keys":"sound_music_normal",
-			"name":"loading"
+			"keys": "sound_music_normal",
+			"name": "loading"
 		}
 	],
 	"resources": [
 		{
-			"name":"level_silence_relative",
-			"type":"json",
-			"url":"level/level_silence_relative.json"
+			"url": "sound/sound_effect_level_fail.mp3",
+			"type": "sound",
+			"name": "sound_effect_level_fail"
 		},
 		{
-			"name":"level_silence_spiral",
-			"type":"json",
-			"url":"level/level_silence_spiral.json"
+			"url": "sound/sound_effect_loop_01.mp3",
+			"type": "sound",
+			"name": "sound_effect_loop_01"
 		},
 		{
-			"name":"level_silence_tutorial",
-			"type":"json",
-			"url":"level/level_silence_tutorial.json"
+			"url": "sound/sound_effect_loop_02.mp3",
+			"type": "sound",
+			"name": "sound_effect_loop_02"
 		},
 		{
-			"name":"level_chase_sample",
-			"type":"json",
-			"url":"level/level_chase_sample.json"
+			"url": "sound/sound_effect_loop_03.mp3",
+			"type": "sound",
+			"name": "sound_effect_loop_03"
 		},
 		{
-			"name":"level_crossover_tetris",
-			"type":"json",
-			"url":"level/level_crossover_tetris.json"
+			"url": "sound/sound_effect_note_01.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_01"
 		},
 		{
-			"name":"level_debug_01",
-			"type":"json",
-			"url":"level/level_debug_01.json"
+			"url": "sound/sound_effect_note_02.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_02"
 		},
 		{
-			"name":"level_index",
-			"type":"json",
-			"url":"level/level_index.json"
+			"url": "sound/sound_effect_note_03.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_03"
 		},
 		{
-			"name":"level_main",
-			"type":"json",
-			"url":"level/level_main.json"
+			"url": "sound/sound_effect_note_04.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_04"
 		},
 		{
-			"name":"level_multiple_community",
-			"type":"json",
-			"url":"level/level_multiple_community.json"
+			"url": "sound/sound_effect_note_05.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_05"
 		},
 		{
-			"name":"level_silence_fishing",
-			"type":"json",
-			"url":"level/level_silence_fishing.json"
+			"url": "sound/sound_effect_note_06.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_06"
 		},
 		{
-			"name":"sound_effect_level_fail",
-			"type":"sound",
-			"url":"sound/sound_effect_level_fail.mp3"
+			"url": "sound/sound_effect_note_07.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_07"
 		},
 		{
-			"name":"sound_effect_loop_01",
-			"type":"sound",
-			"url":"sound/sound_effect_loop_01.mp3"
+			"url": "sound/sound_effect_note_08.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_08"
 		},
 		{
-			"name":"sound_effect_loop_02",
-			"type":"sound",
-			"url":"sound/sound_effect_loop_02.mp3"
+			"url": "sound/sound_effect_note_09.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_09"
 		},
 		{
-			"name":"sound_effect_loop_03",
-			"type":"sound",
-			"url":"sound/sound_effect_loop_03.mp3"
+			"url": "sound/sound_effect_note_10.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_10"
 		},
 		{
-			"name":"sound_effect_note_01",
-			"type":"sound",
-			"url":"sound/sound_effect_note_01.mp3"
+			"url": "sound/sound_effect_note_connect.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_connect"
 		},
 		{
-			"name":"sound_effect_note_02",
-			"type":"sound",
-			"url":"sound/sound_effect_note_02.mp3"
+			"url": "sound/sound_effect_note_move.mp3",
+			"type": "sound",
+			"name": "sound_effect_note_move"
 		},
 		{
-			"name":"sound_effect_note_03",
-			"type":"sound",
-			"url":"sound/sound_effect_note_03.mp3"
+			"url": "sound/sound_effect_notes01.mp3",
+			"type": "sound",
+			"name": "sound_effect_notes01"
 		},
 		{
-			"name":"sound_effect_note_04",
-			"type":"sound",
-			"url":"sound/sound_effect_note_04.mp3"
+			"url": "sound/sound_effect_notes02.mp3",
+			"type": "sound",
+			"name": "sound_effect_notes02"
 		},
 		{
-			"name":"sound_effect_note_05",
-			"type":"sound",
-			"url":"sound/sound_effect_note_05.mp3"
+			"url": "sound/sound_effect_notes03.mp3",
+			"type": "sound",
+			"name": "sound_effect_notes03"
 		},
 		{
-			"name":"sound_effect_note_06",
-			"type":"sound",
-			"url":"sound/sound_effect_note_06.mp3"
+			"url": "sound/sound_music_heavy.mp3",
+			"type": "sound",
+			"name": "sound_music_heavy"
 		},
 		{
-			"name":"sound_effect_note_07",
-			"type":"sound",
-			"url":"sound/sound_effect_note_07.mp3"
+			"url": "sound/sound_music_normal.mp3",
+			"type": "sound",
+			"name": "sound_music_normal"
 		},
 		{
-			"name":"sound_effect_note_08",
-			"type":"sound",
-			"url":"sound/sound_effect_note_08.mp3"
+			"url": "sound/sound_effect_enter.mp3",
+			"type": "sound",
+			"name": "sound_effect_enter"
 		},
 		{
-			"name":"sound_effect_note_09",
-			"type":"sound",
-			"url":"sound/sound_effect_note_09.mp3"
+			"url": "sound/sound_effect_error_01.mp3",
+			"type": "sound",
+			"name": "sound_effect_error_01"
 		},
 		{
-			"name":"sound_effect_note_10",
-			"type":"sound",
-			"url":"sound/sound_effect_note_10.mp3"
+			"url": "sound/sound_effect_error_02.mp3",
+			"type": "sound",
+			"name": "sound_effect_error_02"
 		},
 		{
-			"name":"sound_effect_note_connect",
-			"type":"sound",
-			"url":"sound/sound_effect_note_connect.mp3"
+			"url": "sound/sound_effect_error_03.mp3",
+			"type": "sound",
+			"name": "sound_effect_error_03"
 		},
 		{
-			"name":"sound_effect_note_move",
-			"type":"sound",
-			"url":"sound/sound_effect_note_move.mp3"
+			"url": "sound/sound_effect_level_clear.mp3",
+			"type": "sound",
+			"name": "sound_effect_level_clear"
 		},
 		{
-			"name":"sound_effect_notes01",
-			"type":"sound",
-			"url":"sound/sound_effect_notes01.mp3"
+			"url": "level/level_multiple_printer.json",
+			"type": "json",
+			"name": "level_multiple_printer"
 		},
 		{
-			"name":"sound_effect_notes02",
-			"type":"sound",
-			"url":"sound/sound_effect_notes02.mp3"
+			"url": "level/level_multiple_sacrifice.json",
+			"type": "json",
+			"name": "level_multiple_sacrifice"
 		},
 		{
-			"name":"sound_effect_notes03",
-			"type":"sound",
-			"url":"sound/sound_effect_notes03.mp3"
+			"url": "level/level_multiple_tetris.json",
+			"type": "json",
+			"name": "level_multiple_tetris"
 		},
 		{
-			"name":"sound_music_heavy",
-			"type":"sound",
-			"url":"sound/sound_music_heavy.mp3"
+			"url": "level/level_old_debug.json",
+			"type": "json",
+			"name": "level_old_debug"
 		},
 		{
-			"name":"sound_music_normal",
-			"type":"sound",
-			"url":"sound/sound_music_normal.mp3"
+			"url": "level/level_old_index.json",
+			"type": "json",
+			"name": "level_old_index"
 		},
 		{
-			"name":"sound_effect_enter",
-			"type":"sound",
-			"url":"sound/sound_effect_enter.mp3"
+			"url": "level/level_old_main.json",
+			"type": "json",
+			"name": "level_old_main"
 		},
 		{
-			"name":"sound_effect_error_01",
-			"type":"sound",
-			"url":"sound/sound_effect_error_01.mp3"
+			"url": "level/level_silence_fishing.json",
+			"type": "json",
+			"name": "level_silence_fishing"
 		},
 		{
-			"name":"sound_effect_error_02",
-			"type":"sound",
-			"url":"sound/sound_effect_error_02.mp3"
+			"url": "level/level_silence_palace.json",
+			"type": "json",
+			"name": "level_silence_palace"
 		},
 		{
-			"name":"sound_effect_error_03",
-			"type":"sound",
-			"url":"sound/sound_effect_error_03.mp3"
+			"url": "level/level_silence_spiral.json",
+			"type": "json",
+			"name": "level_silence_spiral"
 		},
 		{
-			"name":"sound_effect_level_clear",
-			"type":"sound",
-			"url":"sound/sound_effect_level_clear.mp3"
+			"url": "level/level_tutorial_color.json",
+			"type": "json",
+			"name": "level_tutorial_color"
+		},
+		{
+			"url": "level/level_tutorial_commit.json",
+			"type": "json",
+			"name": "level_tutorial_commit"
+		},
+		{
+			"url": "level/level_chase_dodgeball.json",
+			"type": "json",
+			"name": "level_chase_dodgeball"
+		},
+		{
+			"url": "level/level_chase_sample.json",
+			"type": "json",
+			"name": "level_chase_sample"
+		},
+		{
+			"url": "level/level_index.json",
+			"type": "json",
+			"name": "level_index"
+		},
+		{
+			"url": "level/level_multiple_community.json",
+			"type": "json",
+			"name": "level_multiple_community"
+		},
+		{
+			"url": "level/level_multiple_haircut.json",
+			"type": "json",
+			"name": "level_multiple_haircut"
 		}
 	]
 }

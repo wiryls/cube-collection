@@ -13,10 +13,8 @@ import Data.Bool (bool)
 import Data.Text.Lazy (Text)
 import Data.Text.Lazy.IO (writeFile, readFile)
 
-
 import CCGen.Generator
 import CCGen.Parser
-
 
 path :: IO ([Either String String])
 path = getArgs >>= \xs -> for xs $ \x -> bool

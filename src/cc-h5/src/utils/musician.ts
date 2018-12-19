@@ -31,7 +31,7 @@ export class Musician
     {
         const sound = this.tryToFind(name);
         if (sound !== undefined) {
-            sound.play(0, 1).volume = 0.6;
+            sound.play(0, 1).volume = 0.2;
         } else {
             console.error("Musician: Cannot find sound", name);
         }
@@ -43,7 +43,7 @@ export class Musician
         const sound = this.tryToFind(name);
         if (sound !== undefined) {
             const channel = sound.play(0, 0);
-            channel.volume = 0.3;
+            channel.volume = 0.1;
             this.playing.set(name, channel);
         } else {
             console.error("Musician: Cannot find music", name);

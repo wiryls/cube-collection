@@ -248,34 +248,22 @@ class Unit implements IUnit
 
     private onPlace(): void
     {
-        const col = this.owner.world.size. width;
-        const row = this.owner.world.size.height;
-        const wid = this.stage.stage.stageWidth;
-        const hgt = this.stage.stage.stageHeight;
+        const {tlx, tly, sid}
+            = locate(this.owner.world.size, this.layer[0].stage);
 
-        const len = Math.min(wid / col, hgt / row);
-        const tlx = (wid - col * len) / 2;
-        const tly = (hgt - row * len) / 2;
-
-        this.cube_top.x = tlx + this.x * len;
-        this.cube_btm.x = tlx + this.x * len;
-        this.cube_top.y = tly + this.y * len;
-        this.cube_btm.y = tly + this.y * len;
+        for (const part of this.parts) {
+            part.x = tlx + this.x * sid;
+            part.y = tly + this.y * sid;
+        }
     }
 
     private onAnimationMove(): void
     {
-        const col = this.owner.world.size. width;
-        const row = this.owner.world.size.height;
-        const wid = this.stage.stage.stageWidth;
-        const hgt = this.stage.stage.stageHeight;
+        const {tlx, tly, sid}
+            = locate(this.owner.world.size, this.layer[0].stage);
 
-        const len = Math.min(wid / col, hgt / row);
-        const tlx = (wid - col * len) / 2;
-        const tly = (hgt - row * len) / 2;
-
-        const x = tlx + this.x * len;
-        const y = tly + this.y * len;
+        const x = tlx + this.x * sid;
+        const y = tly + this.y * sid;
 
         for (const part of this.parts) {
             // make a smaller displacement for sort
@@ -284,26 +272,20 @@ class Unit implements IUnit
             // animation
             egret.Tween
                 .get(part)
-                .to({x: x, y: y}, 240)
+                .to({x: x, y: y}, 248)
                 ;
         }
     }
 
     private onAnimationLock(x: number, y: number): void
     {
-        const col = this.owner.world.size. width;
-        const row = this.owner.world.size.height;
-        const wid = this.stage.stage.stageWidth;
-        const hgt = this.stage.stage.stageHeight;
+        const {tlx, tly, sid}
+            = locate(this.owner.world.size, this.layer[0].stage);
 
-        const len = Math.min(wid / col, hgt / row);
-        const tlx = (wid - col * len) / 2;
-        const tly = (hgt - row * len) / 2;
-
-        const src_x = tlx + this.x * len;
-        const src_y = tly + this.y * len;
-        const dst_x = (src_x + tlx + x * len) / 2;
-        const dst_y = (src_y + tly + y * len) / 2;
+        const src_x = tlx + this.x * sid;
+        const src_y = tly + this.y * sid;
+        const dst_x = (src_x + tlx + x * sid) / 2;
+        const dst_y = (src_y + tly + y * sid) / 2;
 
         for (const part of this.parts) {
             // make a smaller displacement for sort
@@ -312,19 +294,16 @@ class Unit implements IUnit
             // animation
             egret.Tween
                 .get(part)
-                .to({x: dst_x, y: dst_y}, 120, egret.Ease.sineOut)
-                .to({x: src_x, y: src_y}, 120, egret.Ease.sineIn)
+                .to({x: dst_x, y: dst_y}, 140, egret.Ease.sineOut)
+                .to({x: src_x, y: src_y}, 100, egret.Ease.sineIn)
                 ;
         }
     }
 
     private onPaint(): void
     {
-        const col = this.owner.world.size. width;
-        const row = this.owner.world.size.height;
-        const wid = this.stage.stage.stageWidth;
-        const hgt = this.stage.stage.stageHeight;
-        const len = Math.min(wid / col, hgt / row);
+        const {tlx, tly, sid}
+            = locate(this.owner.world.size, this.layer[0].stage);
 
         for (const part of this.parts)
             part.graphics.clear();
@@ -337,7 +316,7 @@ class Unit implements IUnit
                 flag |= 2; // up
         }
         
-        setColor(this.parts[0], this.parts[1], len, this.owner.type, flag);
+        setColor(this.parts[0], this.parts[1], sid, this.owner.type, flag);
     }
 }
 
@@ -357,19 +336,13 @@ export class Dest implements IVec2
         layer[0].addChild(this.parts[0]);
         layer[2].addChild(this.parts[1]);
 
-        const col = this.owner.size. width;
-        const row = this.owner.size.height;
-        const wid = this.stage.stage.stageWidth;
-        const hgt = this.stage.stage.stageHeight;
+        const {tlx, tly, sid}
+            = locate(this.owner.size, this.layer[0].stage);
 
-        const len = Math.min(wid / col, hgt / row);
-        const tlx = (wid - col * len) / 2;
-        const tly = (hgt - row * len) / 2;
-
-        setColor(this.parts[0], this.parts[1], len);
+        setColor(this.parts[0], this.parts[1], sid);
         for (const part of this.parts) {
-            part.x = tlx + this.x * len;
-            part.y = tly + this.y * len;
+            part.x = tlx + this.x * sid;
+            part.y = tly + this.y * sid;
             part.alpha = 0.4;
             egret.Tween
                 .get(part, {loop: true})
@@ -418,6 +391,26 @@ export class CubeFactory
 }
 
 /////////////////////////////////////////////////////////////////////////////
+
+type Size = { readonly width: number; readonly height: number; };
+
+function locate(grid: Size, stage: egret.Stage): {
+    readonly tlx: number;
+    readonly tly: number;
+    readonly sid: number;
+} {
+    const col = grid. width;
+    const row = grid.height;
+    const wid = stage.stageWidth;
+    const hgt = stage.stageHeight;
+    const len = Math.min(wid / col, hgt / row);
+    
+    return {
+        tlx: (wid - col * len) / 2,
+        tly: (hgt - row * len) / 2,
+        sid: len,
+    };
+}
 
 function setColor(top: egret.Shape, bottom: egret.Shape, size: number, type: Type = Type.White, style: number = 0): void
 {

@@ -16,6 +16,7 @@ const Musician = utils.Musician.instance;
 
 export class World extends egret.DisplayObjectContainer implements IWorld
 {
+    private floor: egret.Shape;
     private layer: Array<egret.DisplayObjectContainer>;
     private seed: logic.Seed;
 
@@ -26,6 +27,7 @@ export class World extends egret.DisplayObjectContainer implements IWorld
     {
         super();
         this.addEventListener(egret.Event.ADDED_TO_STAGE, this.onAddToStage, this);
+        this.floor = new egret.Shape();
         this.layer = Array.of(
             new egret.DisplayObjectContainer(),
             new egret.DisplayObjectContainer(),
@@ -40,6 +42,7 @@ export class World extends egret.DisplayObjectContainer implements IWorld
             this.addChildAt(layer, 0);
 
         this.sort();
+        this.addChildAt(this.floor, 0);
     }
 
     public command(code: number): void
@@ -76,11 +79,17 @@ export class World extends egret.DisplayObjectContainer implements IWorld
     {
         if (this.seed === undefined)
             return;
-        this.removeChildren();
-        
-        const creator = new CubeFactory(this, this);
+
+        this.background();
+        for (const layer of this.layer)
+            layer.removeChildren();
+
+        const creator = new CubeFactory(this, this.layer);
         this.dest = this.seed.dest.map(v => creator.create(v));
         this.cube = this.seed.cube.map(c => creator.create(c));
+
+        logic.Transform.link(this.cube, this.size.width, this.size.height);
+        this.sort();
     }
 
     get size(): { readonly width: number; readonly height: number; }
@@ -99,6 +108,26 @@ export class World extends egret.DisplayObjectContainer implements IWorld
                 (l.x + l.y > r.x + r.y) ? +1 : 0
             );
         }
+    }
+
+    private background(): void {
+        const {width : col, height : row} = this.size;
+        const wid = this.stage.stageWidth;
+        const hgt = this.stage.stageHeight;
+
+        const sid = Math.min(wid / col, hgt / row);
+        const tlx = (wid - col * sid) / 2;
+        const tly = (hgt - row * sid) / 2;
+
+        const floor = this.floor;
+
+        floor.graphics.clear();
+        floor.graphics.beginFill(0x1F1F1F);
+        floor.graphics.drawRect(0, 0, col * sid, row * sid);
+        floor.graphics.endFill();
+
+        floor.x = tlx;
+        floor.y = tly;
     }
 }
 
