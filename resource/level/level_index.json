@@ -1,20 +1,18 @@
 [
     {
-        "name": "level_main",
+        "name": "level_tutorial_commit",
         "case": [
-            { "next": "level_silence_tutorial" },
-            { "cond": [1,0,0,0,0,0,0,0], "next": "level_silence_tutorial" },
-            { "cond": [0,1,0,0,0,0,0,0], "next": "level_silence_fishing" },
-            { "cond": [0,0,1,0,0,0,0,0], "next": "level_chase_sample" },
-            { "cond": [0,0,0,1,0,0,0,0], "next": "level_crossover_tetris" },
-            { "cond": [0,0,0,0,1,0,0,0], "next": "level_multiple_community" },
-            { "cond": [0,0,0,0,0,1,0,0], "next": "level_silence_relative" },
-            { "cond": [0,0,0,0,0,0,1,0], "next": "level_silence_spiral" },
-            { "cond": [0,0,0,0,0,0,0,1], "next": "level_debug_01" }
+            { "next": "level_tutorial_color" }
         ]
     },
     {
-        "name": "level_silence_tutorial",
+        "name": "level_tutorial_color",
+        "case": [
+            { "next": "level_silence_palace" }
+        ]
+    },
+    {
+        "name": "level_silence_palace",
         "case": [
             { "next": "level_silence_fishing" }
         ]
@@ -22,17 +20,11 @@
     {
         "name": "level_silence_fishing",
         "case": [
-            { "next": "level_chase_sample" }
+            { "next": "level_chase_dodgeball" }
         ]
     },
     {
-        "name": "level_chase_sample",
-        "case": [
-            { "next": "level_crossover_tetris" }
-        ]
-    },
-    {
-        "name": "level_crossover_tetris",
+        "name": "level_chase_dodgeball",
         "case": [
             { "next": "level_multiple_community" }
         ]
@@ -40,25 +32,31 @@
     {
         "name": "level_multiple_community",
         "case": [
-            { "next": "level_silence_relative" }
+            { "next": "level_multiple_tetris" }
         ]
     },
     {
-        "name": "level_silence_relative",
+        "name": "level_multiple_tetris",
         "case": [
-            { "next": "level_silence_spiral" }
+            { "next": "level_multiple_haircut" }
         ]
     },
     {
-        "name": "level_silence_spiral",
+        "name": "level_multiple_sacrifice",
         "case": [
-            { "next": "level_main" }
+            { "next": "level_multiple_community" }
         ]
     },
     {
-        "name": "level_debug_01",
+        "name": "level_multiple_haircut",
         "case": [
-            { "next": "level_main" }
+            { "next": "level_multiple_printer" }
+        ]
+    },
+    {
+        "name": "level_multiple_printer",
+        "case": [
+            { "next": "level_tutorial_commit" }
         ]
     }
 ]
