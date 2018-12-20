@@ -20,12 +20,6 @@
     {
         "name": "level_silence_fishing",
         "case": [
-            { "next": "level_chase_dodgeball" }
-        ]
-    },
-    {
-        "name": "level_chase_dodgeball",
-        "case": [
             { "next": "level_multiple_community" }
         ]
     },
@@ -42,12 +36,6 @@
         ]
     },
     {
-        "name": "level_multiple_sacrifice",
-        "case": [
-            { "next": "level_multiple_community" }
-        ]
-    },
-    {
         "name": "level_multiple_haircut",
         "case": [
             { "next": "level_multiple_printer" }
@@ -55,6 +43,18 @@
     },
     {
         "name": "level_multiple_printer",
+        "case": [
+            { "next": "level_chase_dodgeball" }
+        ]
+    },
+    {
+        "name": "level_chase_dodgeball",
+        "case": [
+            { "next": "level_multiple_sacrifice" }
+        ]
+    },
+    {
+        "name": "level_multiple_sacrifice",
         "case": [
             { "next": "level_tutorial_commit" }
         ]
