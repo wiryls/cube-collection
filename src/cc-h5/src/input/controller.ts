@@ -21,6 +21,7 @@ export namespace Controller
         CTRL_PAUSE,
         CTRL_RESUME = CTRL_PAUSE,
         CTRL_RESTART,
+        CTRL_SKIP,
     }
 
     export const Moves : ReadonlyArray<Type> =
@@ -32,7 +33,7 @@ export namespace Controller
     export const Ctrls : ReadonlyArray<Type> =
     [
         Type.CTRL_EXIT, Type.CTRL_DONE, Type.CTRL_PAUSE,
-        Type.CTRL_RESUME, Type.CTRL_RESTART,
+        Type.CTRL_RESUME, Type.CTRL_RESTART, Type.CTRL_SKIP,
     ];
 
     export class Event extends egret.Event
@@ -142,7 +143,8 @@ class KeyBoardController extends egret.EventDispatcher implements Controller
             o = this.toMove() || Controller.Type.MOVE_IDLE;
         }
 
-        this.dispatchEvent(new Controller.Event(o, Controller.Event.ORDER, true, true));
+        if (Controller.Moves.includes(o))
+            this.dispatchEvent(new Controller.Event(o, Controller.Event.ORDER, true, true));
     }
 
     private mapper(key: input.Key): Controller.Type|undefined
@@ -156,8 +158,10 @@ class KeyBoardController extends egret.EventDispatcher implements Controller
             // ctrl
             [input.Key.ESC  , Controller.Type.CTRL_EXIT   ],
             [input.Key.ENTER, Controller.Type.CTRL_DONE   ],
+            [input.Key.SPACE, Controller.Type.CTRL_DONE   ],
             [input.Key.P    , Controller.Type.CTRL_PAUSE  ],
             [input.Key.R    , Controller.Type.CTRL_RESTART],
+            [input.Key.N    , Controller.Type.CTRL_SKIP   ],
         ]);
         return map.get(key);
     }

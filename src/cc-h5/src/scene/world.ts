@@ -107,6 +107,16 @@ export class World extends eui.Component
             }
             break;
         }
+        case input.Controller.Type.CTRL_SKIP:
+        {
+            // used for debug
+            const seed = this.guide.next(this.world.status());
+            if (seed !== undefined) {
+                Musician.sound(Track.LEVEL_ENTER);
+                this.world.build(seed);
+            }
+            break;
+        }
         default:
         {
             if (input.Controller.Moves.includes(event.code)) {
