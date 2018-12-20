@@ -38,13 +38,13 @@
     {
         "name": "level_multiple_tetris",
         "case": [
-            { "next": "level_multiple_sacrifice" }
+            { "next": "level_multiple_haircut" }
         ]
     },
     {
         "name": "level_multiple_sacrifice",
         "case": [
-            { "next": "level_multiple_haircut" }
+            { "next": "level_multiple_community" }
         ]
     },
     {
