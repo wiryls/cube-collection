@@ -42,10 +42,10 @@ export namespace Transform
             }
         }
 
-        // merge connected
+        // merge connected.
         for(const foe of dset.groups())
         // NOTE: item and edge become invalid after this line.
-            merge(foe.map(l => l.cube));        
+            merge(foe.map(l => l.cube));
     }
 
     class Link
@@ -63,8 +63,9 @@ export namespace Transform
         // Grid is good.
         // WARNING: all of these become invalid when cs changes,
         //          do NOT modify cs until these are not needed.
-        const item = new ItemGrid<Node>(width, height);
-        const edge = new EdgeGrid(width, height);
+
+        const item = new ItemGrid<Node>(width, height); // grid of cubes
+        const edge = new EdgeGrid(width, height);       // grid of edges
         
         const node = cs.filter(c => c.live).map((c, i) => new Node(c, i));
         const dset = new DisjointSet(node);
@@ -77,7 +78,8 @@ export namespace Transform
         for (const n of move)
             edge.put(n.cube.entity);
 
-        // find stop
+        // find stopped.
+        // no entry.
         const seed = new Array<Node>();
         for(const n of move) {
             const act = n.cube.action;   
@@ -86,26 +88,24 @@ export namespace Transform
 
             const dif = foe.filter(o => o.cube.action !== act);
             if (dif.length > 0 || item.has(nxt) === false) {
-                // stop by other cubes or by wall
+                // stopped by other cubes or by wall
                 if (n.cube.active)
                     dif .filter (o => o.cube.active)
                         .filter (o => o.cube.absorbable(n.cube) || n.cube.absorbable(o.cube))
                         .forEach(o => dset.join(n.index, o.index));
 
-                // mark as stop
+                // mark as stopped.
                 n.cube.status = Status.Stop;
                 seed.push(n);
             } else {
-                // maybe lock
+                // maybe locked.
                 foe.forEach(o => o.node.push(n));
             }
         }
 
-        // find lock
-        for (const n of move) {
-            if (n.cube.status !== Status.Free)
-                continue; // ignore non-free
-
+        // find locked.
+        // multiple cubes compete for the same location.
+        for (const n of move.filter(n => n.cube.status === Status.Free)) {
             for(const v of edge.out(n.cube.entity, n.cube.action)) {
                 const foe = Action.Move
                     .map(a => {
@@ -134,7 +134,22 @@ export namespace Transform
             }
         }
 
-        // solve
+        // find blocked.
+        // cube will be absored halfway.
+        for (const n of move.filter(n => n.cube.status === Status.Free && edge
+            .cor(n.cube.entity, n.cube.action)
+            .map   (v => item.get(v))
+            .filter((o): o is Node => o !== undefined)
+            .map   (o => o as Node)
+            .some  (o => o.cube.status === Status.Free
+                      && o.cube.action === Action.opposite(n.cube.action)
+                      && o.cube.absorbable(n.cube))
+        )) {
+            n.cube.status = Status.Lock;
+            seed.push(n);
+        }
+
+        // solve dependent.
         for(const src of seed) {
             for(const que = new Array<Node>(src); que.length !== 0; ) {
                 const n = que.shift();

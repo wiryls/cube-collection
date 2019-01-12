@@ -182,13 +182,13 @@ namespace Edge
 
     export function is(src: number, dst: Edge): boolean
     {
-        return (src & dst) !== 0;
+        return (src & dst) === dst;
     }
 
     export function opposite(src: Edge): Edge
     {
         switch (src) {
-            default:      return src;
+            default:     return src;
             case Edge.L: return Edge.R;
             case Edge.D: return Edge.U;
             case Edge.U: return Edge.D;
@@ -196,14 +196,43 @@ namespace Edge
         }
     }
 
+    export function ccw(src: Edge): Edge
+    {
+        switch (src) {
+            default:     return src;
+            case Edge.L: return Edge.D;
+            case Edge.D: return Edge.R;
+            case Edge.U: return Edge.L;
+            case Edge.R: return Edge.U;
+        }
+    }
+
+    export function cw(src: Edge): Edge
+    {
+        switch (src) {
+            default:     return src;
+            case Edge.L: return Edge.U;
+            case Edge.D: return Edge.L;
+            case Edge.U: return Edge.R;
+            case Edge.R: return Edge.D;
+        }
+    }
+
     export function toVec2(src: Edge): Vec2
     {
         switch (src) {
+            // default
             default:     return Vec2.Zero;
+            // horizontal or vertical
             case Edge.L: return Vec2.Left;
             case Edge.D: return Vec2.Down;
             case Edge.U: return Vec2.Up;
             case Edge.R: return Vec2.Right;
+            // diagonal
+            case Edge.L|Edge.U: return Vec2.UpLeft;
+            case Edge.L|Edge.D: return Vec2.DownLeft;
+            case Edge.R|Edge.U: return Vec2.UpRight;
+            case Edge.R|Edge.D: return Vec2.DownRight;
         }
     }
 
@@ -263,6 +292,23 @@ export class EdgeGrid extends Uint8Grid
         }
 
         return rs;
+    }
+
+    cor(vs: ReadonlyArray<IVec2>, a: Cube.Action = Cube.Action.Idle): Array<Vec2>
+    {
+        const rs = new Array<Vec2>();
+        const es = Array.from(Edge.fromAction(a).reduce(
+            (s, e) => s.add(e | Edge.cw(e)) && s.add(e | Edge.ccw(e)), new Set<Edge>()
+        ));
+
+        for(const v of vs) {
+            const s = this.getOne(v);
+            for (const e of es)
+                if (Edge.is(s, e))
+                    rs.push(Edge.toVec2(e).plus(v));
+        }
+
+        return rs
     }
 }
 
