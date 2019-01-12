@@ -44,17 +44,23 @@
     {
         "name": "level_multiple_printer",
         "case": [
+            { "next": "level_multiple_sacrifice" }
+        ]
+    },
+    {
+        "name": "level_multiple_sacrifice",
+        "case": [
             { "next": "level_chase_dodgeball" }
         ]
     },
     {
         "name": "level_chase_dodgeball",
         "case": [
-            { "next": "level_multiple_sacrifice" }
+            { "next": "level_chase_synchronize" }
         ]
     },
     {
-        "name": "level_multiple_sacrifice",
+        "name": "level_chase_synchronize",
         "case": [
             { "next": "level_tutorial_commit" }
         ]

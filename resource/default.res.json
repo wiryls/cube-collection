@@ -5,7 +5,7 @@
 			"name": "sound"
 		},
 		{
-			"keys": "level_tutorial_commit,level_tutorial_color,level_silence_spiral,level_silence_palace,level_silence_fishing,level_old_main,level_old_index,level_old_debug,level_multiple_tetris,level_multiple_sacrifice,level_multiple_printer,level_multiple_haircut,level_multiple_community,level_index,level_chase_sample,level_chase_dodgeball",
+			"keys": "level_tutorial_commit,level_tutorial_color,level_silence_spiral,level_silence_palace,level_silence_fishing,level_old_main,level_old_index,level_old_debug,level_multiple_tetris,level_multiple_sacrifice,level_multiple_printer,level_multiple_haircut,level_multiple_community,level_index,level_chase_dodgeball,level_chase_synchronize,level_old_chase_sample",
 			"name": "level"
 		},
 		{
@@ -205,11 +205,6 @@
 			"name": "level_chase_dodgeball"
 		},
 		{
-			"url": "level/level_chase_sample.json",
-			"type": "json",
-			"name": "level_chase_sample"
-		},
-		{
 			"url": "level/level_index.json",
 			"type": "json",
 			"name": "level_index"
@@ -223,6 +218,16 @@
 			"url": "level/level_multiple_haircut.json",
 			"type": "json",
 			"name": "level_multiple_haircut"
+		},
+		{
+			"url": "level/level_chase_synchronize.json",
+			"type": "json",
+			"name": "level_chase_synchronize"
+		},
+		{
+			"url": "level/level_old_chase_sample.json",
+			"type": "json",
+			"name": "level_old_chase_sample"
 		}
 	]
 }
