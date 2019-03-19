@@ -42,12 +42,12 @@ export namespace Controller
 
         constructor(
             public readonly code: Type,
-			type      : string,
-			bubbles   : boolean = false,
-			cancelable: boolean = false)
-		{
-			super(type, bubbles, cancelable);
-		}
+            type      : string,
+            bubbles   : boolean = false,
+            cancelable: boolean = false)
+        {
+            super(type, bubbles, cancelable);
+        }
     }
 
     export function create(src: input.KeyBoard): Controller;
