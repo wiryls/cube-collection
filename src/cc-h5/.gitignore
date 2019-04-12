@@ -1,10 +1,13 @@
 # Egret Wing
+/temp
 /libs
 /manifest.json
 
 /node_modules
 /tools/node_modules
 /bin-*
+
+egret.d.ts
 
 # Mac
 .DS_Store
