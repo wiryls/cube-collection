@@ -31,7 +31,7 @@ export class Musician
     {
         const sound = this.tryToFind(name);
         if (sound !== undefined) {
-            sound.play(0, 1).volume = 0.1;
+            sound.play(0, 1).volume = 0.05;
         } else {
             console.error("Musician: Cannot find sound", name);
         }

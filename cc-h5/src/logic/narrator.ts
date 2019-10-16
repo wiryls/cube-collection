@@ -62,6 +62,13 @@ export class Narrator
 
     tell(): undefined|Seed
     {
+        if (this.node.length === 0)
+            return undefined;
+
+        if (this.node.find(n => n.name === this.data.milestone) === undefined)
+            this.data.milestone = this.node[0].name;
+
+        this.save.set(Narrator.MEMORY_NAME, this.data);
         return this.seed(this.data.milestone);
     }
 
@@ -78,6 +85,7 @@ export class Narrator
         if (cas === undefined)
             throw new Error(`Narrator: Missing Defualt at ${pos}`);
 
+        this.save.set(Narrator.MEMORY_NAME, this.data);
         this.data.milestone = cas.next;
         return this.seed(cas.next);
     }

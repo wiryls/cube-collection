@@ -272,7 +272,7 @@ class Unit implements IUnit
             // animation
             egret.Tween
                 .get(part)
-                .to({x: x, y: y}, 200)
+                .to({x: x, y: y}, 244)
                 ;
         }
     }

@@ -8,6 +8,12 @@
     {
         "name": "level_tutorial_color",
         "case": [
+            { "next": "level_blue_swap" }
+        ]
+    },
+    {
+        "name": "level_blue_swap",
+        "case": [
             { "next": "level_silence_palace" }
         ]
     },
@@ -44,11 +50,23 @@
     {
         "name": "level_multiple_printer",
         "case": [
+            { "next": "level_separate" }
+        ]
+    },
+    {
+        "name": "level_separate",
+        "case": [
             { "next": "level_multiple_sacrifice" }
         ]
     },
     {
         "name": "level_multiple_sacrifice",
+        "case": [
+            { "next": "level_three_way_merge" }
+        ]
+    },
+    {
+        "name": "level_three_way_merge",
         "case": [
             { "next": "level_tutorial_commit" }
         ]
