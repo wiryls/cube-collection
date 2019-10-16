@@ -1,8 +1,12 @@
 # [Project Cube Collection](https://wiryls.github.io/ProjectCubeCollection/)
 
-A simple HTML5 puzzle game (still work in progress). You need to move cubes to target points, and then press `enter` to next level.
+A simple HTML5 puzzle game (still work in progress) based on [Egret](https://www.egret.com/).
+
+![preview](./preview/cc-sample.gif)
 
 ## Tutorial
+
+Try to move cubes to all target points, and then press `enter` to next level!
 
 Use:
 
@@ -21,4 +25,4 @@ Use:
 
 ## Known issues
 
-- Frame rate becomes weird on `Chrome 72.0 beta` or later. Not sure if it's a bug of the browser or engine.
+- Frame rate becomes weird on `Chrome beta (> 72.0)` or later. Not sure if it's a bug of the browser or engine.
