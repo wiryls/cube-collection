@@ -1,6 +1,6 @@
 # [Project Cube Collection](https://wiryls.github.io/ProjectCubeCollection/)
 
-A simple HTML5 puzzle game (still work in progress). You needs to move cubes to target points, and then press `enter` to next level.
+A simple HTML5 puzzle game (still work in progress). You need to move cubes to target points, and then press `enter` to next level.
 
 ## Tutorial
 

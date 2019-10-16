@@ -1,0 +1,68 @@
+[
+    {
+        "name": "level_tutorial_commit",
+        "case": [
+            { "next": "level_tutorial_color" }
+        ]
+    },
+    {
+        "name": "level_tutorial_color",
+        "case": [
+            { "next": "level_silence_palace" }
+        ]
+    },
+    {
+        "name": "level_silence_palace",
+        "case": [
+            { "next": "level_silence_fishing" }
+        ]
+    },
+    {
+        "name": "level_silence_fishing",
+        "case": [
+            { "next": "level_multiple_community" }
+        ]
+    },
+    {
+        "name": "level_multiple_community",
+        "case": [
+            { "next": "level_multiple_tetris" }
+        ]
+    },
+    {
+        "name": "level_multiple_tetris",
+        "case": [
+            { "next": "level_multiple_haircut" }
+        ]
+    },
+    {
+        "name": "level_multiple_haircut",
+        "case": [
+            { "next": "level_multiple_printer" }
+        ]
+    },
+    {
+        "name": "level_multiple_printer",
+        "case": [
+            { "next": "level_multiple_sacrifice" }
+        ]
+    },
+    {
+        "name": "level_multiple_sacrifice",
+        "case": [
+            { "next": "level_tutorial_commit" }
+        ]
+    },
+    {
+        "name": "level_chase_dodgeball",
+        "case": [
+            { "next": "level_chase_synchronize" }
+        ]
+    },
+    {
+        "name": "level_chase_synchronize",
+        "case": [
+            { "next": "level_tutorial_commit" }
+        ]
+    }
+]
