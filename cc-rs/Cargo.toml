@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 bevy = "0.7"
 bevy-inspector-egui = "0.11"
+num-traits = "0.2.15"
 
 [profile.dev]
 opt-level = 1

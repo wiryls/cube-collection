@@ -1,11 +1,11 @@
 use bevy::math::{Rect, Size, Vec3};
 
-pub struct RelocatorUpdated {
+pub struct LocatorUpdated {
     pub mapper: Mapper
 }
 
 #[derive(Default)]
-pub struct Relocator {
+pub struct GridLocator {
     // input
     view: Option<Rect<f32>>,
     grid: Option<Size<i32>>,
@@ -13,35 +13,40 @@ pub struct Relocator {
     mapper: Mapper
 }
 
-impl Relocator {
-
+impl GridLocator {
     pub fn set_view(&mut self, view: Rect<f32>) -> bool {
-        let update = self.view.map_or(true, |rect| rect != view);
+        let update = match self.view {
+            None => true,
+            Some(rect) => rect != view
+        };
         if update {
             self.view = Some(view);
-            self.update_mapper();
+            self.remap();
         }
         update
     }
 
     pub fn set_grid(&mut self, grid: Size<i32>) -> bool {
-        let update = self.grid.map_or(true, |rect| rect != grid);
+        let update = match self.grid {
+            None => true,
+            Some(size) => size != grid
+        };
         if update {
             self.grid = Some(grid);
-            self.update_mapper();
+            self.remap();
         }
         update
+    }
+
+    pub fn available(&self) -> bool {
+        self.grid.is_some() && self.view.is_some()
     }
 
     pub fn mapping(&self) -> &Mapper {
         &self.mapper
     }
 
-    pub fn is_ready(&self) -> bool {
-        self.grid.is_some() && self.view.is_some()
-    }
-
-    fn update_mapper(&mut self) {
+    fn remap(&mut self) {
         if let (Some(view), Some(grid)) = (self.view, self.grid) {
             let vw = view.right - view.left;
             let vh = view.top - view.bottom;
@@ -69,15 +74,19 @@ impl Mapper {
         Self{top, left, unit}
     }
 
-    pub fn scale(&self, x: f32) -> f32 {
-        x * self.unit
+    pub fn scale<T: num_traits::AsPrimitive<f32>>(&self, x: T) -> f32 {
+        x.as_() * self.unit
     }
 
-    pub fn locate3(&self, x: i32, y: i32, z: f32) -> Vec3 {
+    pub fn locate<T, U, V>(&self, x: T, y: U, z: V) -> Vec3 where
+        T: num_traits::AsPrimitive<f32>,
+        U: num_traits::AsPrimitive<f32>,
+        V: num_traits::AsPrimitive<f32>
+    {
         let delta = self.unit / 2.;
         Vec3::new(
-            self.left + x as f32 * self.unit + delta,
-            self.top - y as f32 * self.unit - delta,
-            z)
+            self.left + delta + x.as_() * self.unit,
+            self.top - delta - y.as_() * self.unit,
+            z.as_())
     }
 }

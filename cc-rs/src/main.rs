@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 mod view;
-use view::{Relocator, RelocatorUpdated};
+use view::{GridLocator, LocatorUpdated};
 mod debug;
 use debug::DebugPlugin;
 
@@ -9,24 +9,25 @@ struct Cube(i32, i32);
 
 fn resize(
     mut query: Query<(&Cube, &mut Transform)>,
-    mut relocator_updated: EventReader<RelocatorUpdated>
+    mut relocator_updated: EventReader<LocatorUpdated>
 ) {
     for e in relocator_updated.iter().last() {
-        let scale = e.mapper.scale(0.9);
+        let value = e.mapper.scale(0.9);
+        let scale = Vec3::new(value, value, 0.);
         for (cube, mut transform) in query.iter_mut() {
-            transform.scale =  Vec3::new(scale, scale, 0.);
-            transform.translation = e.mapper.locate3(cube.0, cube.1, 0.);
+            transform.scale =  scale;
+            transform.translation = e.mapper.locate(cube.0, cube.1, 0);
         }
     }
 }
 
 fn setup_scene(
     mut commands: Commands,
-    mut relocator: ResMut<Relocator>,
+    mut locator: ResMut<GridLocator>,
 ) {
-    relocator.set_grid(Size::new(10, 10));
+    locator.set_grid(Size::new(10, 10));
 
-    let mapper = relocator.mapping();
+    let mapper = locator.mapping();
     let scale = mapper.scale(0.9);
 
     for x in 0..10 {
@@ -38,7 +39,7 @@ fn setup_scene(
                     ..default()},
                 transform: Transform {
                     scale: Vec3::new(scale, scale, 0.),
-                    translation: mapper.locate3(x, y, 0.),
+                    translation: mapper.locate(x, y, 0.),
                     ..default()},
                 ..default()})
             .insert(Cube(x, y));
