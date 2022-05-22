@@ -7,6 +7,9 @@ edition = "2021"
 bevy = "0.7"
 bevy-inspector-egui = "0.11"
 num-traits = "0.2.15"
+toml = "0.5"
+serde = { version = "1.0", features = ["derive"] }
+snafu = "0.7"
 
 [profile.dev]
 opt-level = 1

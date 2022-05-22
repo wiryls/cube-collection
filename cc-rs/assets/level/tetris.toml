@@ -1,0 +1,23 @@
+[map]
+raw = """
+W~~~~~~~~~~~
+|   B      |
+|   BB     |
+|    B     |
+|          |
+|          |
+|          |
+|          |
+|          |
+|R~~~~  xR~|
+||||||~xR/~|
+|~~~~~~~~~~~"""
+
+[[map.movements]]
+command = "I3D1"
+is_loop = true
+binding = [[4, 1], [4, 2], [5, 2], [5, 3]]
+
+[info]
+title = "Crossover: Tetris"
+author = "w"
