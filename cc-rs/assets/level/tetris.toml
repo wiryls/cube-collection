@@ -1,5 +1,5 @@
 [map]
-raw = """
+raw = '''
 W~~~~~~~~~~~
 |   B      |
 |   BB     |
@@ -11,10 +11,10 @@ W~~~~~~~~~~~
 |          |
 |R~~~~  xR~|
 ||||||~xR/~|
-|~~~~~~~~~~~"""
+|~~~~~~~~~~~'''
 
-[[map.movements]]
-command = "I3D1"
+[[map.commands]]
+content = "I3D1"
 is_loop = true
 binding = [[4, 1], [4, 2], [5, 2], [5, 3]]
 

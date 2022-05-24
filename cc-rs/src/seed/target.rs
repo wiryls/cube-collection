@@ -1,10 +1,9 @@
-
 #[derive(Clone, Debug, Default)]
-pub struct Level {
+pub struct Seed {
     pub info: Info,
     pub size: Size,
-    pub cube: Vec<Cube>,
-    pub dest: Vec<Location>,
+    pub cubes: Vec<Cube>,
+    pub destnations: Vec<Location>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -35,7 +34,9 @@ pub enum CubeType {
 }
 
 impl Default for CubeType {
-    fn default() -> Self { CubeType::White }
+    fn default() -> Self {
+        CubeType::White
+    }
 }
 
 #[derive(Clone, Debug, Default)]
@@ -60,5 +61,7 @@ pub enum Movement {
 }
 
 impl Default for Movement {
-    fn default() -> Self { Movement::Idle }
+    fn default() -> Self {
+        Movement::Idle
+    }
 }

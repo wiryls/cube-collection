@@ -1,27 +1,27 @@
-use super::level;
+use super::target;
 use serde::Deserialize;
 use snafu::{ensure, Snafu};
 
 #[derive(Debug, Snafu)]
-#[snafu(visibility(pub(crate)), context(suffix(false)))]
+#[snafu(context(suffix(false)))]
 pub enum Error {
-    #[snafu(display("missing field '{}'", name))]
-    MissingField { name: &'static str },
+    #[snafu(display("missing field '{}'", field))]
+    MissingField { field: &'static str },
 
-    #[snafu(display("expect map marker string, but get '{}'", what))]
-    InvalidMarker { what: String },
+    #[snafu(display("expect map marker string, but get '{}'", character))]
+    InvalidMarker { character: char },
 
-    #[snafu(display("expect copiable element at ({}, {})", pos.0, pos.1))]
-    Uncopiable { pos: (i32, i32) },
+    #[snafu(display("expect copiable element at ({}, {})", position.0, position.1))]
+    Uncopiable { position: (i32, i32) },
 
-    #[snafu(display("expect mergeable elements at ({}, {}) and ({}, {})", lhs.0, lhs.1, rhs.0, rhs.1))]
-    Unmergeable { lhs: (i32, i32), rhs: (i32, i32) },
+    #[snafu(display("expect mergeable elements at ({}, {}) and ({}, {})", this.0, this.1, that.0, that.1))]
+    Unmergeable { this: (i32, i32), that: (i32, i32) },
 
-    #[snafu(display("expect movement string, but get '{}'", what))]
-    InvalidMovement { what: char },
+    #[snafu(display("expect movement string, but get '{}'", character))]
+    InvalidMovement { character: char },
 
-    #[snafu(display("expect a valid location, but get ({}, {})", pos.0, pos.1))]
-    InvalidLocation { pos: (i32, i32) },
+    #[snafu(display("expect a valid location, but get ({}, {})", position.0, position.1))]
+    InvalidLocation { position: (i32, i32) },
 }
 
 #[derive(Debug, Deserialize)]
@@ -39,79 +39,81 @@ struct Info {
 #[derive(Debug, Deserialize)]
 struct Map {
     raw: String,
-    movements: Vec<Movement>,
+    commands: Vec<Command>,
 }
 
 #[derive(Debug, Deserialize)]
-struct Movement {
-    command: String,
+struct Command {
+    content: String,
     is_loop: bool,
     binding: Vec<[i32; 2]>,
 }
 
 impl Source {
-    pub fn into_level(self) -> Result<level::Level, Error> {
+    pub fn into_level(self) -> Result<target::Seed, Error> {
         ensure!(
             !self.info.title.is_empty(),
-            MissingField { name: "info.title" }
+            MissingField {
+                field: "info.title"
+            }
         );
         ensure!(
             !self.info.author.is_empty(),
             MissingField {
-                name: "info.author"
+                field: "info.author"
             }
         );
-        ensure!(!self.map.raw.is_empty(), MissingField { name: "map.raw" });
+        ensure!(!self.map.raw.is_empty(), MissingField { field: "map.raw" });
 
         let mut builder: LevelBuilder = self.info.into();
         for line in self.map.raw.lines() {
             for c in line.chars() {
                 match c {
-                    'W' => builder.make_cube(level::CubeType::White),
-                    'R' => builder.make_cube(level::CubeType::Red),
-                    'B' => builder.make_cube(level::CubeType::Blue),
-                    'G' => builder.make_cube(level::CubeType::Green),
+                    'W' => builder.make_cube(target::CubeType::White),
+                    'R' => builder.make_cube(target::CubeType::Red),
+                    'B' => builder.make_cube(target::CubeType::Blue),
+                    'G' => builder.make_cube(target::CubeType::Green),
                     'x' => builder.make_destination(),
                     ' ' => builder.make_empty(),
                     '~' => builder.copy_left()?,
                     '|' => builder.copy_upper()?,
                     '/' => builder.copy_upper_and_left()?,
-                    _ => ensure!(false, InvalidMarker { what: c.to_owned() }),
+                    _ => ensure!(false, InvalidMarker { character: c }),
                 }
             }
             builder.mark_line_end();
         }
 
-        fn add<'a>(builder: &'a mut CommandBuider, string: &mut String) -> &'a mut CommandBuider {
-            if !string.is_empty() {
-                if let Ok(i) = string.parse::<i32>() {
-                    builder.add(i);
-                    string.clear();
-                }
-            }
-            builder
-        }
-        for m in self.map.movements {
+        for m in self.map.commands {
             let mut n = String::new();
-            let mut b = CommandBuider::new(m.is_loop);
-            for c in m.command.chars() {
+            let mut b = CommandBuilder::new(m.is_loop);
+            for c in m.content.chars() {
                 match c {
-                    'I' => add(&mut b, &mut n).put(level::Movement::Idle),
-                    'L' => add(&mut b, &mut n).put(level::Movement::Left),
-                    'D' => add(&mut b, &mut n).put(level::Movement::Down),
-                    'U' => add(&mut b, &mut n).put(level::Movement::Up),
-                    'R' => add(&mut b, &mut n).put(level::Movement::Right),
+                    'I' => put(&mut b, &mut n).put(target::Movement::Idle),
+                    'L' => put(&mut b, &mut n).put(target::Movement::Left),
+                    'D' => put(&mut b, &mut n).put(target::Movement::Down),
+                    'U' => put(&mut b, &mut n).put(target::Movement::Up),
+                    'R' => put(&mut b, &mut n).put(target::Movement::Right),
                     '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' if !b.is_empty() => {
                         n.push(c)
                     }
-                    _ => ensure!(false, InvalidMovement { what: c }),
+                    _ => ensure!(false, InvalidMovement { character: c }),
                 }
             }
 
-            let c: level::Command = b.into();
+            let c: target::Command = b.into();
             for p in m.binding {
                 builder.bind_command(p[0], p[1], c.clone())?;
             }
+        }
+        fn put<'a>(builder: &'a mut CommandBuilder, buffer: &mut String) -> &'a mut CommandBuilder {
+            if !buffer.is_empty() {
+                if let Ok(i) = buffer.parse::<i32>() {
+                    builder.add(i);
+                    buffer.clear();
+                }
+            }
+            builder
         }
 
         Ok(builder.into())
@@ -121,11 +123,11 @@ impl Source {
 #[derive(Debug, Default)]
 struct LevelBuilder {
     // output
-    i: level::Info,
+    i: target::Info,
     h: i32,
     w: i32,
-    cs: Vec<level::Cube>,
-    ds: Vec<level::Location>,
+    cs: Vec<target::Cube>,
+    ds: Vec<target::Location>,
 
     // cached
     x: i32,
@@ -134,37 +136,42 @@ struct LevelBuilder {
 
 impl Into<LevelBuilder> for Info {
     fn into(self) -> LevelBuilder {
-        LevelBuilder::new(level::Info {
+        LevelBuilder::new(target::Info {
             title: self.title,
             author: self.author,
         })
     }
 }
 
-impl Into<level::Level> for LevelBuilder {
-    fn into(mut self) -> level::Level {
+impl Into<target::Seed> for LevelBuilder {
+    fn into(mut self) -> target::Seed {
         self.cs.retain(|c| !c.body.is_empty());
-        level::Level {
+        target::Seed {
             info: self.i,
-            size: level::Size {
+            size: target::Size {
                 width: self.w,
                 height: self.h,
             },
-            cube: self.cs,
-            dest: self.ds,
+            cubes: self.cs,
+            destnations: self.ds,
         }
     }
 }
 
 impl LevelBuilder {
-    fn new(i: level::Info) -> Self {
+    fn new(i: target::Info) -> Self {
         Self {
-            i: level::Info {
+            i: target::Info {
                 title: i.title,
                 author: i.author,
             },
             ..Default::default()
         }
+    }
+
+    fn make(&mut self, value: Option<usize>) {
+        self.x += 1;
+        self.m.put(value);
     }
 
     fn mark_line_end(&mut self) {
@@ -175,35 +182,32 @@ impl LevelBuilder {
     }
 
     fn make_empty(&mut self) {
-        self.x += 1;
-        self.m.put(None);
+        self.make(None);
     }
 
     fn make_destination(&mut self) {
-        let l = level::Location {
+        let l = target::Location {
             x: self.x,
             y: self.h,
         };
 
-        self.x += 1;
-        self.m.put(None);
         self.ds.push(l);
+        self.make(None);
     }
 
-    fn make_cube(&mut self, kind: level::CubeType) {
+    fn make_cube(&mut self, kind: target::CubeType) {
         let i = self.cs.len();
-        let c = level::Cube {
+        let c = target::Cube {
             kind,
-            body: vec![level::Location {
+            body: vec![target::Location {
                 x: self.x,
                 y: self.h,
             }],
-            ..Default::default()
+            command: None,
         };
 
-        self.x += 1;
-        self.m.put(Some(i));
         self.cs.push(c);
+        self.make(Some(i));
     }
 
     fn copy_left(&mut self) -> Result<(), Error> {
@@ -214,11 +218,10 @@ impl LevelBuilder {
             .get(x, y)
             .and_then(|i| self.cs.get_mut(i).map(|c| (i, c)))
         {
-            None => Err(Error::Uncopiable { pos: (x, y) }),
+            None => Err(Error::Uncopiable { position: (x, y) }),
             Some((i, c)) => {
-                self.x += 1;
-                self.m.put(Some(i));
-                c.body.push(level::Location { x: x + 1, y });
+                c.body.push(target::Location { x: x + 1, y });
+                self.make(Some(i));
                 Ok(())
             }
         }
@@ -232,11 +235,10 @@ impl LevelBuilder {
             .get(x, y)
             .and_then(|i| self.cs.get_mut(i).map(|c| (i, c)))
         {
-            None => Err(Error::Uncopiable { pos: (x, y) }),
+            None => Err(Error::Uncopiable { position: (x, y) }),
             Some((i, c)) => {
-                self.x += 1;
-                self.m.put(Some(i));
-                c.body.push(level::Location { x, y: y + 1 });
+                c.body.push(target::Location { x, y: y + 1 });
+                self.make(Some(i));
                 Ok(())
             }
         }
@@ -274,16 +276,14 @@ impl LevelBuilder {
                 }
                 if let Some(c) = self.cs.get_mut(l) {
                     c.body.append(v.as_mut());
-                    c.body.push(level::Location {
+                    c.body.push(target::Location {
                         x: upper.0,
                         y: left.1,
                     });
                 }
 
                 // as usual
-                self.x += 1;
-                self.m.put(Some(l));
-
+                self.make(Some(l));
                 true
             }
             _ => false,
@@ -292,17 +292,17 @@ impl LevelBuilder {
         ensure!(
             ok,
             Unmergeable {
-                lhs: upper,
-                rhs: left
+                this: upper,
+                that: left
             }
         );
         Ok(())
     }
 
-    fn bind_command(&mut self, x: i32, y: i32, command: level::Command) -> Result<(), Error> {
+    fn bind_command(&mut self, x: i32, y: i32, command: target::Command) -> Result<(), Error> {
         match self.m.get(x, y).and_then(|i| self.cs.get_mut(i)) {
             Some(x) => Ok(x.command = Some(command)),
-            None => Err(Error::InvalidLocation { pos: (x, y) }),
+            None => Err(Error::InvalidLocation { position: (x, y) }),
         }
     }
 }
@@ -348,24 +348,24 @@ impl Indexer {
 }
 
 #[derive(Debug, Default)]
-struct CommandBuider(level::Command);
+struct CommandBuilder(target::Command);
 
-impl Into<level::Command> for CommandBuider {
-    fn into(mut self) -> level::Command {
+impl Into<target::Command> for CommandBuilder {
+    fn into(mut self) -> target::Command {
         self.0.movements.retain(|m| m.0 > 0);
         self.0
     }
 }
 
-impl CommandBuider {
+impl CommandBuilder {
     fn new(is_loop: bool) -> Self {
-        Self(level::Command {
+        Self(target::Command {
             is_loop,
             movements: Vec::new(),
         })
     }
 
-    fn put(&mut self, movement: level::Movement) {
+    fn put(&mut self, movement: target::Movement) {
         match self.0.movements.last_mut() {
             Some(c) if c.1 == movement => c.0 += 1,
             _ => self.0.movements.push((1, movement)),
@@ -375,7 +375,7 @@ impl CommandBuider {
     fn add(&mut self, number: i32) {
         match self.0.movements.last_mut() {
             Some(c) => c.0 += number - 1,
-            _ => self.0.movements.push((number, level::Movement::Idle)),
+            _ => self.0.movements.push((number, target::Movement::Idle)),
         }
     }
 
