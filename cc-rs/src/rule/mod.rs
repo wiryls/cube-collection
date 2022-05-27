@@ -1,1 +1,2 @@
-mod cube;
+pub mod cube;
+pub mod seed;

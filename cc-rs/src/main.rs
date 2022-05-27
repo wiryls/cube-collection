@@ -2,10 +2,10 @@ use bevy::prelude::*;
 mod plugin;
 use plugin::{GridMapperUpdated, GridView};
 mod rule;
-mod seed;
 
 mod debug;
 use debug::DebugPlugin;
+use rule::seed;
 
 #[derive(Component, bevy_inspector_egui::Inspectable)]
 struct Cube(i32, i32);
@@ -28,10 +28,10 @@ fn setup_scene(mut commands: Commands, mut view: ResMut<GridView>) {
     let world: seed::Seed = {
         // TODO: custom an asset loader
         // https://github.com/bevyengine/bevy/discussions/3140
-        let path = r"cc-rs/assets/level/tetris.toml";
+        let path = r"cc-rs/assets/level/tetris.level.toml";
         let data = std::fs::read_to_string(path).expect("Unable to read file");
-        let s: crate::seed::toml_source::Source = toml::from_str(&data).expect("cannot parse toml");
-        s.into_level().expect("toml file is not a level")
+        let s: crate::plugin::Source = toml::from_str(&data).expect("cannot parse toml");
+        s.into_seed().expect("toml file is not a level")
     };
 
     let rect = Rect {

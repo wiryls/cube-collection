@@ -1,0 +1,5 @@
+directory = 'assets\level'
+extension = 'level.toml'
+name_list = [
+    'tetris',
+]

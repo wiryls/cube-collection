@@ -1,4 +1,4 @@
-use super::target;
+use crate::rule::seed;
 use serde::Deserialize;
 use snafu::{ensure, Snafu};
 
@@ -50,7 +50,7 @@ struct Command {
 }
 
 impl Source {
-    pub fn into_level(self) -> Result<target::Seed, Error> {
+    pub fn into_seed(self) -> Result<seed::Seed, Error> {
         ensure!(
             !self.info.title.is_empty(),
             MissingField {
@@ -69,10 +69,10 @@ impl Source {
         for line in self.map.raw.lines() {
             for c in line.chars() {
                 match c {
-                    'W' => builder.make_cube(target::CubeType::White),
-                    'R' => builder.make_cube(target::CubeType::Red),
-                    'B' => builder.make_cube(target::CubeType::Blue),
-                    'G' => builder.make_cube(target::CubeType::Green),
+                    'W' => builder.make_cube(seed::CubeType::White),
+                    'R' => builder.make_cube(seed::CubeType::Red),
+                    'B' => builder.make_cube(seed::CubeType::Blue),
+                    'G' => builder.make_cube(seed::CubeType::Green),
                     'x' => builder.make_destination(),
                     ' ' => builder.make_empty(),
                     '~' => builder.copy_left()?,
@@ -89,11 +89,11 @@ impl Source {
             let mut b = CommandBuilder::new(m.is_loop);
             for c in m.content.chars() {
                 match c {
-                    'I' => put(&mut b, &mut n).put(target::Movement::Idle),
-                    'L' => put(&mut b, &mut n).put(target::Movement::Left),
-                    'D' => put(&mut b, &mut n).put(target::Movement::Down),
-                    'U' => put(&mut b, &mut n).put(target::Movement::Up),
-                    'R' => put(&mut b, &mut n).put(target::Movement::Right),
+                    'I' => put(&mut b, &mut n).put(seed::Movement::Idle),
+                    'L' => put(&mut b, &mut n).put(seed::Movement::Left),
+                    'D' => put(&mut b, &mut n).put(seed::Movement::Down),
+                    'U' => put(&mut b, &mut n).put(seed::Movement::Up),
+                    'R' => put(&mut b, &mut n).put(seed::Movement::Right),
                     '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' if !b.is_empty() => {
                         n.push(c)
                     }
@@ -101,7 +101,7 @@ impl Source {
                 }
             }
 
-            let c: target::Command = b.into();
+            let c: seed::Command = b.into();
             for p in m.binding {
                 builder.bind_command(p[0], p[1], c.clone())?;
             }
@@ -123,11 +123,11 @@ impl Source {
 #[derive(Debug, Default)]
 struct LevelBuilder {
     // output
-    i: target::Info,
+    i: seed::Info,
     h: i32,
     w: i32,
-    cs: Vec<target::Cube>,
-    ds: Vec<target::Location>,
+    cs: Vec<seed::Cube>,
+    ds: Vec<seed::Location>,
 
     // cached
     x: i32,
@@ -136,19 +136,19 @@ struct LevelBuilder {
 
 impl Into<LevelBuilder> for Info {
     fn into(self) -> LevelBuilder {
-        LevelBuilder::new(target::Info {
+        LevelBuilder::new(seed::Info {
             title: self.title,
             author: self.author,
         })
     }
 }
 
-impl Into<target::Seed> for LevelBuilder {
-    fn into(mut self) -> target::Seed {
+impl Into<seed::Seed> for LevelBuilder {
+    fn into(mut self) -> seed::Seed {
         self.cs.retain(|c| !c.body.is_empty());
-        target::Seed {
+        seed::Seed {
             info: self.i,
-            size: target::Size {
+            size: seed::Size {
                 width: self.w,
                 height: self.h,
             },
@@ -159,9 +159,9 @@ impl Into<target::Seed> for LevelBuilder {
 }
 
 impl LevelBuilder {
-    fn new(i: target::Info) -> Self {
+    fn new(i: seed::Info) -> Self {
         Self {
-            i: target::Info {
+            i: seed::Info {
                 title: i.title,
                 author: i.author,
             },
@@ -186,7 +186,7 @@ impl LevelBuilder {
     }
 
     fn make_destination(&mut self) {
-        let l = target::Location {
+        let l = seed::Location {
             x: self.x,
             y: self.h,
         };
@@ -195,11 +195,11 @@ impl LevelBuilder {
         self.make(None);
     }
 
-    fn make_cube(&mut self, kind: target::CubeType) {
+    fn make_cube(&mut self, kind: seed::CubeType) {
         let i = self.cs.len();
-        let c = target::Cube {
+        let c = seed::Cube {
             kind,
-            body: vec![target::Location {
+            body: vec![seed::Location {
                 x: self.x,
                 y: self.h,
             }],
@@ -220,7 +220,7 @@ impl LevelBuilder {
         {
             None => Err(Error::Uncopiable { position: (x, y) }),
             Some((i, c)) => {
-                c.body.push(target::Location { x: x + 1, y });
+                c.body.push(seed::Location { x: x + 1, y });
                 self.make(Some(i));
                 Ok(())
             }
@@ -237,7 +237,7 @@ impl LevelBuilder {
         {
             None => Err(Error::Uncopiable { position: (x, y) }),
             Some((i, c)) => {
-                c.body.push(target::Location { x, y: y + 1 });
+                c.body.push(seed::Location { x, y: y + 1 });
                 self.make(Some(i));
                 Ok(())
             }
@@ -276,7 +276,7 @@ impl LevelBuilder {
                 }
                 if let Some(c) = self.cs.get_mut(l) {
                     c.body.append(v.as_mut());
-                    c.body.push(target::Location {
+                    c.body.push(seed::Location {
                         x: upper.0,
                         y: left.1,
                     });
@@ -299,7 +299,7 @@ impl LevelBuilder {
         Ok(())
     }
 
-    fn bind_command(&mut self, x: i32, y: i32, command: target::Command) -> Result<(), Error> {
+    fn bind_command(&mut self, x: i32, y: i32, command: seed::Command) -> Result<(), Error> {
         match self.m.get(x, y).and_then(|i| self.cs.get_mut(i)) {
             Some(x) => Ok(x.command = Some(command)),
             None => Err(Error::InvalidLocation { position: (x, y) }),
@@ -348,10 +348,10 @@ impl Indexer {
 }
 
 #[derive(Debug, Default)]
-struct CommandBuilder(target::Command);
+struct CommandBuilder(seed::Command);
 
-impl Into<target::Command> for CommandBuilder {
-    fn into(mut self) -> target::Command {
+impl Into<seed::Command> for CommandBuilder {
+    fn into(mut self) -> seed::Command {
         self.0.movements.retain(|m| m.0 > 0);
         self.0
     }
@@ -359,13 +359,13 @@ impl Into<target::Command> for CommandBuilder {
 
 impl CommandBuilder {
     fn new(is_loop: bool) -> Self {
-        Self(target::Command {
+        Self(seed::Command {
             is_loop,
             movements: Vec::new(),
         })
     }
 
-    fn put(&mut self, movement: target::Movement) {
+    fn put(&mut self, movement: seed::Movement) {
         match self.0.movements.last_mut() {
             Some(c) if c.1 == movement => c.0 += 1,
             _ => self.0.movements.push((1, movement)),
@@ -375,7 +375,7 @@ impl CommandBuilder {
     fn add(&mut self, number: i32) {
         match self.0.movements.last_mut() {
             Some(c) => c.0 += number - 1,
-            _ => self.0.movements.push((number, target::Movement::Idle)),
+            _ => self.0.movements.push((number, seed::Movement::Idle)),
         }
     }
 

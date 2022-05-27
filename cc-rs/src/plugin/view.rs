@@ -20,26 +20,31 @@ fn setup_camera(mut commands: Commands) {
 }
 
 fn window_resized(
+    windows: ResMut<Windows>,
     mut view: ResMut<GridView>,
     mut window_resized: EventReader<WindowResized>,
     mut mapper_updated: EventWriter<GridMapperUpdated>,
 ) {
-    // multiple windows are not supported
-    for e in window_resized.iter().last() {
-        // it is defined by camera's ScalingMode::WindowSize
-        let w = e.width / 2.;
-        let h = e.height / 2.;
-        let r = Rect {
-            left: -w,
-            right: w,
-            top: h,
-            bottom: -h,
-        };
+    if let Some(window) = windows.get_primary() {
+        // multiple windows are not supported, we just watch the primary one.
+        let id = window.id();
 
-        if view.set_target(r) && view.available() {
-            mapper_updated.send(GridMapperUpdated {
-                mapper: view.mapping().clone(),
-            })
+        for ev in window_resized.iter().filter(|x| x.id == id).last() {
+            // rect is defined by camera's ScalingMode::WindowSize
+            let w = ev.width / 2.;
+            let h = ev.height / 2.;
+            let r = Rect {
+                left: -w,
+                right: w,
+                top: h,
+                bottom: -h,
+            };
+
+            if view.set_target(r) && view.available() {
+                mapper_updated.send(GridMapperUpdated {
+                    mapper: view.mapping().clone(),
+                })
+            }
         }
     }
 }

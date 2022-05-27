@@ -943,6 +943,7 @@ dependencies = [
 name = "cc-rs"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bevy",
  "bevy-inspector-egui",
  "num-traits",
