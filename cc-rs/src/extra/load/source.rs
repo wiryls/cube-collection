@@ -1,4 +1,4 @@
-use crate::rule::seed;
+use crate::model::seed;
 use serde::Deserialize;
 use snafu::{ensure, Snafu};
 

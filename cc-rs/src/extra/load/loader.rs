@@ -1,4 +1,4 @@
-use super::toml_source::Source;
+use super::source::Source;
 use bevy::{
     asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset},
     reflect::TypeUuid,

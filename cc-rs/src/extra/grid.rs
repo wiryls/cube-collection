@@ -4,12 +4,12 @@ use bevy::{
     window::WindowResized,
 };
 
-pub struct ViewPlugin;
+pub struct GridPlugin;
 
-impl Plugin for ViewPlugin {
+impl Plugin for GridPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.init_resource::<GridView>()
-            .add_event::<GridMapperUpdated>()
+            .add_event::<GridUpdated>()
             .add_startup_system(setup_camera)
             .add_system(window_resized);
     }
@@ -23,16 +23,16 @@ fn window_resized(
     windows: ResMut<Windows>,
     mut view: ResMut<GridView>,
     mut window_resized: EventReader<WindowResized>,
-    mut mapper_updated: EventWriter<GridMapperUpdated>,
+    mut mapper_updated: EventWriter<GridUpdated>,
 ) {
     if let Some(window) = windows.get_primary() {
         // multiple windows are not supported, we just watch the primary one.
         let id = window.id();
 
-        for ev in window_resized.iter().filter(|x| x.id == id).last() {
+        for event in window_resized.iter().filter(|x| x.id == id).last() {
             // rect is defined by camera's ScalingMode::WindowSize
-            let w = ev.width / 2.;
-            let h = ev.height / 2.;
+            let w = event.width / 2.;
+            let h = event.height / 2.;
             let r = Rect {
                 left: -w,
                 right: w,
@@ -41,15 +41,14 @@ fn window_resized(
             };
 
             if view.set_target(r) && view.available() {
-                mapper_updated.send(GridMapperUpdated {
-                    mapper: view.mapping().clone(),
-                })
+                let mapper = view.mapping().clone();
+                mapper_updated.send(GridUpdated { mapper });
             }
         }
     }
 }
 
-pub struct GridMapperUpdated {
+pub struct GridUpdated {
     pub mapper: GridMapper,
 }
 

@@ -1,23 +1,23 @@
-mod toml_loader;
-mod toml_source;
-pub use toml_source::{Source, Error};
+mod loader;
+mod source;
+pub use source::{Source, Error};
 
 use bevy::prelude::{AddAsset, AssetServer, Commands, Handle, Local, Plugin, Res};
 
-use crate::rule::seed::Seed;
+use crate::model::seed::Seed;
 
 pub struct LoaderPlugin;
 
 #[derive(Default)]
 pub struct Monitor {
-    index: Handle<toml_loader::SourceList>,
+    index: Handle<loader::SourceList>,
     seeds: Vec<Handle<Seed>>,
 }
 
 impl Plugin for LoaderPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_asset_loader(toml_loader::SourceLoader::default())
-            .add_asset_loader(toml_loader::SourceLoader::default())
+        app.add_asset_loader(loader::SourceLoader::default())
+            .add_asset_loader(loader::SourceLoader::default())
             .add_startup_system(load_seed);
     }
 }

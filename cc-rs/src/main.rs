@@ -1,18 +1,19 @@
 use bevy::prelude::*;
-mod plugin;
-use plugin::{GridMapperUpdated, GridView};
-mod rule;
 
-mod debug;
-use debug::DebugPlugin;
-use rule::seed;
+mod model;
+use crate::model::seed;
+
+mod extra;
+use crate::extra::debug;
+use crate::extra::grid;
+use crate::extra::grid::{GridUpdated, GridView};
 
 #[derive(Component, bevy_inspector_egui::Inspectable)]
 struct Cube(i32, i32);
 
 fn resize(
     mut query: Query<(&Cube, &mut Transform)>,
-    mut relocator_updated: EventReader<GridMapperUpdated>,
+    mut relocator_updated: EventReader<GridUpdated>,
 ) {
     for e in relocator_updated.iter().last() {
         let value = e.mapper.scale(0.98);
@@ -30,7 +31,7 @@ fn setup_scene(mut commands: Commands, mut view: ResMut<GridView>) {
         // https://github.com/bevyengine/bevy/discussions/3140
         let path = r"cc-rs/assets/level/tetris.level.toml";
         let data = std::fs::read_to_string(path).expect("Unable to read file");
-        let s: crate::plugin::Source = toml::from_str(&data).expect("cannot parse toml");
+        let s: crate::extra::load::Source = toml::from_str(&data).expect("cannot parse toml");
         s.into_seed().expect("toml file is not a level")
     };
 
@@ -90,8 +91,8 @@ fn setup_scene(mut commands: Commands, mut view: ResMut<GridView>) {
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(plugin::ViewPlugin)
-        .add_plugin(DebugPlugin)
+        .add_plugin(grid::GridPlugin)
+        .add_plugin(debug::DebugPlugin)
         .add_startup_system(setup_scene)
         .add_system(resize)
         .run();
