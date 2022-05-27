@@ -4,9 +4,8 @@ mod model;
 use crate::model::seed;
 
 mod extra;
-use crate::extra::debug;
-use crate::extra::grid;
 use crate::extra::grid::{GridUpdated, GridView};
+use crate::extra::{debug, grid, load};
 
 #[derive(Component, bevy_inspector_egui::Inspectable)]
 struct Cube(i32, i32);
@@ -25,16 +24,30 @@ fn resize(
     }
 }
 
-fn setup_scene(mut commands: Commands, mut view: ResMut<GridView>) {
-    let world: seed::Seed = {
-        // TODO: custom an asset loader
-        // https://github.com/bevyengine/bevy/discussions/3140
-        let path = r"cc-rs/assets/level/tetris.level.toml";
-        let data = std::fs::read_to_string(path).expect("Unable to read file");
-        let s: crate::extra::load::Source = toml::from_str(&data).expect("cannot parse toml");
-        s.into_seed().expect("toml file is not a level")
+fn watch_seeds(mut status: EventReader<load::LoadSeedsUpdated>) {
+    for event in status.iter() {
+        use load::LoadSeedsUpdated::{Failure, Loading};
+        match event {
+            Loading { total, done } => println!("{}/{}", done, total),
+            Failure { which } => println!("{}", which),
+        }
+    }
+}
+
+fn setup_scene(
+    mut commands: Commands,
+    mut view: ResMut<GridView>,
+    seeds: Option<Res<seed::Seeds>>,
+) {
+    let seeds = match seeds {
+        None => return,
+        Some(seeds) => {
+            commands.remove_resource::<seed::Seeds>();
+            seeds
+        }
     };
 
+    let world = seeds.first().unwrap();
     let rect = Rect {
         left: 0,
         right: world.size.width,
@@ -44,10 +57,10 @@ fn setup_scene(mut commands: Commands, mut view: ResMut<GridView>) {
     view.set_source(rect);
 
     let mapper = view.mapping();
-    let scale = mapper.scale(0.9);
+    let scale = mapper.scale(0.98);
 
-    for c in world.cubes {
-        for o in c.body {
+    for c in &world.cubes {
+        for o in &c.body {
             commands
                 .spawn_bundle(SpriteBundle {
                     sprite: Sprite {
@@ -70,7 +83,7 @@ fn setup_scene(mut commands: Commands, mut view: ResMut<GridView>) {
         }
     }
 
-    for o in world.destnations {
+    for o in &world.destnations {
         commands
             .spawn_bundle(SpriteBundle {
                 sprite: Sprite {
@@ -92,8 +105,11 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(grid::GridPlugin)
+        .add_plugin(load::LoaderPlugin)
         .add_plugin(debug::DebugPlugin)
-        .add_startup_system(setup_scene)
+        .add_system(setup_scene)
+        .add_system(watch_seeds)
         .add_system(resize)
+        .insert_resource(load::LoadSeeds::new(r"level/index.toml"))
         .run();
 }

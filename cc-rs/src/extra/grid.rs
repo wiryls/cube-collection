@@ -4,6 +4,7 @@ use bevy::{
     window::WindowResized,
 };
 
+// GridPlugin adds a GridView resource and a GridUpdated event.
 pub struct GridPlugin;
 
 impl Plugin for GridPlugin {

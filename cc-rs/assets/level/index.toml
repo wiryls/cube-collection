@@ -1,4 +1,4 @@
-directory = 'assets\level'
+directory = 'level'
 extension = 'level.toml'
 name_list = [
     'tetris',

@@ -1,5 +1,7 @@
 use bevy::reflect::TypeUuid;
 
+pub type Seeds = Vec<Seed>;
+
 #[derive(Clone, Debug, Default, TypeUuid)]
 #[uuid = "c99b1333-8ad3-4b26-a54c-7de542f43c51"]
 pub struct Seed {
