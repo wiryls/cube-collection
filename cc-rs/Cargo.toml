@@ -7,6 +7,7 @@ edition = "2021"
 # Bery and some plugins
 bevy = "0.7"
 iyes_loopless = "0.5"
+bevy_prototype_lyon = "0.5"
 bevy-inspector-egui = "0.11"
 
 # Extra utilities

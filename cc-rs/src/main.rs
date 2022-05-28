@@ -10,6 +10,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         // plugins
         .add_plugin(extra::debug::DebugPlugin)
+        .add_plugin(extra::poly::PolyPlugin)
         // scenes
         .add_loopless_state(scene::State::default())
         .add_plugin(scene::LoadingScene)

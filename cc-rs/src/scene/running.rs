@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_prototype_lyon::prelude::*;
 use iyes_loopless::prelude::*;
 
 use super::state::State;
@@ -67,7 +68,8 @@ fn switch_world(
             for c in &seed.cubes {
                 for o in &c.body {
                     commands
-                        .spawn_bundle(SpriteBundle {
+                        .spawn()
+                        .insert_bundle(SpriteBundle {
                             sprite: Sprite {
                                 color: match c.kind {
                                     seed::CubeType::White => Color::rgb(1., 1., 1.),
@@ -78,13 +80,13 @@ fn switch_world(
                                 ..default()
                             },
                             transform: Transform {
-                                scale: Vec3::new(scale, scale, 0.),
+                                scale: Vec3::new(scale, scale, 1.),
                                 translation: mapper.locate(o.x, o.y, 0.),
                                 ..default()
                             },
                             ..default()
                         })
-                        .insert(cube::Unit { x: o.x, y: o.y })
+                        .insert(cube::GridPoint { x: o.x, y: o.y })
                         .insert(cube::Live);
                 }
             }
@@ -97,21 +99,42 @@ fn switch_world(
                             ..default()
                         },
                         transform: Transform {
-                            scale: Vec3::new(scale, scale, 0.),
+                            scale: Vec3::new(scale, scale, 1.),
                             translation: mapper.locate(o.x, o.y, 0.),
                             ..default()
                         },
                         ..default()
                     })
-                    .insert(cube::Unit { x: o.x, y: o.y })
+                    .insert(cube::GridPoint { x: o.x, y: o.y })
                     .insert(cube::Live);
             }
         }
     }
+
+    let shape = shapes::Polygon {
+        points: vec![
+            Vec2::new(0., 0.),
+            Vec2::new(0., 90.),
+            Vec2::new(10., 90.),
+            Vec2::new(10., 100.),
+            Vec2::new(10., 100.),
+            Vec2::new(90., 100.),
+            Vec2::new(90., 90.),
+            Vec2::new(100., 90.),
+            Vec2::new(100., 0.),
+        ],
+        closed: true,
+    };
+
+    commands.spawn_bundle(GeometryBuilder::build_as(
+        &shape,
+        DrawMode::Fill(FillMode::color(Color::CYAN)),
+        Transform::default(),
+    ));
 }
 
 fn regrid(
-    mut query: Query<(&cube::Unit, &mut Transform)>,
+    mut query: Query<(&cube::GridPoint, &mut Transform)>,
     mut grid_updated: EventReader<GridUpdated>,
 ) {
     for e in grid_updated.iter().last() {

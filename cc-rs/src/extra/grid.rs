@@ -6,7 +6,6 @@ use bevy::{
 
 // GridPlugin adds a GridView resource and a GridUpdated event.
 pub struct GridPlugin;
-
 impl Plugin for GridPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.init_resource::<GridView>()
