@@ -3,8 +3,7 @@ use iyes_loopless::prelude::*;
 
 use super::state::State;
 use crate::extra::grid::{GridPlugin, GridUpdated, GridView};
-use crate::model::cube;
-use crate::model::seed;
+use crate::model::{cube, seed};
 
 /// - input: ```Res<seed::Seeds>```
 /// - output: none
@@ -24,7 +23,7 @@ impl Plugin for RunningScene {
     }
 }
 
-enum WorldChanged {
+pub enum WorldChanged {
     Reset,
     Next,
 }
@@ -35,7 +34,7 @@ fn setup_world(mut reset: EventWriter<WorldChanged>) {
 
 fn switch_world(
     mut commands: Commands,
-    query: Query<&cube::Live>,
+    entities: Query<Entity, With<cube::Live>>,
     mut view: ResMut<GridView>,
     mut world_seeds: ResMut<seed::Seeds>,
     mut world_changed: EventReader<WorldChanged>,
@@ -49,7 +48,6 @@ fn switch_world(
     match world_seeds.current() {
         None => return,
         Some(seed) => {
-
             // [0] update grid view
             let rect = Rect {
                 left: 0,
@@ -60,9 +58,9 @@ fn switch_world(
             view.set_source(rect);
 
             // [1] remove old object
-            // TODO:
+            entities.for_each(|i| commands.entity(i).despawn_recursive());
 
-            // [1] create cubes
+            // [2] create cubes
             let mapper = view.mapping();
             let scale = mapper.scale(0.98);
 
@@ -86,10 +84,11 @@ fn switch_world(
                             },
                             ..default()
                         })
-                        .insert(cube::Gridded { x: o.x, y: o.y });
+                        .insert(cube::Unit { x: o.x, y: o.y })
+                        .insert(cube::Live);
                 }
             }
-        
+
             for o in &seed.destnations {
                 commands
                     .spawn_bundle(SpriteBundle {
@@ -104,14 +103,15 @@ fn switch_world(
                         },
                         ..default()
                     })
-                    .insert(cube::Gridded { x: o.x, y: o.y });
+                    .insert(cube::Unit { x: o.x, y: o.y })
+                    .insert(cube::Live);
             }
         }
-    } 
+    }
 }
 
 fn regrid(
-    mut query: Query<(&cube::Gridded, &mut Transform)>,
+    mut query: Query<(&cube::Unit, &mut Transform)>,
     mut grid_updated: EventReader<GridUpdated>,
 ) {
     for e in grid_updated.iter().last() {

@@ -89,11 +89,11 @@ impl Source {
             let mut b = CommandBuilder::new(m.is_loop);
             for c in m.content.chars() {
                 match c {
-                    'I' => put(&mut b, &mut n).put(seed::Movement::Idle),
-                    'L' => put(&mut b, &mut n).put(seed::Movement::Left),
-                    'D' => put(&mut b, &mut n).put(seed::Movement::Down),
-                    'U' => put(&mut b, &mut n).put(seed::Movement::Up),
-                    'R' => put(&mut b, &mut n).put(seed::Movement::Right),
+                    'I' => put(&mut b, &mut n).put(seed::Action::Idle),
+                    'L' => put(&mut b, &mut n).put(seed::Action::Left),
+                    'D' => put(&mut b, &mut n).put(seed::Action::Down),
+                    'U' => put(&mut b, &mut n).put(seed::Action::Up),
+                    'R' => put(&mut b, &mut n).put(seed::Action::Right),
                     '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' if !b.is_empty() => {
                         n.push(c)
                     }
@@ -365,7 +365,7 @@ impl CommandBuilder {
         })
     }
 
-    fn put(&mut self, movement: seed::Movement) {
+    fn put(&mut self, movement: seed::Action) {
         match self.0.movements.last_mut() {
             Some(c) if c.1 == movement => c.0 += 1,
             _ => self.0.movements.push((1, movement)),
@@ -374,8 +374,8 @@ impl CommandBuilder {
 
     fn add(&mut self, number: i32) {
         match self.0.movements.last_mut() {
-            Some(c) => c.0 += number - 1,
-            _ => self.0.movements.push((number, seed::Movement::Idle)),
+            Some(c) => c.0 = c.0 + number as usize - 1,
+            _ => self.0.movements.push((number as usize, seed::Action::Idle)),
         }
     }
 

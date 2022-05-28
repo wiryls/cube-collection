@@ -3,3 +3,9 @@ pub enum State {
     Loading,
     Running,
 }
+
+impl Default for State {
+    fn default() -> Self {
+        Self::Loading
+    }
+}

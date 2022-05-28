@@ -1,3 +1,4 @@
+use super::cube;
 use bevy::reflect::TypeUuid;
 
 pub struct Seeds {
@@ -23,11 +24,14 @@ impl Seeds {
 
 impl From<Vec<Seed>> for Seeds {
     fn from(seeds: Vec<Seed>) -> Self {
-        Self { list: seeds, head: 0 }
+        Self {
+            list: seeds,
+            head: 0,
+        }
     }
 }
 
-#[derive(Clone, Default, TypeUuid)]
+#[derive(Clone, TypeUuid)]
 #[uuid = "c99b1333-8ad3-4b26-a54c-7de542f43c51"]
 pub struct Seed {
     pub info: Info,
@@ -42,34 +46,22 @@ pub struct Info {
     pub author: String,
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Size {
     pub width: i32,
     pub height: i32,
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Cube {
     pub kind: CubeType,
     pub body: Vec<Location>,
     pub command: Option<Command>,
 }
 
-#[derive(Clone, PartialEq)]
-pub enum CubeType {
-    White,
-    Red,
-    Blue,
-    Green,
-}
+pub type CubeType = cube::Type;
 
-impl Default for CubeType {
-    fn default() -> Self {
-        CubeType::White
-    }
-}
-
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct Location {
     pub x: i32,
     pub y: i32,
@@ -78,20 +70,7 @@ pub struct Location {
 #[derive(Clone, Default)]
 pub struct Command {
     pub is_loop: bool,
-    pub movements: Vec<(i32, Movement)>,
+    pub movements: Vec<(usize, Action)>,
 }
 
-#[derive(Clone, PartialEq)]
-pub enum Movement {
-    Idle,
-    Left,
-    Down,
-    Up,
-    Right,
-}
-
-impl Default for Movement {
-    fn default() -> Self {
-        Movement::Idle
-    }
-}
+pub type Action = cube::Action;
