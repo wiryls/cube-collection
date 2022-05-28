@@ -5,10 +5,13 @@ use super::state::State;
 use crate::extra::load;
 use crate::model::seed;
 
+/// - input: none
+/// - output: ```Res<seed::Seeds>```
 pub struct LoadingScene;
 impl Plugin for LoadingScene {
     fn build(&self, app: &mut App) {
-        app.add_enter_system(State::Loading, loading_enter)
+        app.add_plugin(load::LoaderPlugin)
+            .add_enter_system(State::Loading, loading_enter)
             .add_system_set(
                 ConditionSet::new()
                     .run_in_state(State::Loading)

@@ -9,8 +9,6 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         // plugins
-        .add_plugin(extra::grid::GridPlugin)
-        .add_plugin(extra::load::LoaderPlugin)
         .add_plugin(extra::debug::DebugPlugin)
         // scenes
         .add_loopless_state(scene::State::Loading)

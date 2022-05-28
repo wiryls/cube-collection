@@ -1,6 +1,31 @@
 use bevy::reflect::TypeUuid;
 
-pub type Seeds = Vec<Seed>;
+pub struct Seeds {
+    list: Vec<Seed>,
+    head: usize,
+}
+
+impl Seeds {
+    pub fn current(&self) -> Option<&Seed> {
+        self.list.get(self.head)
+    }
+
+    pub fn next(&mut self) -> bool {
+        self.head += 1;
+        if self.head >= self.list.len() {
+            self.head = 0;
+            false
+        } else {
+            true
+        }
+    }
+}
+
+impl From<Vec<Seed>> for Seeds {
+    fn from(seeds: Vec<Seed>) -> Self {
+        Self { list: seeds, head: 0 }
+    }
+}
 
 #[derive(Clone, Default, TypeUuid)]
 #[uuid = "c99b1333-8ad3-4b26-a54c-7de542f43c51"]

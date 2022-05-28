@@ -2,100 +2,124 @@ use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
 use super::state::State;
-use crate::extra::grid::{GridUpdated, GridView};
+use crate::extra::grid::{GridPlugin, GridUpdated, GridView};
 use crate::model::cube;
 use crate::model::seed;
 
+/// - input: ```Res<seed::Seeds>```
+/// - output: none
 pub struct RunningScene;
 impl Plugin for RunningScene {
     fn build(&self, app: &mut App) {
-        app.add_system_set(
-            ConditionSet::new()
-                .run_in_state(State::Running)
-                .with_system(regrid)
-                .with_system(setup_scene)
-                .into(),
-        );
+        app.add_plugin(GridPlugin)
+            .add_event::<WorldChanged>()
+            .add_enter_system(State::Running, setup_world)
+            .add_system_set(
+                ConditionSet::new()
+                    .run_in_state(State::Running)
+                    .with_system(switch_world.run_on_event::<WorldChanged>())
+                    .with_system(regrid.run_on_event::<GridUpdated>())
+                    .into(),
+            );
     }
+}
+
+enum WorldChanged {
+    Reset,
+    Next,
+}
+
+fn setup_world(mut reset: EventWriter<WorldChanged>) {
+    reset.send(WorldChanged::Reset)
+}
+
+fn switch_world(
+    mut commands: Commands,
+    query: Query<&cube::Live>,
+    mut view: ResMut<GridView>,
+    mut world_seeds: ResMut<seed::Seeds>,
+    mut world_changed: EventReader<WorldChanged>,
+) {
+    for event in world_changed.iter() {
+        if let WorldChanged::Next = event {
+            world_seeds.next();
+        }
+    }
+
+    match world_seeds.current() {
+        None => return,
+        Some(seed) => {
+
+            // [0] update grid view
+            let rect = Rect {
+                left: 0,
+                right: seed.size.width,
+                top: 0,
+                bottom: seed.size.height,
+            };
+            view.set_source(rect);
+
+            // [1] remove old object
+            // TODO:
+
+            // [1] create cubes
+            let mapper = view.mapping();
+            let scale = mapper.scale(0.98);
+
+            for c in &seed.cubes {
+                for o in &c.body {
+                    commands
+                        .spawn_bundle(SpriteBundle {
+                            sprite: Sprite {
+                                color: match c.kind {
+                                    seed::CubeType::White => Color::rgb(1., 1., 1.),
+                                    seed::CubeType::Red => Color::rgb(1., 0., 0.),
+                                    seed::CubeType::Blue => Color::rgb(0., 0., 1.),
+                                    seed::CubeType::Green => Color::rgb(0., 1., 0.),
+                                },
+                                ..default()
+                            },
+                            transform: Transform {
+                                scale: Vec3::new(scale, scale, 0.),
+                                translation: mapper.locate(o.x, o.y, 0.),
+                                ..default()
+                            },
+                            ..default()
+                        })
+                        .insert(cube::Gridded { x: o.x, y: o.y });
+                }
+            }
+        
+            for o in &seed.destnations {
+                commands
+                    .spawn_bundle(SpriteBundle {
+                        sprite: Sprite {
+                            color: Color::rgb(0.1, 0.1, 0.1),
+                            ..default()
+                        },
+                        transform: Transform {
+                            scale: Vec3::new(scale, scale, 0.),
+                            translation: mapper.locate(o.x, o.y, 0.),
+                            ..default()
+                        },
+                        ..default()
+                    })
+                    .insert(cube::Gridded { x: o.x, y: o.y });
+            }
+        }
+    } 
 }
 
 fn regrid(
     mut query: Query<(&cube::Gridded, &mut Transform)>,
-    mut relocator_updated: EventReader<GridUpdated>,
+    mut grid_updated: EventReader<GridUpdated>,
 ) {
-    for e in relocator_updated.iter().last() {
+    for e in grid_updated.iter().last() {
         let value = e.mapper.scale(0.98);
         let scale = Vec3::new(value, value, 0.);
         for (cube, mut transform) in query.iter_mut() {
             transform.scale = scale;
             transform.translation = e.mapper.locate(cube.x, cube.y, 0);
         }
-    }
-}
-
-fn setup_scene(
-    mut commands: Commands,
-    mut view: ResMut<GridView>,
-    seeds: Option<Res<seed::Seeds>>,
-) {
-    let seeds = match seeds {
-        None => return,
-        Some(seeds) => {
-            commands.remove_resource::<seed::Seeds>();
-            seeds
-        }
-    };
-
-    let world = seeds.first().unwrap();
-    let rect = Rect {
-        left: 0,
-        right: world.size.width,
-        top: 0,
-        bottom: world.size.height,
-    };
-    view.set_source(rect);
-
-    let mapper = view.mapping();
-    let scale = mapper.scale(0.98);
-
-    for c in &world.cubes {
-        for o in &c.body {
-            commands
-                .spawn_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        color: match c.kind {
-                            seed::CubeType::White => Color::rgb(1., 1., 1.),
-                            seed::CubeType::Red => Color::rgb(1., 0., 0.),
-                            seed::CubeType::Blue => Color::rgb(0., 0., 1.),
-                            seed::CubeType::Green => Color::rgb(0., 1., 0.),
-                        },
-                        ..default()
-                    },
-                    transform: Transform {
-                        scale: Vec3::new(scale, scale, 0.),
-                        translation: mapper.locate(o.x, o.y, 0.),
-                        ..default()
-                    },
-                    ..default()
-                })
-                .insert(cube::Gridded { x: o.x, y: o.y });
-        }
-    }
-
-    for o in &world.destnations {
-        commands
-            .spawn_bundle(SpriteBundle {
-                sprite: Sprite {
-                    color: Color::rgb(0.1, 0.1, 0.1),
-                    ..default()
-                },
-                transform: Transform {
-                    scale: Vec3::new(scale, scale, 0.),
-                    translation: mapper.locate(o.x, o.y, 0.),
-                    ..default()
-                },
-                ..default()
-            })
-            .insert(cube::Gridded { x: o.x, y: o.y });
     }
 }

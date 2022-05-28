@@ -120,7 +120,8 @@ fn load_seeds(
                     .iter()
                     .filter_map(|x| seeds_assets.get(x))
                     .map(|x| x.clone())
-                    .collect();
+                    .collect::<Vec<_>>()
+                    .into();
                 commands.insert_resource(output);
                 load_updated.send(LoadSeedsUpdated::Loading { total, done });
                 status.0 = LoadSeedsState::Stopped {};
