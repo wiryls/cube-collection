@@ -40,13 +40,15 @@ fn switch_world(
     mut world_seeds: ResMut<seed::Seeds>,
     mut world_changed: EventReader<WorldChanged>,
 ) {
+    let mut got = None;
     for event in world_changed.iter() {
+        got = Some(());
         if let WorldChanged::Next = event {
             world_seeds.next();
         }
     }
 
-    match world_seeds.current() {
+    match got.and(world_seeds.current()) {
         None => return,
         Some(seed) => {
             // [0] update grid view
@@ -108,29 +110,16 @@ fn switch_world(
                     .insert(cube::GridPoint { x: o.x, y: o.y })
                     .insert(cube::Live);
             }
+
+            let mut style = cube::Style::default();
+            style.set(cube::Style::LEFT);
+            style.set(cube::Style::LEFT_TOP);
+            style.set(cube::Style::TOP);
+            style.set(cube::Style::RIGHT);
+            style.set(cube::Style::BOTTOM);
+            commands.spawn_bundle(cube::build(mapper.scale(1.), 0.9, style));
         }
     }
-
-    let shape = shapes::Polygon {
-        points: vec![
-            Vec2::new(0., 0.),
-            Vec2::new(0., 90.),
-            Vec2::new(10., 90.),
-            Vec2::new(10., 100.),
-            Vec2::new(10., 100.),
-            Vec2::new(90., 100.),
-            Vec2::new(90., 90.),
-            Vec2::new(100., 90.),
-            Vec2::new(100., 0.),
-        ],
-        closed: true,
-    };
-
-    commands.spawn_bundle(GeometryBuilder::build_as(
-        &shape,
-        DrawMode::Fill(FillMode::color(Color::CYAN)),
-        Transform::default(),
-    ));
 }
 
 fn regrid(
