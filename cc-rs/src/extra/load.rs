@@ -6,8 +6,13 @@ use crate::model::seed;
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-/// Use ```commands.insert_resource(LoadSeeds::new("PATH"))``` to start
-/// loading ```Res<seed::Seeds>```.
+/// Use
+///
+/// ```
+/// commands.insert_resource(LoadSeeds::new("INDEX_PATH"))
+/// ```
+///
+/// to start loading ```Res<seed::Seeds>```.
 pub struct LoaderPlugin;
 impl Plugin for LoaderPlugin {
     fn build(&self, app: &mut App) {
@@ -26,22 +31,22 @@ pub enum LoadSeedsUpdated {
     Failure { which: String },
 }
 
-pub struct LoadSeeds(LoadSeedsStatus);
+pub struct LoadSeeds(LoadSeedsState);
 
 impl LoadSeeds {
     pub fn new<S: AsRef<str>>(index: S) -> Self {
-        Self(LoadSeedsStatus::Pending(String::from(index.as_ref())))
+        Self(LoadSeedsState::Pending(String::from(index.as_ref())))
     }
 }
 
-enum LoadSeedsStatus {
+enum LoadSeedsState {
     Pending(String),
     Finding(Handle<loader::Index>),
     Loading(Vec<Handle<seed::Seed>>),
     Stopped,
 }
 
-impl Default for LoadSeedsStatus {
+impl Default for LoadSeedsState {
     fn default() -> Self {
         Self::Pending(String::new())
     }
@@ -50,7 +55,7 @@ impl Default for LoadSeedsStatus {
 fn load_seeds(
     mut commands: Commands,
     mut status: ResMut<LoadSeeds>,
-    mut report: Local<(i32, i32)>,
+    mut progress: Local<(i32, i32)>,
     mut load_updated: EventWriter<LoadSeedsUpdated>,
     server: Res<AssetServer>,
     index_assets: Res<Assets<loader::Index>>,
@@ -58,11 +63,11 @@ fn load_seeds(
 ) {
     use bevy::asset::LoadState;
     match &status.0 {
-        LoadSeedsStatus::Pending(path) => {
-            status.0 = LoadSeedsStatus::Finding(server.load(path));
+        LoadSeedsState::Pending(path) => {
+            status.0 = LoadSeedsState::Finding(server.load(path));
         }
 
-        LoadSeedsStatus::Finding(handle) => match server.get_load_state(handle) {
+        LoadSeedsState::Finding(handle) => match server.get_load_state(handle) {
             LoadState::Loading => {}
             LoadState::Loaded if index_assets.get(handle).is_some() => {
                 let index = index_assets.get(handle).unwrap();
@@ -73,7 +78,7 @@ fn load_seeds(
                     .map(|x| dir.join([x, ".", &index.extension].concat()))
                     .map(|x| server.load(x))
                     .collect();
-                status.0 = LoadSeedsStatus::Loading(out);
+                status.0 = LoadSeedsState::Loading(out);
             }
             _ => {
                 let which = server
@@ -82,11 +87,11 @@ fn load_seeds(
                     .unwrap_or_default();
                 let event = LoadSeedsUpdated::Failure { which };
                 load_updated.send(event);
-                status.0 = LoadSeedsStatus::Stopped {};
+                status.0 = LoadSeedsState::Stopped {};
             }
         },
 
-        LoadSeedsStatus::Loading(handles) => {
+        LoadSeedsState::Loading(handles) => {
             let total = handles.len() as i32;
             let mut done = 0;
             let mut fail = None;
@@ -109,7 +114,7 @@ fn load_seeds(
 
             if let Some(which) = fail {
                 load_updated.send(LoadSeedsUpdated::Failure { which });
-                status.0 = LoadSeedsStatus::Stopped {};
+                status.0 = LoadSeedsState::Stopped {};
             } else if done == total {
                 let output: seed::Seeds = handles
                     .iter()
@@ -118,15 +123,15 @@ fn load_seeds(
                     .collect();
                 commands.insert_resource(output);
                 load_updated.send(LoadSeedsUpdated::Loading { total, done });
-                status.0 = LoadSeedsStatus::Stopped {};
-            } else if report.0 != total || report.1 != done {
-                *report = (total, done);
+                status.0 = LoadSeedsState::Stopped {};
+            } else if progress.0 != total || progress.1 != done {
+                *progress = (total, done);
                 load_updated.send(LoadSeedsUpdated::Loading { total, done });
             }
         }
 
-        LoadSeedsStatus::Stopped => {
-            *report = (0, 0);
+        LoadSeedsState::Stopped => {
+            *progress = (0, 0);
             commands.remove_resource::<LoadSeeds>();
         }
     };

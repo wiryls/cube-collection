@@ -24,25 +24,25 @@ pub enum Error {
     InvalidLocation { position: (i32, i32) },
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 pub struct Source {
     info: Info,
     map: Map,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 struct Info {
     title: String,
     author: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 struct Map {
     raw: String,
     commands: Vec<Command>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Deserialize)]
 struct Command {
     content: String,
     is_loop: bool,
@@ -120,7 +120,7 @@ impl Source {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct LevelBuilder {
     // output
     i: seed::Info,
@@ -307,7 +307,7 @@ impl LevelBuilder {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct Indexer(Vec<Vec<Option<usize>>>);
 
 impl Indexer {
@@ -347,7 +347,7 @@ impl Indexer {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 struct CommandBuilder(seed::Command);
 
 impl Into<seed::Command> for CommandBuilder {
