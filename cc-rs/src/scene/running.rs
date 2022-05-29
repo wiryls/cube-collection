@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::*;
 use iyes_loopless::prelude::*;
 
 use super::state::State;
@@ -26,7 +25,7 @@ impl Plugin for RunningScene {
 
 pub enum WorldChanged {
     Reset,
-    Next,
+    Next, 
 }
 
 fn setup_world(mut reset: EventWriter<WorldChanged>) {
@@ -40,15 +39,14 @@ fn switch_world(
     mut world_seeds: ResMut<seed::Seeds>,
     mut world_changed: EventReader<WorldChanged>,
 ) {
-    let mut got = None;
+    let got = !world_changed.is_empty();
     for event in world_changed.iter() {
-        got = Some(());
         if let WorldChanged::Next = event {
             world_seeds.next();
         }
     }
 
-    match got.and(world_seeds.current()) {
+    match got.then(|| world_seeds.current()).flatten() {
         None => return,
         Some(seed) => {
             // [0] update grid view
@@ -110,14 +108,6 @@ fn switch_world(
                     .insert(cube::GridPoint { x: o.x, y: o.y })
                     .insert(cube::Live);
             }
-
-            let mut style = cube::Style::default();
-            style.set(cube::Style::LEFT);
-            style.set(cube::Style::LEFT_TOP);
-            style.set(cube::Style::TOP);
-            style.set(cube::Style::RIGHT);
-            style.set(cube::Style::BOTTOM);
-            commands.spawn_bundle(cube::build(mapper.scale(1.), 0.9, style));
         }
     }
 }

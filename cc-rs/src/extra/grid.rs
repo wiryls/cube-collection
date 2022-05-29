@@ -3,6 +3,7 @@ use bevy::{
     prelude::*,
     window::WindowResized,
 };
+use iyes_loopless::prelude::*;
 
 // GridPlugin adds a GridView resource and a GridUpdated event.
 pub struct GridPlugin;
@@ -11,7 +12,7 @@ impl Plugin for GridPlugin {
         app.init_resource::<GridView>()
             .add_event::<GridUpdated>()
             .add_startup_system(setup_camera)
-            .add_system(window_resized);
+            .add_system(window_resized.run_on_event::<WindowResized>());
     }
 }
 
