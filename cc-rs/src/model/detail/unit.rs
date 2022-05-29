@@ -2,12 +2,12 @@ use super::lookup::{Location, Lookup};
 use super::near::{Direction, Near};
 
 #[derive(Default)]
-pub struct Group {
+pub struct United {
     pub units: Vec<Unit>,
     pub lookup: Lookup,
 }
 
-impl Group {
+impl United {
     pub fn new() -> Self {
         Default::default()
     }
@@ -81,15 +81,15 @@ impl Point {
             },
             Direction::LEFT_TOP => Self {
                 x: self.x - 1,
-                y: self.y + 1,
+                y: self.y - 1,
             },
             Direction::TOP => Self {
                 x: self.x,
-                y: self.y + 1,
+                y: self.y - 1,
             },
             Direction::RIGHT_TOP => Self {
                 x: self.x + 1,
-                y: self.y + 1,
+                y: self.y - 1,
             },
             Direction::RIGHT => Self {
                 x: self.x + 1,
@@ -97,15 +97,15 @@ impl Point {
             },
             Direction::RIGHT_BOTTOM => Self {
                 x: self.x + 1,
-                y: self.y - 1,
+                y: self.y + 1,
             },
             Direction::BOTTOM => Self {
                 x: self.x,
-                y: self.y - 1,
+                y: self.y + 1,
             },
             Direction::LEFT_BOTTOM => Self {
                 x: self.x - 1,
-                y: self.y - 1,
+                y: self.y + 1,
             },
             _ => Self {
                 x: self.x,

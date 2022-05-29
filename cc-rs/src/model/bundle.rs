@@ -2,92 +2,86 @@ use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 
-use super::base::Near;
 use super::cube::*;
+use super::{detail, seed};
+use crate::extra::grid::GridMapper;
 
 #[derive(Bundle)]
 struct CubeBundle {
     live: Live,
     kind: Type,
+    pack: Pack,
+    pub transform: Transform,
+    pub global_transform: GlobalTransform,
 }
 
 #[derive(Bundle)]
 struct UnitBundle {
+    live: Live,
+    style: Pattern,
     point: GridPoint,
     #[bundle]
     shape: ShapeBundle,
 }
 
-pub fn build(unit: f32, ratio: f32, style: Near) -> ShapeBundle {
-    let mut points = Vec::with_capacity(12);
+pub struct CubeBuilder<'a>(&'a seed::Cube);
 
-    let tests = style.around();
-    let max = unit * 0.5;
-    let min = max * ratio;
-
-    //    3      2                       0      3
-    //     ┌────┬─────────────────────────┬────┐
-    //     │    │                         │    │
-    //     │    │                         │    │
-    //     ├────┼─────────────────────────┼────┤
-    //    0│    │1                       1│    │2
-    //     │    │                         │    │
-    //     │    │                         │    │
-    //     │    │                         │    │
-    //     │    │                         │    │
-    //     │    │                         │    │
-    //     │    │          (0, 0)         │    │
-    //     │    │                         │    │
-    //     │    │                         │    │
-    //     │    │                         │    │
-    //     │    │                         │    │
-    //    2│    │1                       1│    │0
-    //     ├────┼─────────────────────────┼────┤
-    //     │    │                         │    │
-    //     │    │                         │    │
-    //     └────┴─────────────────────────┴────┘
-    //    3      0                       2      3
-    let mut v = [
-        Vec2::new(-min, -max), // 0
-        Vec2::new(-min, -min), // 1
-        Vec2::new(-max, -min), // 2
-        Vec2::new(-max, -max), // 3
-    ];
-    for i in 0..4 {
-        for j in 0..4 {
-            (v[j].x, v[j].y) = (v[j].y, -v[j].x);
-        }
-        match (
-            tests[(2 * i + 0)],
-            tests[(2 * i + 1)],
-            tests[(2 * i + 2) % tests.len()],
-        ) {
-            (true, true, true) => {
-                points.push(v[3]);
-            }
-            (true, _, true) => {
-                points.push(v[0]);
-                points.push(v[1]);
-                points.push(v[2]);
-            }
-            (true, _, _) => {
-                points.push(v[0]);
-            }
-            (_, _, true) => {
-                points.push(v[2]);
-            }
-            _ => {
-                points.push(v[1]);
-            }
-        }
+impl detail::Location<i32> for seed::Location {
+    fn x_(&self) -> i32 {
+        self.x
     }
 
-    GeometryBuilder::build_as(
-        &shapes::Polygon {
-            points,
-            closed: true,
-        },
-        DrawMode::Fill(FillMode::color(Color::CYAN)),
-        Transform::default(),
-    )
+    fn y_(&self) -> i32 {
+        self.y
+    }
+}
+
+impl<'a> CubeBuilder<'a> {
+    pub fn new(cube: &'a seed::Cube) -> Self {
+        Self(cube)
+    }
+
+    pub fn build(&self, commands: &mut Commands, mapper: &GridMapper) {
+        let pack = Pack::from(detail::United::from(self.0.body.iter()));
+        let scale = mapper.unit();
+        let color = match self.0.kind {
+            Type::White => Color::rgb(1., 1., 1.),
+            Type::Red => Color::rgb(1., 0., 0.),
+            Type::Blue => Color::rgb(0., 0., 1.),
+            Type::Green => Color::rgb(0., 1., 0.),
+        };
+
+        commands
+            .spawn()
+            .with_children(|head| {
+                for unit in &pack.0.units {
+                    head.spawn_bundle(UnitBundle {
+                        live: Live {},
+                        style: Pattern::from(&unit.n),
+                        point: GridPoint {
+                            x: unit.o.x,
+                            y: unit.o.y,
+                        },
+                        shape: GeometryBuilder::build_as(
+                            &shapes::Polygon {
+                                points: detail::make_boundaries(scale, 0.95, unit.n),
+                                closed: true,
+                            },
+                            DrawMode::Fill(FillMode::color(color)),
+                            Transform {
+                                translation: mapper.locate(unit.o.x, unit.o.y, 0.),
+                                ..default()
+                            },
+                        ),
+                    });
+                }
+            })
+            .insert_bundle(CubeBundle {
+                live: Live {},
+                kind: self.0.kind,
+                pack,
+                transform: Transform::default(),
+                global_transform: GlobalTransform::default(),
+            });
+    }
 }

@@ -8,7 +8,6 @@ pub trait Location<T> {
 #[derive(Default)]
 pub struct Lookup(HashMap<u64, usize>);
 
-#[allow(dead_code)]
 impl Lookup {
     pub fn new() -> Self {
         Default::default()

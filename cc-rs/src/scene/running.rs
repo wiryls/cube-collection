@@ -1,9 +1,10 @@
 use bevy::prelude::*;
+use bevy_prototype_lyon::prelude::*;
 use iyes_loopless::prelude::*;
 
 use super::state::State;
 use crate::extra::grid::{GridPlugin, GridUpdated, GridView};
-use crate::model::{cube, seed};
+use crate::model::{bundle, cube, detail, seed};
 
 /// - input: ```Res<seed::Seeds>```
 /// - output: none
@@ -25,7 +26,7 @@ impl Plugin for RunningScene {
 
 pub enum WorldChanged {
     Reset,
-    Next, 
+    Next,
 }
 
 fn setup_world(mut reset: EventWriter<WorldChanged>) {
@@ -63,65 +64,44 @@ fn switch_world(
 
             // [2] create cubes
             let mapper = view.mapping();
-            let scale = mapper.scale(0.98);
-
             for c in &seed.cubes {
-                for o in &c.body {
-                    commands
-                        .spawn()
-                        .insert_bundle(SpriteBundle {
-                            sprite: Sprite {
-                                color: match c.kind {
-                                    seed::CubeType::White => Color::rgb(1., 1., 1.),
-                                    seed::CubeType::Red => Color::rgb(1., 0., 0.),
-                                    seed::CubeType::Blue => Color::rgb(0., 0., 1.),
-                                    seed::CubeType::Green => Color::rgb(0., 1., 0.),
-                                },
-                                ..default()
-                            },
-                            transform: Transform {
-                                scale: Vec3::new(scale, scale, 1.),
-                                translation: mapper.locate(o.x, o.y, 0.),
-                                ..default()
-                            },
-                            ..default()
-                        })
-                        .insert(cube::GridPoint { x: o.x, y: o.y })
-                        .insert(cube::Live);
-                }
+                let bulder = bundle::CubeBuilder::new(&c);
+                bulder.build(&mut commands, mapper);
             }
 
-            for o in &seed.destnations {
-                commands
-                    .spawn_bundle(SpriteBundle {
-                        sprite: Sprite {
-                            color: Color::rgb(0.1, 0.1, 0.1),
-                            ..default()
-                        },
-                        transform: Transform {
-                            scale: Vec3::new(scale, scale, 1.),
-                            translation: mapper.locate(o.x, o.y, 0.),
-                            ..default()
-                        },
-                        ..default()
-                    })
-                    .insert(cube::GridPoint { x: o.x, y: o.y })
-                    .insert(cube::Live);
-            }
+            // for o in &seed.destnations {
+            //     commands
+            //         .spawn_bundle(SpriteBundle {
+            //             sprite: Sprite {
+            //                 color: Color::rgb(0.1, 0.1, 0.1),
+            //                 ..default()
+            //             },
+            //             transform: Transform {
+            //                 scale: Vec3::new(scale, scale, 1.),
+            //                 translation: mapper.locate(o.x, o.y, 0.),
+            //                 ..default()
+            //             },
+            //             ..default()
+            //         })
+            //         .insert(cube::GridPoint { x: o.x, y: o.y })
+            //         .insert(cube::Live);
+            // }
         }
     }
 }
 
 fn regrid(
-    mut query: Query<(&cube::GridPoint, &mut Transform)>,
+    mut query: Query<(&cube::GridPoint, &cube::Pattern, &mut Transform, &mut Path)>,
     mut grid_updated: EventReader<GridUpdated>,
 ) {
     for e in grid_updated.iter().last() {
-        let value = e.mapper.scale(0.98);
-        let scale = Vec3::new(value, value, 0.);
-        for (cube, mut transform) in query.iter_mut() {
-            transform.scale = scale;
+        let value = e.mapper.unit();
+        for (cube, style, mut transform, mut shape) in query.iter_mut() {
             transform.translation = e.mapper.locate(cube.x, cube.y, 0);
+            *shape = ShapePath::build_as(&shapes::Polygon {
+                points: detail::make_boundaries(value, 0.98, detail::Near::from(style)),
+                closed: true,
+            });
         }
     }
 }

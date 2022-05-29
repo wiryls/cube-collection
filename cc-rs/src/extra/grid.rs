@@ -126,6 +126,10 @@ pub struct GridMapper {
 }
 
 impl GridMapper {
+    pub fn unit(&self) -> f32 {
+        self.unit
+    }
+
     pub fn scale<T>(&self, x: T) -> f32
     where
         T: num_traits::AsPrimitive<f32>,

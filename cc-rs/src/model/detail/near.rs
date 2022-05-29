@@ -13,7 +13,7 @@ impl Direction {
 }
 
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
-pub struct Near(u8);
+pub struct Near(pub u8);
 
 impl Near {
     pub const AROUND: [Direction; 8] = [
