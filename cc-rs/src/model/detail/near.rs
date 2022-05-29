@@ -35,10 +35,6 @@ impl Near {
         self.0 |= bit.0;
     }
 
-    pub fn unset(&mut self, bit: Direction) {
-        self.0 &= !bit.0;
-    }
-
     pub fn around(&self) -> [bool; 8] {
         Near::AROUND.map(|mask| (self.0 & mask.0) != 0)
     }

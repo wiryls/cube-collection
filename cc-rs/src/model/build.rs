@@ -11,8 +11,8 @@ struct CubeBundle {
     live: Live,
     kind: Type,
     pack: Pack,
-    pub transform: Transform,
-    pub global_transform: GlobalTransform,
+    #[bundle]
+    transform: TransformBundle,
 }
 
 #[derive(Bundle)]
@@ -43,6 +43,7 @@ impl<'a> CubeBuilder<'a> {
 
     pub fn build(&self, commands: &mut Commands, mapper: &GridMapper) {
         let pack = Pack::from(detail::United::from(self.0.body.iter()));
+        let zero = (pack.0.rect.left, pack.0.rect.top);
         let scale = mapper.unit();
         let color = match self.0.kind {
             Type::White => Color::rgb(1., 1., 1.),
@@ -69,7 +70,7 @@ impl<'a> CubeBuilder<'a> {
                             },
                             DrawMode::Fill(FillMode::color(color)),
                             Transform {
-                                translation: mapper.locate(unit.o.x, unit.o.y, 0.),
+                                translation: mapper.scale(unit.o.x, unit.o.y, 0.),
                                 ..default()
                             },
                         ),
@@ -80,8 +81,13 @@ impl<'a> CubeBuilder<'a> {
                 live: Live {},
                 kind: self.0.kind,
                 pack,
-                transform: Transform::default(),
-                global_transform: GlobalTransform::default(),
+                transform: TransformBundle {
+                    local: Transform {
+                        translation: mapper.locate(zero.0, zero.1, 0.),
+                        ..default()
+                    },
+                    ..default()
+                },
             });
     }
 }

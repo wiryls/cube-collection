@@ -4,7 +4,7 @@ use iyes_loopless::prelude::*;
 
 use super::state::State;
 use crate::extra::grid::{GridPlugin, GridUpdated, GridView};
-use crate::model::{bundle, cube, detail, seed};
+use crate::model::{build, cube, detail, seed};
 
 /// - input: ```Res<seed::Seeds>```
 /// - output: none
@@ -59,14 +59,14 @@ fn switch_world(
             };
             view.set_source(rect);
 
-            // [1] remove old object
+            // [1] remove old objects
             entities.for_each(|i| commands.entity(i).despawn_recursive());
 
-            // [2] create cubes
+            // [2] create new cubes
             let mapper = view.mapping();
             for c in &seed.cubes {
-                let bulder = bundle::CubeBuilder::new(&c);
-                bulder.build(&mut commands, mapper);
+                let bulder = build::CubeBuilder::new(&c);
+                bulder.build(&mut commands, &mapper);
             }
 
             // for o in &seed.destnations {
@@ -91,17 +91,30 @@ fn switch_world(
 }
 
 fn regrid(
-    mut query: Query<(&cube::GridPoint, &cube::Pattern, &mut Transform, &mut Path)>,
+    mut heads: Query<(&cube::Pack, &mut Transform, &Children), Without<Path>>,
+    mut units: Query<(&cube::GridPoint, &cube::Pattern, &mut Transform, &mut Path)>,
     mut grid_updated: EventReader<GridUpdated>,
 ) {
-    for e in grid_updated.iter().last() {
-        let value = e.mapper.unit();
-        for (cube, style, mut transform, mut shape) in query.iter_mut() {
-            transform.translation = e.mapper.locate(cube.x, cube.y, 0);
-            *shape = ShapePath::build_as(&shapes::Polygon {
-                points: detail::make_boundaries(value, 0.98, detail::Near::from(style)),
-                closed: true,
-            });
+    let event = match grid_updated.iter().last() {
+        None => return,
+        Some(event) => event,
+    };
+
+    let grid = &event.mapper;
+    let unit = grid.unit();
+    for (pack, mut transform, children) in heads.iter_mut() {
+        let x = pack.0.rect.left;
+        let y = pack.0.rect.top;
+        transform.translation = grid.locate(x, y, 0);
+
+        for &child in children.iter() {
+            if let Ok((cube, style, mut transform, mut shape)) = units.get_mut(child) {
+                transform.translation = grid.scale(cube.x, cube.y, 0);
+                *shape = ShapePath::build_as(&shapes::Polygon {
+                    points: detail::make_boundaries(unit, 0.98, detail::Near::from(style)),
+                    closed: true,
+                });
+            }
         }
     }
 }

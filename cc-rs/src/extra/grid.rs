@@ -130,11 +130,17 @@ impl GridMapper {
         self.unit
     }
 
-    pub fn scale<T>(&self, x: T) -> f32
+    pub fn scale<T, U, V>(&self, x: T, y: U, z: V) -> Vec3
     where
-        T: num_traits::AsPrimitive<f32>,
+        T: num_traits::AsPrimitive<i32>,
+        U: num_traits::AsPrimitive<i32>,
+        V: num_traits::AsPrimitive<f32>,
     {
-        x.as_() * self.unit
+        Vec3::new(
+            x.as_() as f32 * self.unit,
+            y.as_() as f32 * -self.unit,
+            z.as_(),
+        )
     }
 
     pub fn locate<T, U, V>(&self, x: T, y: U, z: V) -> Vec3
