@@ -2,10 +2,13 @@ use super::detail;
 use bevy::prelude::*;
 
 /// Marks its is a lattice grid and will be rescale when window size changed.
-#[derive(Component, bevy_inspector_egui::Inspectable)]
-pub struct GridPoint {
-    pub x: i32,
-    pub y: i32,
+#[derive(Component)]
+pub struct GridPoint(pub detail::Point);
+
+impl<T: detail::Location<i32>> From<&T> for GridPoint {
+    fn from(location: &T) -> Self {
+        Self(detail::Point::new(location.x_(), location.y_()))
+    }
 }
 
 /// Marks its lifetime is limited to a specific level.

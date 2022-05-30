@@ -1,9 +1,5 @@
+use super::location::Location;
 use std::collections::HashMap;
-
-pub trait Location<T> {
-    fn x_(&self) -> T;
-    fn y_(&self) -> T;
-}
 
 #[derive(Default)]
 pub struct Lookup(HashMap<u64, usize>);

@@ -6,7 +6,7 @@ pub fn make_boundaries(outer: f32, inner_scale: f32, style: Near) -> Vec<Vec2> {
 
     let tests = style.around();
     let max = outer * 0.5;
-    let min = max * inner_scale;
+    let min = max * inner_scale.clamp(0., 1.);
 
     //    3      2                       0      3
     //     ┌────┬─────────────────────────┬────┐

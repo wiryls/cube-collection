@@ -59,10 +59,7 @@ impl<'a> CubeBuilder<'a> {
                     head.spawn_bundle(UnitBundle {
                         live: Live {},
                         style: Pattern::from(&unit.n),
-                        point: GridPoint {
-                            x: unit.o.x,
-                            y: unit.o.y,
-                        },
+                        point: GridPoint::from(&unit.o),
                         shape: GeometryBuilder::build_as(
                             &shapes::Polygon {
                                 points: detail::make_boundaries(scale, 0.95, unit.n),
