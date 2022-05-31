@@ -1,13 +1,13 @@
-use super::detail;
+use super::{common, detail};
 use bevy::prelude::*;
 
 /// Marks its is a lattice grid and will be rescale when window size changed.
 #[derive(Component)]
-pub struct GridPoint(pub detail::Point);
+pub struct GridPoint(pub common::Point);
 
-impl<T: detail::Location<i32>> From<&T> for GridPoint {
+impl<T: common::Location<i32>> From<&T> for GridPoint {
     fn from(location: &T) -> Self {
-        Self(detail::Point::new(location.x_(), location.y_()))
+        Self(common::Point::new(location.x_(), location.y_()))
     }
 }
 
@@ -37,13 +37,13 @@ impl From<detail::United> for Pack {
 #[derive(Component)]
 pub struct Pattern(u8);
 
-impl From<&detail::Near> for Pattern {
-    fn from(near: &detail::Near) -> Self {
+impl From<&common::Vicinity> for Pattern {
+    fn from(near: &common::Vicinity) -> Self {
         Self(near.0)
     }
 }
 
-impl From<&Pattern> for detail::Near {
+impl From<&Pattern> for common::Vicinity {
     fn from(pattern: &Pattern) -> Self {
         Self(pattern.0)
     }

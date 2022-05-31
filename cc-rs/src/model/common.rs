@@ -1,7 +1,7 @@
-mod direction;
 mod location;
 mod lookup;
+mod vicinity;
 
-pub use direction::*;
-pub use location::*;
-pub use lookup::*;
+pub use self::location::*;
+pub use self::lookup::*;
+pub use self::vicinity::*;

@@ -1,6 +1,21 @@
-use super::lookup::{Location, Lookup};
-use super::near::{Direction, Near};
+use crate::model::common::{Location, Lookup, Point, Vicinity};
 use bevy::math::Rect;
+
+#[derive(Default)]
+pub struct Unit {
+    pub v: Vicinity,
+    pub o: Point,
+}
+
+impl Location<i32> for Unit {
+    fn x_(&self) -> i32 {
+        self.o.x
+    }
+
+    fn y_(&self) -> i32 {
+        self.o.y
+    }
+}
 
 #[derive(Default)]
 pub struct United {
@@ -23,31 +38,22 @@ impl United {
     {
         // [0] collect points into units
         let mut units: Vec<Unit> = it
-            .map(|point| Unit {
-                n: Near::new(),
+            .map(|l| Unit {
+                v: Vicinity::new(),
                 o: Point {
-                    x: point.x_().into(),
-                    y: point.y_().into(),
+                    x: l.x_().into(),
+                    y: l.y_().into(),
                 },
             })
             .collect();
 
         // [1] create rect
-        let mut rect = units
-            .first()
-            .map(|u| Rect {
-                left: u.o.x,
-                right: u.o.x,
-                top: u.o.y,
-                bottom: u.o.y,
-            })
-            .unwrap_or_default();
-        for v in units.iter().skip(1) {
-            rect.left = rect.left.min(v.o.x);
-            rect.right = rect.right.max(v.o.x);
-            rect.top = rect.top.min(v.o.y);
-            rect.bottom = rect.bottom.max(v.o.y);
-        }
+        let rect = Rect {
+            left: units.iter().map(|u| u.o.x).min().unwrap_or_default(),
+            right: units.iter().map(|u| u.o.x).max().unwrap_or_default(),
+            top: units.iter().map(|u| u.o.y).min().unwrap_or_default(),
+            bottom: units.iter().map(|u| u.o.y).max().unwrap_or_default(),
+        };
 
         // [2] update unit.o
         for unit in units.iter_mut() {
@@ -55,12 +61,12 @@ impl United {
             unit.o.y -= rect.top;
         }
 
-        // [3] create lookup table and update unit.n
+        // [3] create lookup table and update vicinity
         let lookup = Lookup::from(units.iter());
-        for v in units.iter_mut() {
-            for d in Near::AROUND {
-                if lookup.get(&v.o.step(d)).is_some() {
-                    v.n.set(d);
+        for u in units.iter_mut() {
+            for v in Vicinity::AROUND {
+                if lookup.get(&u.o.near(v)).is_some() {
+                    u.v.set(v);
                 }
             }
         }
@@ -73,21 +79,6 @@ impl United {
         }
     }
 
-    pub fn merge(&mut self, that: Self) {}
-}
-
-#[derive(Default)]
-pub struct Unit {
-    pub n: Near,
-    pub o: Point,
-}
-
-impl Location<i32> for Unit {
-    fn x_(&self) -> i32 {
-        self.o.x
-    }
-
-    fn y_(&self) -> i32 {
-        self.o.y
-    }
+    // TODO: implement merge methods.
+    // pub fn merge(&mut self, that: Self) {}
 }

@@ -1,8 +1,18 @@
-use super::direction::Direction;
+use super::vicinity::Adjacence;
 
 pub trait Location<T> {
     fn x_(&self) -> T;
     fn y_(&self) -> T;
+}
+
+impl Location<i32> for Point {
+    fn x_(&self) -> i32 {
+        self.x
+    }
+
+    fn y_(&self) -> i32 {
+        self.y
+    }
 }
 
 #[derive(Clone, Copy, Default)]
@@ -19,37 +29,37 @@ impl Point {
         }
     }
 
-    pub const fn next(&self, dir: Direction) -> Self {
+    pub const fn near(&self, dir: Adjacence) -> Self {
         match dir {
-            Direction::LEFT => Self {
+            Adjacence::LEFT => Self {
                 x: self.x - 1,
                 y: self.y,
             },
-            Direction::LEFT_TOP => Self {
+            Adjacence::LEFT_TOP => Self {
                 x: self.x - 1,
                 y: self.y - 1,
             },
-            Direction::TOP => Self {
+            Adjacence::TOP => Self {
                 x: self.x,
                 y: self.y - 1,
             },
-            Direction::RIGHT_TOP => Self {
+            Adjacence::RIGHT_TOP => Self {
                 x: self.x + 1,
                 y: self.y - 1,
             },
-            Direction::RIGHT => Self {
+            Adjacence::RIGHT => Self {
                 x: self.x + 1,
                 y: self.y,
             },
-            Direction::RIGHT_BOTTOM => Self {
+            Adjacence::RIGHT_BOTTOM => Self {
                 x: self.x + 1,
                 y: self.y + 1,
             },
-            Direction::BOTTOM => Self {
+            Adjacence::BOTTOM => Self {
                 x: self.x,
                 y: self.y + 1,
             },
-            Direction::LEFT_BOTTOM => Self {
+            Adjacence::LEFT_BOTTOM => Self {
                 x: self.x - 1,
                 y: self.y + 1,
             },
@@ -58,15 +68,5 @@ impl Point {
                 y: self.y,
             },
         }
-    }
-}
-
-impl Location<i32> for Point {
-    fn x_(&self) -> i32 {
-        self.x
-    }
-
-    fn y_(&self) -> i32 {
-        self.y
     }
 }

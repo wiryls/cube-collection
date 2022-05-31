@@ -1,10 +1,10 @@
-use super::near::Near;
+use crate::model::common::Vicinity;
 use bevy::math::Vec2;
 
-pub fn make_boundaries(outer: f32, inner_scale: f32, style: Near) -> Vec<Vec2> {
+pub fn make_boundaries(outer: f32, inner_scale: f32, near: Vicinity) -> Vec<Vec2> {
     let mut points = Vec::with_capacity(12);
 
-    let tests = style.around();
+    let is_occupied = near.states();
     let max = outer * 0.5;
     let min = max * inner_scale.clamp(0., 1.);
 
@@ -36,14 +36,16 @@ pub fn make_boundaries(outer: f32, inner_scale: f32, style: Near) -> Vec<Vec2> {
         Vec2::new(-max, -min), // 2
         Vec2::new(-max, -max), // 3
     ];
+
     for i in 0..4 {
         for j in 0..4 {
             (v[j].x, v[j].y) = (v[j].y, -v[j].x);
         }
+
         match (
-            tests[(2 * i + 0)],
-            tests[(2 * i + 1)],
-            tests[(2 * i + 2) % tests.len()],
+            is_occupied[(2 * i + 0)],
+            is_occupied[(2 * i + 1)],
+            is_occupied[(2 * i + 2) % is_occupied.len()],
         ) {
             (true, true, true) => {
                 points.push(v[3]);

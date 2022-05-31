@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 
-use super::cube::*;
+use super::{common, cube::*};
 use super::{detail, seed};
 use crate::extra::grid::GridMapper;
 
@@ -26,7 +26,7 @@ struct UnitBundle {
 
 pub struct CubeBuilder<'a>(&'a seed::Cube);
 
-impl detail::Location<i32> for seed::Location {
+impl common::Location<i32> for seed::Location {
     fn x_(&self) -> i32 {
         self.x
     }
@@ -58,11 +58,11 @@ impl<'a> CubeBuilder<'a> {
                 for unit in &pack.0.units {
                     head.spawn_bundle(UnitBundle {
                         live: Live {},
-                        style: Pattern::from(&unit.n),
+                        style: Pattern::from(&unit.v),
                         point: GridPoint::from(&unit.o),
                         shape: GeometryBuilder::build_as(
                             &shapes::Polygon {
-                                points: detail::make_boundaries(scale, 0.95, unit.n),
+                                points: detail::make_boundaries(scale, 0.95, unit.v),
                                 closed: true,
                             },
                             DrawMode::Fill(FillMode::color(color)),

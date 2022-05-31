@@ -111,7 +111,7 @@ fn regrid(
             if let Ok((cube, style, mut transform, mut shape)) = units.get_mut(child) {
                 transform.translation = grid.scale(cube.0.x, cube.0.y, 0);
                 *shape = ShapePath::build_as(&shapes::Polygon {
-                    points: detail::make_boundaries(unit, 0.98, detail::Near::from(style)),
+                    points: detail::make_boundaries(unit, 0.98, crate::model::common::Vicinity::from(style)),
                     closed: true,
                 });
             }
