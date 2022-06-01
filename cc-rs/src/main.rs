@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
+mod extra;
 mod model;
 mod scene;
-mod extra;
 
 fn main() {
     App::new()

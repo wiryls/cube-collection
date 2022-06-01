@@ -1,10 +1,9 @@
 use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::*;
 use iyes_loopless::prelude::*;
 
 use super::state::State;
 use crate::extra::grid::{GridPlugin, GridUpdated, GridView};
-use crate::model::{build, cube, detail, seed};
+use crate::model::{build, cube, seed};
 
 /// - input: ```Res<seed::Seeds>```
 /// - output: none
@@ -64,8 +63,7 @@ fn switch_world(
             // [2] create new cubes
             let mapper = view.mapping();
             for c in &seed.cubes {
-                let bulder = build::CubeBuilder::new(&c);
-                bulder.build(&mut commands, &mapper);
+                build::spawn_cube(&c, &mut commands, &mapper);
             }
 
             // for o in &seed.destnations {
@@ -90,8 +88,8 @@ fn switch_world(
 }
 
 fn regrid(
-    mut heads: Query<(&cube::Pack, &mut Transform, &Children), Without<Path>>,
-    mut units: Query<(&cube::GridPoint, &cube::Pattern, &mut Transform, &mut Path)>,
+    mut heads: Query<(&cube::Pack, &mut Transform, &Children)>,
+    mut units: Query<(&cube::GridPoint, &mut Transform), Without<Children>>,
     mut grid_updated: EventReader<GridUpdated>,
 ) {
     let event = match grid_updated.iter().last() {
@@ -100,19 +98,16 @@ fn regrid(
     };
 
     let grid = &event.mapper;
-    let unit = grid.unit();
+    let scale = grid.scale();
     for (pack, mut transform, children) in heads.iter_mut() {
         let x = pack.0.rect.left;
         let y = pack.0.rect.top;
         transform.translation = grid.absolute(&(x, y)).extend(0.0);
 
         for &child in children.iter() {
-            if let Ok((cube, style, mut transform, mut shape)) = units.get_mut(child) {
+            if let Ok((cube, mut transform)) = units.get_mut(child) {
                 transform.translation = grid.relative(cube).extend(0.);
-                *shape = ShapePath::build_as(&shapes::Polygon {
-                    points: detail::make_boundaries(unit, 0.98, style.into()),
-                    closed: true,
-                });
+                transform.scale = Vec3::new(scale, scale, scale);
             }
         }
     }

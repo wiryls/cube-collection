@@ -1,15 +1,15 @@
-use super::vicinity::Adjacence;
+use super::pattern::Adjacence;
 
 pub trait Location<T> {
-    fn x_(&self) -> T;
-    fn y_(&self) -> T;
+    fn x(&self) -> T;
+    fn y(&self) -> T;
 }
 
 impl<T: Copy> Location<T> for (T, T) {
-    fn x_(&self) -> T {
+    fn x(&self) -> T {
         self.0
     }
-    fn y_(&self) -> T {
+    fn y(&self) -> T {
         self.1
     }
 }
@@ -23,17 +23,17 @@ pub struct Point {
 impl<T: Location<i32>> From<&T> for Point {
     fn from(src: &T) -> Self {
         Self {
-            x: src.x_(),
-            y: src.y_(),
+            x: src.x(),
+            y: src.y(),
         }
     }
 }
 
 impl Location<i32> for Point {
-    fn x_(&self) -> i32 {
+    fn x(&self) -> i32 {
         self.x
     }
-    fn y_(&self) -> i32 {
+    fn y(&self) -> i32 {
         self.y
     }
 }

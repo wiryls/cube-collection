@@ -1,7 +1,7 @@
 mod location;
 mod lookup;
-mod vicinity;
+mod pattern;
 
 pub use self::location::*;
 pub use self::lookup::*;
-pub use self::vicinity::*;
+pub use self::pattern::*;

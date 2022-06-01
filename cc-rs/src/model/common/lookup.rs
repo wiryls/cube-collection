@@ -29,6 +29,6 @@ impl Lookup {
     }
 
     fn key<U: Location<V>, V: Into<i32>>(o: &U) -> u64 {
-        ((o.x_().into() as u64) << 32) | (o.y_().into() as u64)
+        ((o.x().into() as u64) << 32) | (o.y().into() as u64)
     }
 }

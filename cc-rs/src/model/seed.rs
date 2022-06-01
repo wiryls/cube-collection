@@ -1,4 +1,4 @@
-use super::cube;
+use super::{common, cube};
 use bevy::reflect::TypeUuid;
 
 pub struct Seeds {
@@ -65,6 +65,16 @@ pub type CubeType = cube::Type;
 pub struct Location {
     pub x: i32,
     pub y: i32,
+}
+
+impl common::Location<i32> for Location {
+    fn x(&self) -> i32 {
+        self.x
+    }
+
+    fn y(&self) -> i32 {
+        self.y
+    }
 }
 
 #[derive(Clone, Default)]

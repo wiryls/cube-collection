@@ -1,18 +1,18 @@
-use crate::model::common::{Location, Lookup, Point, Vicinity};
+use crate::model::common::{CubePattern, Location, Lookup, Point};
 use bevy::math::Rect;
 
 #[derive(Default)]
 pub struct Unit {
-    pub v: Vicinity,
+    pub v: CubePattern,
     pub o: Point,
 }
 
 impl Location<i32> for Unit {
-    fn x_(&self) -> i32 {
+    fn x(&self) -> i32 {
         self.o.x
     }
 
-    fn y_(&self) -> i32 {
+    fn y(&self) -> i32 {
         self.o.y
     }
 }
@@ -24,10 +24,10 @@ impl Unit {
         U: Into<i32>,
     {
         Self {
-            v: Vicinity::new(),
+            v: CubePattern::new(),
             o: Point {
-                x: o.x_().into(),
-                y: o.y_().into(),
+                x: o.x().into(),
+                y: o.y().into(),
             },
         }
     }
@@ -72,7 +72,7 @@ impl United {
         // [3] create lookup table and update vicinity
         let lookup = Lookup::from(units.iter());
         for u in units.iter_mut() {
-            for v in Vicinity::AROUND {
+            for v in CubePattern::AROUND {
                 if lookup.get(&u.o.near(v)).is_some() {
                     u.v.set(v);
                 }

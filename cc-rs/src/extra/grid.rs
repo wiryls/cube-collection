@@ -102,7 +102,7 @@ impl GridView {
             let th = target.top - target.bottom;
             let sw = (source.right - source.left) as f32;
             let sh = (source.bottom - source.top) as f32;
-            let unit = f32::min(tw / sw, th / sh);
+            let scale = f32::min(tw / sw, th / sh);
 
             self.mapper = GridMapper {
                 source: XY {
@@ -110,10 +110,10 @@ impl GridView {
                     y: source.top,
                 },
                 target: XY {
-                    x: target.left + (tw - sw * unit) / 2.,
-                    y: target.top - (th - sh * unit) / 2.,
+                    x: target.left + (tw - sw * scale) / 2.,
+                    y: target.top - (th - sh * scale) / 2.,
                 },
-                unit,
+                scale,
             };
         }
     }
@@ -123,12 +123,12 @@ impl GridView {
 pub struct GridMapper {
     source: XY<i32>,
     target: XY<f32>,
-    unit: f32,
+    scale: f32,
 }
 
 impl GridMapper {
-    pub fn unit(&self) -> f32 {
-        self.unit
+    pub fn scale(&self) -> f32 {
+        self.scale
     }
 
     pub fn relative<T, U>(&self, o: &T) -> Vec2
@@ -136,7 +136,7 @@ impl GridMapper {
         T: Location<U>,
         U: num_traits::AsPrimitive<f32>,
     {
-        Vec2::new(o.x_().as_() * self.unit, o.y_().as_() as f32 * -self.unit)
+        Vec2::new(o.x().as_() * self.scale, o.y().as_() as f32 * -self.scale)
     }
 
     pub fn absolute<T, U>(&self, o: &T) -> Vec2
@@ -144,36 +144,9 @@ impl GridMapper {
         T: Location<U>,
         U: num_traits::AsPrimitive<i32>,
     {
-        let delta = self.unit * 0.5;
-        let x = self.target.x + delta + (o.x_().as_() - self.source.x) as f32 * self.unit;
-        let y = self.target.y - delta - (o.y_().as_() - self.source.y) as f32 * self.unit;
+        let delta = self.scale * 0.5;
+        let x = self.target.x + delta + (o.x().as_() - self.source.x) as f32 * self.scale;
+        let y = self.target.y - delta - (o.y().as_() - self.source.y) as f32 * self.scale;
         Vec2::new(x, y)
     }
-
-    // pub fn scale<T, U, V>(&self, x: T, y: U, z: V) -> Vec3
-    // where
-    //     T: num_traits::AsPrimitive<i32>,
-    //     U: num_traits::AsPrimitive<i32>,
-    //     V: num_traits::AsPrimitive<f32>,
-    // {
-    //     Vec3::new(
-    //         x.as_() as f32 * self.unit,
-    //         y.as_() as f32 * -self.unit,
-    //         z.as_(),
-    //     )
-    // }
-
-    // pub fn locate<T, U, V>(&self, x: T, y: U, z: V) -> Vec3
-    // where
-    //     T: num_traits::AsPrimitive<i32>,
-    //     U: num_traits::AsPrimitive<i32>,
-    //     V: num_traits::AsPrimitive<f32>,
-    // {
-    //     let delta = self.unit / 2.;
-    //     Vec3::new(
-    //         self.target.x + delta + (x.as_() - self.source.x) as f32 * self.unit,
-    //         self.target.y - delta - (y.as_() - self.source.y) as f32 * self.unit,
-    //         z.as_(),
-    //     )
-    // }
 }
