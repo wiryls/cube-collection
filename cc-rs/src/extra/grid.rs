@@ -1,6 +1,7 @@
+use crate::model::common::Location;
+use bevy::prelude::*;
 use bevy::{
-    math::{Rect, Vec3, XY},
-    prelude::*,
+    math::{Rect, XY},
     window::WindowResized,
 };
 use iyes_loopless::prelude::*;
@@ -130,30 +131,49 @@ impl GridMapper {
         self.unit
     }
 
-    pub fn scale<T, U, V>(&self, x: T, y: U, z: V) -> Vec3
+    pub fn relative<T, U>(&self, o: &T) -> Vec2
     where
-        T: num_traits::AsPrimitive<i32>,
-        U: num_traits::AsPrimitive<i32>,
-        V: num_traits::AsPrimitive<f32>,
+        T: Location<U>,
+        U: num_traits::AsPrimitive<f32>,
     {
-        Vec3::new(
-            x.as_() as f32 * self.unit,
-            y.as_() as f32 * -self.unit,
-            z.as_(),
-        )
+        Vec2::new(o.x_().as_() * self.unit, o.y_().as_() as f32 * -self.unit)
     }
 
-    pub fn locate<T, U, V>(&self, x: T, y: U, z: V) -> Vec3
+    pub fn absolute<T, U>(&self, o: &T) -> Vec2
     where
-        T: num_traits::AsPrimitive<i32>,
+        T: Location<U>,
         U: num_traits::AsPrimitive<i32>,
-        V: num_traits::AsPrimitive<f32>,
     {
-        let delta = self.unit / 2.;
-        Vec3::new(
-            self.target.x + delta + (x.as_() - self.source.x) as f32 * self.unit,
-            self.target.y - delta - (y.as_() - self.source.y) as f32 * self.unit,
-            z.as_(),
-        )
+        let delta = self.unit * 0.5;
+        let x = self.target.x + delta + (o.x_().as_() - self.source.x) as f32 * self.unit;
+        let y = self.target.y - delta - (o.y_().as_() - self.source.y) as f32 * self.unit;
+        Vec2::new(x, y)
     }
+
+    // pub fn scale<T, U, V>(&self, x: T, y: U, z: V) -> Vec3
+    // where
+    //     T: num_traits::AsPrimitive<i32>,
+    //     U: num_traits::AsPrimitive<i32>,
+    //     V: num_traits::AsPrimitive<f32>,
+    // {
+    //     Vec3::new(
+    //         x.as_() as f32 * self.unit,
+    //         y.as_() as f32 * -self.unit,
+    //         z.as_(),
+    //     )
+    // }
+
+    // pub fn locate<T, U, V>(&self, x: T, y: U, z: V) -> Vec3
+    // where
+    //     T: num_traits::AsPrimitive<i32>,
+    //     U: num_traits::AsPrimitive<i32>,
+    //     V: num_traits::AsPrimitive<f32>,
+    // {
+    //     let delta = self.unit / 2.;
+    //     Vec3::new(
+    //         self.target.x + delta + (x.as_() - self.source.x) as f32 * self.unit,
+    //         self.target.y - delta - (y.as_() - self.source.y) as f32 * self.unit,
+    //         z.as_(),
+    //     )
+    // }
 }

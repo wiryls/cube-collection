@@ -51,13 +51,12 @@ fn switch_world(
         None => return,
         Some(seed) => {
             // [0] update grid view
-            let rect = Rect {
+            view.set_source(Rect {
                 left: 0,
                 right: seed.size.width,
                 top: 0,
                 bottom: seed.size.height,
-            };
-            view.set_source(rect);
+            });
 
             // [1] remove old objects
             entities.for_each(|i| commands.entity(i).despawn_recursive());
@@ -105,13 +104,13 @@ fn regrid(
     for (pack, mut transform, children) in heads.iter_mut() {
         let x = pack.0.rect.left;
         let y = pack.0.rect.top;
-        transform.translation = grid.locate(x, y, 0);
+        transform.translation = grid.absolute(&(x, y)).extend(0.0);
 
         for &child in children.iter() {
             if let Ok((cube, style, mut transform, mut shape)) = units.get_mut(child) {
-                transform.translation = grid.scale(cube.0.x, cube.0.y, 0);
+                transform.translation = grid.relative(cube).extend(0.);
                 *shape = ShapePath::build_as(&shapes::Polygon {
-                    points: detail::make_boundaries(unit, 0.98, crate::model::common::Vicinity::from(style)),
+                    points: detail::make_boundaries(unit, 0.98, style.into()),
                     closed: true,
                 });
             }

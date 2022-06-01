@@ -5,13 +5,12 @@ pub trait Location<T> {
     fn y_(&self) -> T;
 }
 
-impl Location<i32> for Point {
-    fn x_(&self) -> i32 {
-        self.x
+impl<T: Copy> Location<T> for (T, T) {
+    fn x_(&self) -> T {
+        self.0
     }
-
-    fn y_(&self) -> i32 {
-        self.y
+    fn y_(&self) -> T {
+        self.1
     }
 }
 
@@ -19,6 +18,24 @@ impl Location<i32> for Point {
 pub struct Point {
     pub x: i32,
     pub y: i32,
+}
+
+impl<T: Location<i32>> From<&T> for Point {
+    fn from(src: &T) -> Self {
+        Self {
+            x: src.x_(),
+            y: src.y_(),
+        }
+    }
+}
+
+impl Location<i32> for Point {
+    fn x_(&self) -> i32 {
+        self.x
+    }
+    fn y_(&self) -> i32 {
+        self.y
+    }
 }
 
 impl Point {

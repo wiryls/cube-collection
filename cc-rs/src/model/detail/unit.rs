@@ -17,6 +17,22 @@ impl Location<i32> for Unit {
     }
 }
 
+impl Unit {
+    fn from<T, U>(o: &T) -> Self
+    where
+        T: Location<U>,
+        U: Into<i32>,
+    {
+        Self {
+            v: Vicinity::new(),
+            o: Point {
+                x: o.x_().into(),
+                y: o.y_().into(),
+            },
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct United {
     pub rect: Rect<i32>,
@@ -37,15 +53,7 @@ impl United {
         V: Into<i32>,
     {
         // [0] collect points into units
-        let mut units: Vec<Unit> = it
-            .map(|l| Unit {
-                v: Vicinity::new(),
-                o: Point {
-                    x: l.x_().into(),
-                    y: l.y_().into(),
-                },
-            })
-            .collect();
+        let mut units: Vec<Unit> = it.map(Unit::from).collect();
 
         // [1] create rect
         let rect = Rect {

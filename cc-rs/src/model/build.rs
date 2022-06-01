@@ -67,7 +67,7 @@ impl<'a> CubeBuilder<'a> {
                             },
                             DrawMode::Fill(FillMode::color(color)),
                             Transform {
-                                translation: mapper.scale(unit.o.x, unit.o.y, 0.),
+                                translation: mapper.relative(unit).extend(0.),
                                 ..default()
                             },
                         ),
@@ -80,7 +80,7 @@ impl<'a> CubeBuilder<'a> {
                 pack,
                 transform: TransformBundle {
                     local: Transform {
-                        translation: mapper.locate(zero.0, zero.1, 0.),
+                        translation: mapper.absolute(&zero).extend(0.),
                         ..default()
                     },
                     ..default()

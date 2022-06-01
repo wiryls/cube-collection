@@ -5,6 +5,16 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub struct GridPoint(pub common::Point);
 
+impl common::Location<i32> for GridPoint {
+    fn x_(&self) -> i32 {
+        self.0.x
+    }
+
+    fn y_(&self) -> i32 {
+        self.0.y
+    }
+}
+
 impl<T: common::Location<i32>> From<&T> for GridPoint {
     fn from(location: &T) -> Self {
         Self(common::Point::new(location.x_(), location.y_()))
