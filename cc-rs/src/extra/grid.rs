@@ -126,9 +126,21 @@ pub struct GridMapper {
     scale: f32,
 }
 
+#[allow(dead_code)]
 impl GridMapper {
-    pub fn scale(&self) -> f32 {
-        self.scale
+    pub fn scale<T>(&self, i: T) -> f32
+    where
+        T: num_traits::AsPrimitive<f32>,
+    {
+        self.scale * i.as_()
+    }
+
+    pub fn flip<T, U>(&self, o: &T) -> Vec2
+    where
+        T: Location<U>,
+        U: num_traits::AsPrimitive<f32>,
+    {
+        Vec2::new(o.x().as_(), -o.y().as_())
     }
 
     pub fn relative<T, U>(&self, o: &T) -> Vec2

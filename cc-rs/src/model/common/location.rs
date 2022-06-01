@@ -38,6 +38,7 @@ impl Location<i32> for Point {
     }
 }
 
+#[allow(dead_code)]
 impl Point {
     pub fn new<T: Into<i32>>(x: T, y: T) -> Self {
         Self {
