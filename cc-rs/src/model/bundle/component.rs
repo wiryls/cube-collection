@@ -1,27 +1,33 @@
 use crate::model::common::Location;
-use crate::model::unit;
+use crate::model::{cube, seed, unit};
 use bevy::prelude::*;
 
 /// Marks its lifetime is limited to a specific level.
 #[derive(Component, Default)]
 pub struct Earthbound;
 
-/// The header of cubes.
+/// The core of cubes.
 #[derive(Component)]
-pub struct Pack(pub unit::United);
+pub struct Cube {
+    pub kind: cube::Type,
+    pub body: unit::Unibody,
+}
 
-impl From<unit::United> for Pack {
-    fn from(united: unit::United) -> Self {
-        Self(united)
+impl From<&seed::Cube> for Cube {
+    fn from(cube: &seed::Cube) -> Self {
+        Self {
+            kind: cube.kind,
+            body: unit::Unibody::from(cube.body.iter()),
+        }
     }
 }
 
-impl Location<i32> for Pack {
+impl Location<i32> for Cube {
     fn x(&self) -> i32 {
-        self.0.rect.left
+        self.body.rect.left
     }
     fn y(&self) -> i32 {
-        self.0.rect.top
+        self.body.rect.top
     }
 }
 

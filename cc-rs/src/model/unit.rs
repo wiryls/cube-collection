@@ -1,51 +1,14 @@
-use crate::model::common::{CubePattern, Location, Lookup, Point};
+use crate::model::common::*;
 use bevy::math::Rect;
 
-#[derive(Default)]
-pub struct Unit {
-    pub v: CubePattern,
-    pub o: Point,
-}
-
-impl Location<i32> for Unit {
-    fn x(&self) -> i32 {
-        self.o.x
-    }
-
-    fn y(&self) -> i32 {
-        self.o.y
-    }
-}
-
-impl Unit {
-    fn from<T, U>(o: &T) -> Self
-    where
-        T: Location<U>,
-        U: Into<i32>,
-    {
-        Self {
-            v: CubePattern::new(),
-            o: Point {
-                x: o.x().into(),
-                y: o.y().into(),
-            },
-        }
-    }
-}
-
-#[derive(Default)]
-pub struct United {
+pub struct Unibody {
     pub rect: Rect<i32>,
-    pub units: Vec<Unit>,
+    pub units: Vec<Point>,
     pub lookup: Lookup,
 }
 
 #[allow(dead_code)]
-impl United {
-    pub fn new() -> Self {
-        Default::default()
-    }
-
+impl Unibody {
     pub fn from<'a, I, U, V>(it: I) -> Self
     where
         I: Iterator<Item = &'a U>,
@@ -53,38 +16,46 @@ impl United {
         V: Into<i32>,
     {
         // [0] collect points into units
-        let mut units: Vec<Unit> = it.map(Unit::from).collect();
+        let mut units: Vec<Point> = it.map(Point::from).collect();
 
         // [1] create rect
         let rect = Rect {
-            left: units.iter().map(|u| u.o.x).min().unwrap_or_default(),
-            right: units.iter().map(|u| u.o.x).max().unwrap_or_default(),
-            top: units.iter().map(|u| u.o.y).min().unwrap_or_default(),
-            bottom: units.iter().map(|u| u.o.y).max().unwrap_or_default(),
+            left: units.iter().map(|u| u.x).min().unwrap_or_default(),
+            right: units.iter().map(|u| u.x).max().unwrap_or_default(),
+            top: units.iter().map(|u| u.y).min().unwrap_or_default(),
+            bottom: units.iter().map(|u| u.y).max().unwrap_or_default(),
         };
 
-        // [2] update unit.o
+        // [2] update unit
         for unit in units.iter_mut() {
-            unit.o.x -= rect.left;
-            unit.o.y -= rect.top;
+            unit.x -= rect.left;
+            unit.y -= rect.top;
         }
 
-        // [3] create lookup table and update vicinity
+        // [3] create lookup table and update CubePattern
         let lookup = Lookup::from(units.iter());
-        for unit in units.iter_mut() {
-            for direction in CubePattern::AROUND {
-                if lookup.get(&unit.o.near(direction)).is_some() {
-                    unit.v.set(direction);
-                }
-            }
-        }
 
-        // finish
+        // [4] finish
         Self {
             rect,
             units,
             lookup,
         }
+    }
+
+    pub fn patterns(&self) -> impl Iterator<Item = (&Point, CubePattern)> {
+        self.units
+            .iter()
+            .map(|unit| {
+                let mut pattern = CubePattern::new();
+                for direction in CubePattern::AROUND {
+                    if self.lookup.get(&unit.near(direction)).is_some() {
+                        pattern.set(direction);
+                    }
+                }
+                (unit, pattern)
+            })
+            .into_iter()
     }
 
     // TODO: implement merge methods.

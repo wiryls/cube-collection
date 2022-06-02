@@ -47,6 +47,17 @@ impl Point {
         }
     }
 
+    pub fn from<T, U>(o: &T) -> Self
+    where
+        T: Location<U>,
+        U: Into<i32>,
+    {
+        Self {
+            x: o.x().into(),
+            y: o.y().into(),
+        }
+    }
+
     pub const fn near(&self, dir: Adjacence) -> Self {
         match dir {
             Adjacence::LEFT => Self {

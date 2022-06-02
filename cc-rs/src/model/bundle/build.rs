@@ -5,12 +5,12 @@ use bevy_prototype_lyon::prelude::*;
 use super::component::*;
 use crate::extra::grid::GridMapper;
 use crate::model::common::Location;
-use crate::model::{cube, seed, unit};
+use crate::model::{cube, seed};
 
 #[derive(Bundle)]
 struct CubeBundle {
     live: Earthbound,
-    pack: Pack,
+    cube: Cube,
     #[bundle]
     transform: TransformBundle,
 }
@@ -21,9 +21,9 @@ struct UnitBundle {
     shape: ShapeBundle,
 }
 
-pub fn spawn_cube(cube: &seed::Cube, commands: &mut Commands, mapper: &GridMapper) {
-    let pack = Pack::from(unit::United::from(cube.body.iter()));
-    let zero = (pack.x(), pack.y());
+pub fn spawn_cube(seed: &seed::Cube, commands: &mut Commands, mapper: &GridMapper) {
+    let cube = Cube::from(seed);
+    let zero = (cube.x(), cube.y());
     let scale = mapper.scale(1.0);
     let color = match cube.kind {
         cube::Type::White => Color::rgb(1., 1., 1.),
@@ -35,11 +35,11 @@ pub fn spawn_cube(cube: &seed::Cube, commands: &mut Commands, mapper: &GridMappe
     commands
         .spawn()
         .with_children(|head| {
-            for unit in &pack.0.units {
+            for (unit, pattern) in cube.body.patterns() {
                 head.spawn_bundle(UnitBundle {
                     shape: GeometryBuilder::build_as(
                         &shapes::Polygon {
-                            points: unit.v.boundaries(1.0, 0.95),
+                            points: pattern.boundaries(1.0, 0.95),
                             closed: true,
                         },
                         DrawMode::Fill(FillMode::color(color)),
@@ -53,7 +53,7 @@ pub fn spawn_cube(cube: &seed::Cube, commands: &mut Commands, mapper: &GridMappe
         })
         .insert_bundle(CubeBundle {
             live: Earthbound::default(),
-            pack,
+            cube,
             transform: TransformBundle {
                 local: Transform {
                     translation: mapper.absolute(&zero).extend(0.),

@@ -88,7 +88,7 @@ fn switch_world(
 }
 
 fn regrid(
-    mut cubes: Query<(&bundle::Pack, &mut Transform)>,
+    mut cubes: Query<(&bundle::Cube, &mut Transform)>,
     mut grid_updated: EventReader<GridUpdated>,
 ) {
     let event = match grid_updated.iter().last() {
