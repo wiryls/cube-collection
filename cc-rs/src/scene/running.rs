@@ -3,7 +3,7 @@ use iyes_loopless::prelude::*;
 
 use super::state::State;
 use crate::extra::grid::{GridPlugin, GridUpdated, GridView};
-use crate::model::{build, cube, seed};
+use crate::model::{bundle, component, seed};
 
 /// - input: ```Res<seed::Seeds>```
 /// - output: none
@@ -34,7 +34,7 @@ fn setup_world(mut reset: EventWriter<WorldChanged>) {
 
 fn switch_world(
     mut commands: Commands,
-    entities: Query<Entity, With<cube::Live>>,
+    entities: Query<Entity, With<component::Earthbound>>,
     mut view: ResMut<GridView>,
     mut world_seeds: ResMut<seed::Seeds>,
     mut world_changed: EventReader<WorldChanged>,
@@ -63,7 +63,7 @@ fn switch_world(
             // [2] create new cubes
             let mapper = view.mapping();
             for c in &seed.cubes {
-                build::spawn_cube(&c, &mut commands, &mapper);
+                bundle::spawn_cube(&c, &mut commands, &mapper);
             }
 
             // for o in &seed.destnations {
@@ -88,7 +88,7 @@ fn switch_world(
 }
 
 fn regrid(
-    mut cubes: Query<(&cube::Pack, &mut Transform)>,
+    mut cubes: Query<(&component::Pack, &mut Transform)>,
     mut grid_updated: EventReader<GridUpdated>,
 ) {
     let event = match grid_updated.iter().last() {
@@ -99,9 +99,7 @@ fn regrid(
     let grid = &event.mapper;
     let scale = grid.scale(1.0);
     for (pack, mut transform) in cubes.iter_mut() {
-        let x = pack.0.rect.left;
-        let y = pack.0.rect.top;
-        transform.translation = grid.absolute(&(x, y)).extend(0.0);
+        transform.translation = grid.absolute(pack).extend(0.0);
         transform.scale = Vec3::new(scale, scale, 1.0);
     }
 }

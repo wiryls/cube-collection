@@ -1,6 +1,6 @@
-pub mod build;
+pub mod bundle;
 pub mod common;
+pub mod component;
 pub mod cube;
-pub mod detail;
-pub mod rule;
 pub mod seed;
+pub mod unit;

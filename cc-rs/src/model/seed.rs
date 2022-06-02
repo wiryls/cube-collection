@@ -1,4 +1,4 @@
-use super::{common, cube};
+use super::{common, component, cube};
 use bevy::reflect::TypeUuid;
 
 pub struct Seeds {
@@ -83,4 +83,4 @@ pub struct Command {
     pub movements: Vec<(usize, Action)>,
 }
 
-pub type Action = cube::Action;
+pub type Action = component::Action;

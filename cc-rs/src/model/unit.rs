@@ -71,10 +71,10 @@ impl United {
 
         // [3] create lookup table and update vicinity
         let lookup = Lookup::from(units.iter());
-        for u in units.iter_mut() {
-            for v in CubePattern::AROUND {
-                if lookup.get(&u.o.near(v)).is_some() {
-                    u.v.set(v);
+        for unit in units.iter_mut() {
+            for direction in CubePattern::AROUND {
+                if lookup.get(&unit.o.near(direction)).is_some() {
+                    unit.v.set(direction);
                 }
             }
         }
