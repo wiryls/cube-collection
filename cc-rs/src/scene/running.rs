@@ -3,7 +3,7 @@ use iyes_loopless::prelude::*;
 
 use super::state::State;
 use crate::extra::grid::{GridPlugin, GridUpdated, GridView};
-use crate::model::{bundle, component, seed};
+use crate::model::{bundle, seed};
 
 /// - input: ```Res<seed::Seeds>```
 /// - output: none
@@ -34,7 +34,7 @@ fn setup_world(mut reset: EventWriter<WorldChanged>) {
 
 fn switch_world(
     mut commands: Commands,
-    entities: Query<Entity, With<component::Earthbound>>,
+    entities: Query<Entity, With<bundle::Earthbound>>,
     mut view: ResMut<GridView>,
     mut world_seeds: ResMut<seed::Seeds>,
     mut world_changed: EventReader<WorldChanged>,
@@ -88,7 +88,7 @@ fn switch_world(
 }
 
 fn regrid(
-    mut cubes: Query<(&component::Pack, &mut Transform)>,
+    mut cubes: Query<(&bundle::Pack, &mut Transform)>,
     mut grid_updated: EventReader<GridUpdated>,
 ) {
     let event = match grid_updated.iter().last() {

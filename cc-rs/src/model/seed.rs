@@ -1,4 +1,4 @@
-use super::{common, component, cube};
+use super::{common, cube};
 use bevy::reflect::TypeUuid;
 
 pub struct Seeds {
@@ -54,12 +54,10 @@ pub struct Size {
 
 #[derive(Clone)]
 pub struct Cube {
-    pub kind: CubeType,
+    pub kind: cube::Type,
     pub body: Vec<Location>,
     pub command: Option<Command>,
 }
-
-pub type CubeType = cube::Type;
 
 #[derive(Clone)]
 pub struct Location {
@@ -71,7 +69,6 @@ impl common::Location<i32> for Location {
     fn x(&self) -> i32 {
         self.x
     }
-
     fn y(&self) -> i32 {
         self.y
     }
@@ -80,7 +77,5 @@ impl common::Location<i32> for Location {
 #[derive(Clone, Default)]
 pub struct Command {
     pub is_loop: bool,
-    pub movements: Vec<(usize, Action)>,
+    pub movements: Vec<(usize, cube::Movement)>,
 }
-
-pub type Action = component::Action;

@@ -1,4 +1,4 @@
-use crate::model::seed;
+use crate::model::{cube, seed};
 use serde::Deserialize;
 use snafu::{ensure, Snafu};
 
@@ -69,10 +69,10 @@ impl Source {
         for line in self.map.raw.lines() {
             for c in line.chars() {
                 match c {
-                    'W' => builder.make_cube(seed::CubeType::White),
-                    'R' => builder.make_cube(seed::CubeType::Red),
-                    'B' => builder.make_cube(seed::CubeType::Blue),
-                    'G' => builder.make_cube(seed::CubeType::Green),
+                    'W' => builder.make_cube(cube::Type::White),
+                    'R' => builder.make_cube(cube::Type::Red),
+                    'B' => builder.make_cube(cube::Type::Blue),
+                    'G' => builder.make_cube(cube::Type::Green),
                     'x' => builder.make_destination(),
                     ' ' => builder.make_empty(),
                     '~' => builder.copy_left()?,
@@ -89,11 +89,11 @@ impl Source {
             let mut b = CommandBuilder::new(m.is_loop);
             for c in m.content.chars() {
                 match c {
-                    'I' => put(&mut b, &mut n).put(seed::Action::Idle),
-                    'L' => put(&mut b, &mut n).put(seed::Action::Left),
-                    'D' => put(&mut b, &mut n).put(seed::Action::Down),
-                    'U' => put(&mut b, &mut n).put(seed::Action::Up),
-                    'R' => put(&mut b, &mut n).put(seed::Action::Right),
+                    'I' => put(&mut b, &mut n).put(cube::Movement::Idle),
+                    'L' => put(&mut b, &mut n).put(cube::Movement::Left),
+                    'D' => put(&mut b, &mut n).put(cube::Movement::Down),
+                    'U' => put(&mut b, &mut n).put(cube::Movement::Up),
+                    'R' => put(&mut b, &mut n).put(cube::Movement::Right),
                     '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' if !b.is_empty() => {
                         n.push(c)
                     }
@@ -195,7 +195,7 @@ impl LevelBuilder {
         self.make(None);
     }
 
-    fn make_cube(&mut self, kind: seed::CubeType) {
+    fn make_cube(&mut self, kind: cube::Type) {
         let i = self.cs.len();
         let c = seed::Cube {
             kind,
@@ -365,7 +365,7 @@ impl CommandBuilder {
         })
     }
 
-    fn put(&mut self, movement: seed::Action) {
+    fn put(&mut self, movement: cube::Movement) {
         match self.0.movements.last_mut() {
             Some(c) if c.1 == movement => c.0 += 1,
             _ => self.0.movements.push((1, movement)),
@@ -375,7 +375,10 @@ impl CommandBuilder {
     fn add(&mut self, number: i32) {
         match self.0.movements.last_mut() {
             Some(c) => c.0 = c.0 + number as usize - 1,
-            _ => self.0.movements.push((number as usize, seed::Action::Idle)),
+            _ => self
+                .0
+                .movements
+                .push((number as usize, cube::Movement::Idle)),
         }
     }
 

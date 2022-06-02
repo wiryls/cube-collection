@@ -1,4 +1,5 @@
-use super::{common::Location, unit};
+use crate::model::common::Location;
+use crate::model::unit;
 use bevy::prelude::*;
 
 /// Marks its lifetime is limited to a specific level.
@@ -19,7 +20,6 @@ impl Location<i32> for Pack {
     fn x(&self) -> i32 {
         self.0.rect.left
     }
-
     fn y(&self) -> i32 {
         self.0.rect.top
     }
@@ -28,13 +28,3 @@ impl Location<i32> for Pack {
 /// The actions list of cubes.
 #[derive(Component)]
 pub struct Move {/* TODO */}
-
-/// Cube's current action.
-#[derive(Clone, PartialEq)]
-pub enum Action {
-    Idle,
-    Left,
-    Down,
-    Up,
-    Right,
-}
