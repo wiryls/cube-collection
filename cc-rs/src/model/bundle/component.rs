@@ -8,12 +8,12 @@ pub struct Earthbound;
 
 /// The core of cubes.
 #[derive(Component)]
-pub struct Cube {
+pub struct CubeCore {
     pub kind: cube::Type,
     pub body: unit::Unibody,
 }
 
-impl From<&seed::Cube> for Cube {
+impl From<&seed::Cube> for CubeCore {
     fn from(cube: &seed::Cube) -> Self {
         Self {
             kind: cube.kind,
@@ -22,7 +22,7 @@ impl From<&seed::Cube> for Cube {
     }
 }
 
-impl Location<i32> for Cube {
+impl Location<i32> for CubeCore {
     fn x(&self) -> i32 {
         self.body.rect.left
     }

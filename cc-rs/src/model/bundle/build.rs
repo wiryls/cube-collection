@@ -10,7 +10,7 @@ use crate::model::{cube, seed};
 #[derive(Bundle)]
 struct CubeBundle {
     live: Earthbound,
-    cube: Cube,
+    cube: CubeCore,
     #[bundle]
     transform: TransformBundle,
 }
@@ -22,7 +22,7 @@ struct UnitBundle {
 }
 
 pub fn spawn_cube(seed: &seed::Cube, commands: &mut Commands, mapper: &GridMapper) {
-    let cube = Cube::from(seed);
+    let cube = CubeCore::from(seed);
     let zero = (cube.x(), cube.y());
     let scale = mapper.scale(1.0);
     let color = match cube.kind {
@@ -35,7 +35,7 @@ pub fn spawn_cube(seed: &seed::Cube, commands: &mut Commands, mapper: &GridMappe
     commands
         .spawn()
         .with_children(|head| {
-            for (unit, pattern) in cube.body.patterns() {
+            for (unit, pattern) in cube.body.calculate_patterns() {
                 head.spawn_bundle(UnitBundle {
                     shape: GeometryBuilder::build_as(
                         &shapes::Polygon {

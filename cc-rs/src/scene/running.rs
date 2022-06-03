@@ -88,7 +88,7 @@ fn switch_world(
 }
 
 fn regrid(
-    mut cubes: Query<(&bundle::Cube, &mut Transform)>,
+    mut cubes: Query<(&bundle::CubeCore, &mut Transform)>,
     mut grid_updated: EventReader<GridUpdated>,
 ) {
     let event = match grid_updated.iter().last() {
@@ -98,8 +98,8 @@ fn regrid(
 
     let grid = &event.mapper;
     let scale = grid.scale(1.0);
-    for (pack, mut transform) in cubes.iter_mut() {
-        transform.translation = grid.absolute(pack).extend(0.0);
+    for (cube, mut transform) in cubes.iter_mut() {
+        transform.translation = grid.absolute(cube).extend(0.0);
         transform.scale = Vec3::new(scale, scale, 1.0);
     }
 }

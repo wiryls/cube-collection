@@ -43,7 +43,7 @@ impl Unibody {
         }
     }
 
-    pub fn patterns(&self) -> impl Iterator<Item = (&Point, CubePattern)> {
+    pub fn calculate_patterns(&self) -> impl Iterator<Item = (&Point, CubePattern)> {
         self.units
             .iter()
             .map(|unit| {
