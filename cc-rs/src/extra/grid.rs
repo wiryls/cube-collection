@@ -126,6 +126,7 @@ pub struct GridMapper {
     scale: f32,
 }
 
+#[allow(dead_code)]
 impl GridMapper {
     pub fn scale<T>(&self, o: T) -> f32
     where

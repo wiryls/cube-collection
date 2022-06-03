@@ -3,7 +3,7 @@ use iyes_loopless::prelude::*;
 
 use super::state::State;
 use crate::extra::grid::{GridPlugin, GridUpdated, GridView};
-use crate::model::{bundle, seed};
+use crate::model::{port, seed};
 
 /// - input: ```Res<seed::Seeds>```
 /// - output: none
@@ -15,9 +15,18 @@ impl Plugin for RunningScene {
             .add_enter_system(State::Running, setup_world)
             .add_system_set(
                 ConditionSet::new()
+                    .label("flow")
                     .run_in_state(State::Running)
                     .with_system(switch_world.run_on_event::<WorldChanged>())
                     .with_system(update_scale.run_on_event::<GridUpdated>())
+                    .into(),
+            )
+            .add_system_set(
+                ConditionSet::new()
+                    .label("rule")
+                    .after("flow")
+                    .run_not_in_state(State::Running)
+                    .with_system(port::movement)
                     .into(),
             );
     }
@@ -34,7 +43,7 @@ fn setup_world(mut reset: EventWriter<WorldChanged>) {
 
 fn switch_world(
     mut commands: Commands,
-    entities: Query<Entity, With<bundle::Earthbound>>,
+    entities: Query<Entity, With<port::Earthbound>>,
     mut view: ResMut<GridView>,
     mut world_seeds: ResMut<seed::Seeds>,
     mut world_changed: EventReader<WorldChanged>,
@@ -63,7 +72,7 @@ fn switch_world(
             // [2] create new cubes
             let mapper = view.mapping();
             for c in &seed.cubes {
-                bundle::spawn_cube(&c, &mut commands, &mapper);
+                port::spawn_cube(&c, &mut commands, &mapper);
             }
 
             // for o in &seed.destnations {
@@ -88,7 +97,7 @@ fn switch_world(
 }
 
 fn update_scale(
-    mut cubes: Query<(&bundle::CubeCore, &mut Transform)>,
+    mut cubes: Query<(&port::CubeCore, &mut Transform)>,
     mut grid_updated: EventReader<GridUpdated>,
 ) {
     let event = match grid_updated.iter().last() {

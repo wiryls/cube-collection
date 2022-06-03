@@ -28,7 +28,7 @@ impl Behavior {
     }
 
     #[allow(dead_code)]
-    pub fn new_with_others<'a, I>(it: I) -> Self
+    pub fn new_from_others<'a, I>(it: I) -> Self
     where
         I: IntoIterator<Item = Self>,
     {
