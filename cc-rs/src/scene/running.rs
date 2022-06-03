@@ -99,7 +99,7 @@ fn regrid(
     let grid = &event.mapper;
     let scale = grid.scale(1.0);
     for (cube, mut transform) in cubes.iter_mut() {
-        transform.translation = grid.absolute(cube).extend(0.0);
+        transform.translation = grid.absolute(&cube.body).extend(0.0);
         transform.scale = Vec3::new(scale, scale, 1.0);
     }
 }

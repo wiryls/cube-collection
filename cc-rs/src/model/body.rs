@@ -61,3 +61,12 @@ impl Unibody {
     // TODO: implement merge methods.
     // pub fn merge(&mut self, that: Self) {}
 }
+
+impl Location<i32> for Unibody {
+    fn x(&self) -> i32 {
+        self.rect.left
+    }
+    fn y(&self) -> i32 {
+        self.rect.top
+    }
+}

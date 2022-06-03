@@ -1,4 +1,4 @@
-use super::{common, cube};
+use super::{behavior, common, cube};
 use bevy::reflect::TypeUuid;
 
 pub struct Seeds {
@@ -77,5 +77,5 @@ impl common::Location<i32> for Location {
 #[derive(Clone, Default)]
 pub struct Command {
     pub is_loop: bool,
-    pub movements: Vec<(usize, cube::Movement)>,
+    pub movements: Vec<(behavior::Movement, usize)>,
 }

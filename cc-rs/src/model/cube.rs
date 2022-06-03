@@ -6,12 +6,3 @@ pub enum Type {
     Blue,
     Green,
 }
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum Movement {
-    Idle,
-    Left,
-    Down,
-    Up,
-    Right,
-}

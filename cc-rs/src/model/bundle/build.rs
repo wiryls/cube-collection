@@ -23,7 +23,7 @@ struct UnitBundle {
 
 pub fn spawn_cube(seed: &seed::Cube, commands: &mut Commands, mapper: &GridMapper) {
     let cube = CubeCore::from(seed);
-    let zero = (cube.x(), cube.y());
+    let zero = (cube.body.x(), cube.body.y());
     let scale = mapper.scale(1.0);
     let color = match cube.kind {
         cube::Type::White => Color::rgb(1., 1., 1.),

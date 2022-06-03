@@ -1,4 +1,4 @@
-use crate::model::{cube, seed};
+use crate::model::{behavior, cube, seed};
 use serde::Deserialize;
 use snafu::{ensure, Snafu};
 
@@ -89,11 +89,11 @@ impl Source {
             let mut b = CommandBuilder::new(m.is_loop);
             for c in m.content.chars() {
                 match c {
-                    'I' => put(&mut b, &mut n).put(cube::Movement::Idle),
-                    'L' => put(&mut b, &mut n).put(cube::Movement::Left),
-                    'D' => put(&mut b, &mut n).put(cube::Movement::Down),
-                    'U' => put(&mut b, &mut n).put(cube::Movement::Up),
-                    'R' => put(&mut b, &mut n).put(cube::Movement::Right),
+                    'I' => put(&mut b, &mut n).put(behavior::Movement::Idle),
+                    'L' => put(&mut b, &mut n).put(behavior::Movement::Left),
+                    'D' => put(&mut b, &mut n).put(behavior::Movement::Down),
+                    'U' => put(&mut b, &mut n).put(behavior::Movement::Up),
+                    'R' => put(&mut b, &mut n).put(behavior::Movement::Right),
                     '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' if !b.is_empty() => {
                         n.push(c)
                     }
@@ -352,7 +352,7 @@ struct CommandBuilder(seed::Command);
 
 impl Into<seed::Command> for CommandBuilder {
     fn into(mut self) -> seed::Command {
-        self.0.movements.retain(|m| m.0 > 0);
+        self.0.movements.retain(|m| m.1 > 0);
         self.0
     }
 }
@@ -365,20 +365,20 @@ impl CommandBuilder {
         })
     }
 
-    fn put(&mut self, movement: cube::Movement) {
+    fn put(&mut self, movement: behavior::Movement) {
         match self.0.movements.last_mut() {
-            Some(c) if c.1 == movement => c.0 += 1,
-            _ => self.0.movements.push((1, movement)),
+            Some(c) if c.0 == movement => c.1 += 1,
+            _ => self.0.movements.push((movement, 1)),
         }
     }
 
     fn add(&mut self, number: i32) {
         match self.0.movements.last_mut() {
-            Some(c) => c.0 = c.0 + number as usize - 1,
+            Some(c) => c.1 = c.1 + number as usize - 1,
             _ => self
                 .0
                 .movements
-                .push((number as usize, cube::Movement::Idle)),
+                .push((behavior::Movement::Idle, number as usize)),
         }
     }
 
