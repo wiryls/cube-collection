@@ -1,4 +1,4 @@
-use crate::model::{body, cube, seed};
+use crate::model::{behavior, body, cube, seed};
 use bevy::prelude::*;
 
 /// Marks its lifetime is limited to a specific level.
@@ -23,4 +23,4 @@ impl From<&seed::Cube> for CubeCore {
 
 /// The actions list of cubes.
 #[derive(Component)]
-pub struct Move {/* TODO */}
+pub struct Movement(pub behavior::Behavior);

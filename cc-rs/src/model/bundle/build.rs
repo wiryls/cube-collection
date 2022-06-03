@@ -1,9 +1,11 @@
+use bevy::ecs::system::EntityCommands;
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 
 use super::component::*;
 use crate::extra::grid::GridMapper;
+use crate::model::behavior::Behavior;
 use crate::model::common::Location;
 use crate::model::{cube, seed};
 
@@ -62,5 +64,24 @@ pub fn spawn_cube(seed: &seed::Cube, commands: &mut Commands, mapper: &GridMappe
                 },
                 ..default()
             },
-        });
+        })
+        .insert_option(
+            seed.command
+                .as_ref()
+                .map(Behavior::new_with_seed)
+                .map(Movement),
+        );
+}
+
+trait EntityCommandsExt {
+    fn insert_option<T: Component>(&mut self, o: Option<T>) -> &mut Self;
+}
+
+impl EntityCommandsExt for EntityCommands<'_, '_, '_> {
+    fn insert_option<T: Component>(&mut self, o: Option<T>) -> &mut Self {
+        match o {
+            Some(x) => self.insert(x),
+            None => self,
+        }
+    }
 }

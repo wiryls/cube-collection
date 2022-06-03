@@ -17,7 +17,7 @@ impl Plugin for RunningScene {
                 ConditionSet::new()
                     .run_in_state(State::Running)
                     .with_system(switch_world.run_on_event::<WorldChanged>())
-                    .with_system(regrid.run_on_event::<GridUpdated>())
+                    .with_system(update_scale.run_on_event::<GridUpdated>())
                     .into(),
             );
     }
@@ -87,7 +87,7 @@ fn switch_world(
     }
 }
 
-fn regrid(
+fn update_scale(
     mut cubes: Query<(&bundle::CubeCore, &mut Transform)>,
     mut grid_updated: EventReader<GridUpdated>,
 ) {

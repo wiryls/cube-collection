@@ -1,5 +1,3 @@
-use bevy::utils::tracing::Id;
-
 use super::seed;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -11,60 +9,95 @@ pub enum Movement {
     Right,
 }
 
-pub trait Behavior {
-    fn get(&self) -> Movement;
-    fn set(&mut self, m: Movement);
-    fn done(&self) -> bool;
-    fn next(&mut self);
-}
+pub struct Behavior(Behaviour);
 
-pub fn create_behavior() -> Box<dyn Behavior> {
-    Box::new(Idle(None))
-}
-
-pub fn create_behavior_from_seed(seed: &seed::Command) -> Box<dyn Behavior> {
-    Box::new(Move {
-        is_loop: seed.is_loop,
-        movements: seed.movements.clone(),
-        cache: None,
-        count: 0,
-        index: 0,
-    })
-}
-
-pub fn create_behavior_from_behaviors<I>(it: I) -> Box<dyn Behavior>
-where
-    I: IntoIterator<Item = Box<dyn Behavior>>,
-{
-    Box::new(Moves {
-        cache: None,
-        moves: it.into_iter().collect(),
-    })
-}
-
-struct Done;
-
-impl Behavior for Done {
-    fn get(&self) -> Movement {
-        Movement::Idle
+#[allow(dead_code)]
+impl Behavior {
+    pub fn new() -> Self {
+        Behavior(Behaviour::Idle(Idle(None)))
     }
 
-    fn set(&mut self, _: Movement) {
-        // do nothing
+    pub fn new_with_seed(seed: &seed::Command) -> Self {
+        Behavior(Behaviour::Move(Move {
+            is_loop: seed.is_loop,
+            movements: seed.movements.clone(),
+            cache: None,
+            count: 0,
+            index: 0,
+        }))
     }
 
-    fn done(&self) -> bool {
-        true
+    #[allow(dead_code)]
+    pub fn new_with_others<'a, I>(it: I) -> Self
+    where
+        I: IntoIterator<Item = Self>,
+    {
+        Behavior(Behaviour::Team(Team {
+            cache: None,
+            moves: it.into_iter().map(|x| x.0).filter(|x| !x.done()).collect(),
+        }))
     }
 
-    fn next(&mut self) {
-        // do nothing
+    pub fn get(&self) -> Movement {
+        self.0.get()
+    }
+
+    pub fn set(&mut self, m: Movement) {
+        self.0.set(m)
+    }
+
+    pub fn done(&self) -> bool {
+        self.0.done()
+    }
+
+    pub fn next(&mut self) {
+        self.0.next()
+    }
+}
+
+enum Behaviour {
+    Idle(Idle),
+    Move(Move),
+    Team(Team),
+}
+
+impl Behaviour {
+    pub fn get(&self) -> Movement {
+        match self {
+            Behaviour::Idle(x) => x.get(),
+            Behaviour::Move(x) => x.get(),
+            Behaviour::Team(x) => x.get(),
+        }
+    }
+
+    pub fn set(&mut self, m: Movement) {
+        match self {
+            Behaviour::Idle(x) => x.set(m),
+            Behaviour::Move(x) => x.set(m),
+            Behaviour::Team(x) => x.set(m),
+        }
+    }
+
+    pub fn done(&self) -> bool {
+        match self {
+            Behaviour::Idle(x) => x.done(),
+            Behaviour::Move(x) => x.done(),
+            Behaviour::Team(x) => x.done(),
+        }
+    }
+
+    pub fn next(&mut self) {
+        match self {
+            Behaviour::Idle(x) => x.next(),
+            Behaviour::Move(x) => x.next(),
+            Behaviour::Team(x) => x.next(),
+        }
     }
 }
 
 struct Idle(Option<Movement>);
 
-impl Behavior for Idle {
+impl Idle {
     fn get(&self) -> Movement {
         self.0.unwrap_or(Movement::Idle)
     }
@@ -92,7 +125,7 @@ struct Move {
     index: usize,
 }
 
-impl Behavior for Move {
+impl Move {
     fn get(&self) -> Movement {
         if let Some(m) = self.cache {
             m
@@ -133,12 +166,12 @@ impl Behavior for Move {
     }
 }
 
-struct Moves {
+struct Team {
     cache: Option<Movement>,
-    moves: Vec<Box<dyn Behavior>>,
+    moves: Vec<Behaviour>,
 }
 
-impl Behavior for Moves {
+impl Team {
     fn get(&self) -> Movement {
         match self.cache {
             Some(m) => m,
@@ -150,11 +183,12 @@ impl Behavior for Moves {
     }
 
     fn set(&mut self, m: Movement) {
+        self.cache = Some(m);
         self.moves.iter_mut().for_each(|it| it.set(m));
     }
 
     fn done(&self) -> bool {
-        !self.moves.iter().any(|m| !m.done())
+        self.moves.iter().all(|m| m.done())
     }
 
     fn next(&mut self) {
