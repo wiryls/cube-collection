@@ -1,4 +1,5 @@
 use super::pattern::Adjacence;
+use crate::model::behavior::Movement;
 
 pub trait Location<T> {
     fn x(&self) -> T;
@@ -55,6 +56,31 @@ impl Point {
         Self {
             x: o.x().into(),
             y: o.y().into(),
+        }
+    }
+
+    pub const fn step(&self, dir: Movement) -> Self {
+        match dir {
+            Movement::Idle => Self {
+                x: self.x,
+                y: self.y,
+            },
+            Movement::Left => Self {
+                x: self.x - 1,
+                y: self.y,
+            },
+            Movement::Down => Self {
+                x: self.x,
+                y: self.y + 1,
+            },
+            Movement::Up => Self {
+                x: self.x,
+                y: self.y - 1,
+            },
+            Movement::Right => Self {
+                x: self.x + 1,
+                y: self.y,
+            },
         }
     }
 

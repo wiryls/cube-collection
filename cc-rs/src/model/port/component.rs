@@ -16,7 +16,7 @@ impl From<&seed::Cube> for CubeCore {
     fn from(cube: &seed::Cube) -> Self {
         Self {
             kind: cube.kind,
-            body: body::Unibody::from(cube.body.iter()),
+            body: body::Unibody::new(cube.body.iter()),
         }
     }
 }

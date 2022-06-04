@@ -1,46 +1,113 @@
 use super::location::Location;
-use std::collections::HashMap;
+use crate::model::behavior::Movement;
+use std::collections::{HashMap, HashSet};
+
+#[derive(Eq, Hash, PartialEq)]
+pub struct Key(u64);
+
+impl<T: Location<i32>> From<&T> for Key {
+    fn from(o: &T) -> Self {
+        Key(((o.x() as u64) << 32) | (o.y() as u64))
+    }
+}
+
+pub struct Existence(HashSet<Key>);
+
+impl Existence {
+    pub fn new<T, U>(it: T) -> Self
+    where
+        T: Iterator<Item = U>,
+        U: Into<Key>,
+    {
+        Self(it.map(|k| k.into()).collect())
+    }
+
+    pub fn has<T: Into<Key>>(&self, k: T) -> bool {
+        self.0.contains(&k.into())
+    }
+}
 
 #[derive(Default)]
-pub struct Lookup(HashMap<u64, usize>);
+pub struct Collision(HashMap<Key, usize>);
 
 #[allow(dead_code)]
-impl Lookup {
+impl Collision {
+    pub fn new<T, U>(it: T) -> Self
+    where
+        T: Iterator<Item = (U, usize)>,
+        U: Into<Key>,
+    {
+        Self(it.map(|(k, v)| (k.into(), v)).collect())
+    }
+
+    pub fn put<T: Into<Key>>(&mut self, k: T, v: usize) {
+        self.0.insert(k.into(), v);
+    }
+
+    pub fn get<T: Into<Key>>(&self, k: T) -> Option<usize> {
+        self.0.get(&k.into()).cloned()
+    }
+}
+
+#[derive(Default)]
+pub struct Conflict(HashMap<Key, Race>);
+
+#[allow(dead_code)]
+impl Conflict {
     pub fn new() -> Self {
         Default::default()
     }
 
-    pub fn from<'a, I, T, U>(it: I) -> Self
+    pub fn put<T, U>(&mut self, keys: T, movement: Movement, index: usize)
     where
-        I: Iterator<Item = &'a T>,
-        T: 'a + Location<U> + ?Sized,
-        U: Into<i32> + ?Sized,
+        T: Iterator<Item = U>,
+        U: Into<Key>,
     {
-        Self(it.enumerate().map(|(i, o)| (Self::key(o), i)).collect())
+        keys.for_each(|key| self.0.entry(key.into()).or_default().set(movement, index));
     }
 
-    pub fn put<T, U>(&mut self, o: &T) -> &mut Self
-    where
-        T: Location<U> + ?Sized,
-        U: Into<i32> + ?Sized,
-    {
-        self.0.insert(Self::key(o), self.0.len());
-        self
+    pub fn overlaps(
+        &self,
+    ) -> impl Iterator<Item = impl Iterator<Item = (Movement, usize)> + '_> + '_ {
+        self.0.values().filter(|x| x.conflict()).map(|x| x.whom())
+    }
+}
+
+#[derive(Default)]
+struct Race {
+    mark: u8,
+    data: [usize; 4],
+}
+
+impl Race {
+    const MASK: [u8; 4] = [0b0001, 0b0010, 0b0100, 0b1000];
+    const MOVE: [Movement; 4] = [
+        Movement::Left,
+        Movement::Down,
+        Movement::Up,
+        Movement::Right,
+    ];
+
+    fn set(&mut self, movement: Movement, index: usize) {
+        let i = match movement {
+            Movement::Idle => return,
+            Movement::Left => 0,
+            Movement::Down => 1,
+            Movement::Up => 2,
+            Movement::Right => 3,
+        };
+        self.mark |= Race::MASK[i];
+        self.data[i] = index;
     }
 
-    pub fn get<T, U>(&self, o: &T) -> Option<usize>
-    where
-        T: Location<U> + ?Sized,
-        U: Into<i32> + ?Sized,
-    {
-        self.0.get(&Self::key(o)).map(|x| x.to_owned())
+    fn conflict(&self) -> bool {
+        self.mark & self.mark - 1 != 0
     }
 
-    fn key<T, U>(o: &T) -> u64
-    where
-        T: Location<U> + ?Sized,
-        U: Into<i32> + ?Sized,
-    {
-        ((o.x().into() as u64) << 32) | (o.y().into() as u64)
+    fn whom(&self) -> impl Iterator<Item = (Movement, usize)> + '_ {
+        (0..4)
+            .into_iter()
+            .filter(|i| self.mark & Race::MASK[*i] != 0)
+            .map(|i| (Race::MOVE[i], self.data[i]))
     }
 }

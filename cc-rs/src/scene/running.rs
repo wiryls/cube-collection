@@ -25,7 +25,7 @@ impl Plugin for RunningScene {
                 ConditionSet::new()
                     .label("rule")
                     .after("flow")
-                    .run_not_in_state(State::Running)
+                    .run_in_state(State::Running)
                     .with_system(port::movement)
                     .into(),
             );

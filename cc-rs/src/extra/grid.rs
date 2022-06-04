@@ -5,6 +5,7 @@ use bevy::{
     window::WindowResized,
 };
 use iyes_loopless::prelude::*;
+use num_traits::AsPrimitive;
 
 // GridPlugin adds a GridView resource and a GridUpdated event.
 pub struct GridPlugin;
@@ -126,11 +127,10 @@ pub struct GridMapper {
     scale: f32,
 }
 
-#[allow(dead_code)]
 impl GridMapper {
     pub fn scale<T>(&self, o: T) -> f32
     where
-        T: num_traits::AsPrimitive<f32>,
+        T: AsPrimitive<f32>,
     {
         self.scale * o.as_()
     }
@@ -138,7 +138,7 @@ impl GridMapper {
     pub fn flip<T, U>(&self, o: &T) -> Vec2
     where
         T: Location<U>,
-        U: num_traits::AsPrimitive<f32>,
+        U: AsPrimitive<f32>,
     {
         Vec2::new(o.x().as_(), -o.y().as_())
     }
@@ -146,7 +146,7 @@ impl GridMapper {
     pub fn absolute<T, U>(&self, o: &T) -> Vec2
     where
         T: Location<U>,
-        U: num_traits::AsPrimitive<i32>,
+        U: AsPrimitive<i32>,
     {
         let delta = self.scale * 0.5;
         let x = self.target.x + delta + (o.x().as_() - self.source.x) as f32 * self.scale;

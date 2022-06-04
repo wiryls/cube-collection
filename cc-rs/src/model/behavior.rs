@@ -14,7 +14,7 @@ pub struct Behavior(Behaviour);
 #[allow(dead_code)]
 impl Behavior {
     pub fn new() -> Self {
-        Behavior(Behaviour::Idle(Idle(None)))
+        Behavior(Behaviour::Once(Once(None)))
     }
 
     pub fn new_with_seed(seed: &seed::Command) -> Self {
@@ -56,7 +56,7 @@ impl Behavior {
 }
 
 enum Behaviour {
-    Idle(Idle),
+    Once(Once),
     Move(Move),
     Team(Team),
 }
@@ -64,7 +64,7 @@ enum Behaviour {
 impl Behaviour {
     pub fn get(&self) -> Movement {
         match self {
-            Behaviour::Idle(x) => x.get(),
+            Behaviour::Once(x) => x.get(),
             Behaviour::Move(x) => x.get(),
             Behaviour::Team(x) => x.get(),
         }
@@ -72,7 +72,7 @@ impl Behaviour {
 
     pub fn set(&mut self, m: Movement) {
         match self {
-            Behaviour::Idle(x) => x.set(m),
+            Behaviour::Once(x) => x.set(m),
             Behaviour::Move(x) => x.set(m),
             Behaviour::Team(x) => x.set(m),
         }
@@ -80,7 +80,7 @@ impl Behaviour {
 
     pub fn done(&self) -> bool {
         match self {
-            Behaviour::Idle(x) => x.done(),
+            Behaviour::Once(x) => x.done(),
             Behaviour::Move(x) => x.done(),
             Behaviour::Team(x) => x.done(),
         }
@@ -88,16 +88,16 @@ impl Behaviour {
 
     pub fn next(&mut self) {
         match self {
-            Behaviour::Idle(x) => x.next(),
+            Behaviour::Once(x) => x.next(),
             Behaviour::Move(x) => x.next(),
             Behaviour::Team(x) => x.next(),
         }
     }
 }
 
-struct Idle(Option<Movement>);
+struct Once(Option<Movement>);
 
-impl Idle {
+impl Once {
     fn get(&self) -> Movement {
         self.0.unwrap_or(Movement::Idle)
     }
