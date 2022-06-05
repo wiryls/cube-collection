@@ -1,14 +1,55 @@
+use super::CubeCore;
+use crate::extra::grid::GridView;
+use crate::model::behavior::Movement;
+use crate::model::common::{Collision, DisjointSet};
 use bevy::prelude::*;
 
+#[derive(Component, Default)]
+pub struct Test;
+
 pub fn movement(
-    mut cubes: Query<(&super::CubeCore, &mut Transform)>,
+    mut commands: Commands,
+    cubes: Query<(&mut CubeCore, &Children)>,
+    view: ResMut<GridView>,
     time: Res<Time>,
     mut turn: Local<detail::Turn>,
 ) {
     if turn.tick(time.delta()).finished() {
-        // TODO:
+        let mapper = view.mapping();
+
+        let cs: Vec<_> = cubes
+            .iter()
+            .map(|x| x.0)
+            .filter(|c| c.is_active())
+            .collect();
+
+        let mut dset = DisjointSet::default();
+        let grid = Collision::new(
+            cs.iter()
+                .enumerate()
+                .flat_map(|(i, x)| x.body.units().map(move |x| (x, i))),
+        );
+
+        // this: i, x
+        // that: u, o
+        for (i, x) in cs.iter().enumerate() {
+            for u in x.body.edges(Movement::Idle).filter_map(|o| grid.get(&o)) {
+                let o = cs[u];
+                if x.absorbable(o) && !o.absorbable(x) {
+                    dset.join(i, u);
+                }
+            }
+        }
+
+        for group in dset.groups() {
+            for i in group {}
+
+            // group
+        }
     }
 }
+
+fn link(cs: Vec<&mut CubeCore>) {}
 
 mod detail {
     use bevy::prelude::*;
@@ -17,7 +58,7 @@ mod detail {
         time::Duration,
     };
 
-    pub struct Turn(pub Timer);
+    pub struct Turn(Timer);
 
     impl Default for Turn {
         fn default() -> Self {

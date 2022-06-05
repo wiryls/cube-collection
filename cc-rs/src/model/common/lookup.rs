@@ -1,13 +1,19 @@
-use super::location::Location;
+use super::Point;
 use crate::model::behavior::Movement;
 use std::collections::{HashMap, HashSet};
 
 #[derive(Eq, Hash, PartialEq)]
 pub struct Key(u64);
 
-impl<T: Location<i32>> From<&T> for Key {
-    fn from(o: &T) -> Self {
-        Key(((o.x() as u64) << 32) | (o.y() as u64))
+impl From<&Point> for Key {
+    fn from(o: &Point) -> Self {
+        Key(((o.x as u64) << 32) | (o.y as u64))
+    }
+}
+
+impl From<Point> for Key {
+    fn from(o: Point) -> Self {
+        Key(((o.x as u64) << 32) | (o.y as u64))
     }
 }
 
@@ -109,5 +115,58 @@ impl Race {
             .into_iter()
             .filter(|i| self.mark & Race::MASK[*i] != 0)
             .map(|i| (Race::MOVE[i], self.data[i]))
+    }
+}
+
+#[derive(Default)]
+pub struct DisjointSet(HashMap<usize, usize>);
+
+impl DisjointSet {
+    pub fn join(&mut self, this: usize, that: usize) {
+        let l = *self.root_mut(this);
+        let r = self.root_mut(that);
+        *r = l;
+    }
+
+    pub fn groups(&self) -> Vec<Vec<usize>> {
+        let mut map: HashMap<usize, Vec<usize>> = HashMap::new();
+        for (k, v) in self.0.iter() {
+            map.entry(self.root(*v)).or_default().push(*k);
+        }
+        map.into_values().collect()
+    }
+
+    fn root(&self, index: usize) -> usize {
+        let mut index = index;
+        while let Some(upper) = self.0.get(&index).filter(|upper| **upper != index) {
+            index = *upper;
+        }
+        index
+    }
+
+    fn root_mut(&mut self, index: usize) -> &mut usize {
+        let mut root = index;
+        loop {
+            let upper = self.parent_mut(root);
+            if *upper == root {
+                break;
+            }
+            root = *upper;
+        }
+
+        let mut index = index;
+        while index != root {
+            let upper = self.parent_mut(index);
+            index = *upper;
+            *upper = root;
+        }
+
+        // we have to call it again to avoid non-lexical lifetime issue:
+        // https://github.com/rust-lang/rust/issues/21906
+        self.parent_mut(root)
+    }
+
+    fn parent_mut(&mut self, index: usize) -> &mut usize {
+        self.0.entry(index).or_insert(index)
     }
 }

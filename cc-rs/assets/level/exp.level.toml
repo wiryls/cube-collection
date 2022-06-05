@@ -1,0 +1,11 @@
+[map]
+raw = '''
+W~   
+| R  
+B G G
+|~R G
+| W  '''
+
+[info]
+title = "Experiment"
+author = "w"

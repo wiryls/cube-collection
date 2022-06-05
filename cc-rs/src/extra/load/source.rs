@@ -39,7 +39,7 @@ struct Info {
 #[derive(Deserialize)]
 struct Map {
     raw: String,
-    commands: Vec<Command>,
+    commands: Option<Vec<Command>>,
 }
 
 #[derive(Deserialize)]
@@ -84,7 +84,7 @@ impl Source {
             builder.mark_line_end();
         }
 
-        for m in self.map.commands {
+        for m in self.map.commands.unwrap_or_default() {
             let mut n = String::new();
             let mut b = CommandBuilder::new(m.is_loop);
             for c in m.content.chars() {

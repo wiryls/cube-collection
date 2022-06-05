@@ -23,12 +23,7 @@ impl Unibody {
         let mut units: Vec<Point> = it.map(Point::from).collect();
 
         // [1] create rect
-        let rect = Rect {
-            left: units.iter().map(|u| u.x).min().unwrap_or_default(),
-            right: units.iter().map(|u| u.x).max().unwrap_or_default(),
-            top: units.iter().map(|u| u.y).min().unwrap_or_default(),
-            bottom: units.iter().map(|u| u.y).max().unwrap_or_default(),
-        };
+        let rect = surrounding(&units);
 
         // [2] relocate units
         for unit in units.iter_mut() {
@@ -51,8 +46,16 @@ impl Unibody {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.units.is_empty()
+    }
+
+    pub fn units(&self) -> impl Iterator<Item = Point> + '_ {
+        self.units.iter().map(|x| absolute(&self.rect, x))
+    }
+
     pub fn edges(&self, m: Movement) -> impl Iterator<Item = Point> + '_ {
-        self.edges.get(m).iter().map(|x| self.to_global(x))
+        self.edges.get(m).iter().map(|x| absolute(&self.rect, x))
     }
 
     pub fn calculate_patterns(&self) -> impl Iterator<Item = (&Point, CubePattern)> {
@@ -72,13 +75,6 @@ impl Unibody {
 
     // TODO: implement merge methods.
     // pub fn merge(&mut self, that: Self) {}
-
-    fn to_global(&self, o: &Point) -> Point {
-        Point {
-            x: o.x + self.rect.left,
-            y: o.y + self.rect.top,
-        }
-    }
 }
 
 impl Location<i32> for Unibody {
@@ -121,5 +117,21 @@ impl Borders {
             Movement::Up => &self.data[self.size[1]..self.size[2]],
             Movement::Right => &self.data[self.size[2]..],
         }
+    }
+}
+
+fn absolute(r: &Rect<i32>, o: &Point) -> Point {
+    Point {
+        x: o.x + r.left,
+        y: o.y + r.top,
+    }
+}
+
+fn surrounding(os: &Vec<Point>) -> Rect<i32> {
+    Rect {
+        left: os.iter().map(|o| o.x).min().unwrap_or_default(),
+        right: os.iter().map(|o| o.x).max().unwrap_or_default(),
+        top: os.iter().map(|o| o.y).min().unwrap_or_default(),
+        bottom: os.iter().map(|o| o.y).max().unwrap_or_default(),
     }
 }

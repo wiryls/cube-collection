@@ -21,6 +21,16 @@ impl From<&seed::Cube> for CubeCore {
     }
 }
 
+impl CubeCore {
+    pub fn is_active(&self) -> bool {
+        self.kind.is_active() && !self.body.is_empty()
+    }
+
+    pub fn absorbable(&self, that: &Self) -> bool {
+        self.kind.absorbable(&that.kind)
+    }
+}
+
 /// The actions list of cubes.
 #[derive(Component)]
 pub struct Movement(pub behavior::Behavior);
