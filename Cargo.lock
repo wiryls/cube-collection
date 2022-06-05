@@ -957,7 +957,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cc-rs"
+name = "cc-bevy"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -970,6 +970,10 @@ dependencies = [
  "snafu",
  "toml",
 ]
+
+[[package]]
+name = "cc-core"
+version = "0.1.0"
 
 [[package]]
 name = "cesu8"
