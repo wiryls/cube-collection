@@ -1,12 +1,12 @@
-use std::{collections::HashSet, rc::Rc};
+use std::rc::Rc;
 
-use super::{Behavior, Movement, Type};
-use crate::common::{Neighborhood, Point};
+use super::{Behavior, Borders, Movement, Type};
+use crate::common::{Collision, Neighborhood, Point};
 
 pub struct State {
     active: Collection,
     stable: Rc<Collection>,
-    cached: Option<()>,
+    closed: Rc<Collision>,
 }
 
 impl State {
@@ -14,8 +14,8 @@ impl State {
     pub fn next(movement: Movement) /* -> patch */ {}
 }
 
-type UnitID = usize;
-type HeadID = usize;
+pub type UnitID = usize;
+pub type HeadID = usize;
 
 struct Collection {
     heads: Vec<Head>,
@@ -23,9 +23,12 @@ struct Collection {
 }
 
 struct Head {
+    // necessary
     kind: Type,
     units: Vec<UnitID>,
     behavior: Option<Behavior>,
+    // temporary
+    edges: Option<Borders>,
 }
 
 struct Unit {
@@ -33,3 +36,5 @@ struct Unit {
     position: Point,
     neighborhood: Neighborhood,
 }
+
+struct Cache {}
