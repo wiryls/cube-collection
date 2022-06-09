@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
-use super::{Behavior, Borders, Movement, Type};
-use crate::common::{Collision, Neighborhood, Point};
+use super::{Collection, Movement};
+use crate::common::Collision;
 
 pub struct State {
     active: Collection,
@@ -11,30 +11,7 @@ pub struct State {
 
 impl State {
     pub fn current() {}
-    pub fn next(movement: Movement) /* -> patch */ {}
+    pub fn diff(&self, that: &Self) /* -> Diff */ {}
+    pub fn link(&self) /* -> Self */ {}
+    pub fn next(&self, movement: Movement) /* -> Self */ {}
 }
-
-pub type UnitID = usize;
-pub type HeadID = usize;
-
-struct Collection {
-    heads: Vec<Head>,
-    units: Box<[Unit]>,
-}
-
-struct Head {
-    // necessary
-    kind: Type,
-    units: Vec<UnitID>,
-    behavior: Option<Behavior>,
-    // temporary
-    edges: Option<Borders>,
-}
-
-struct Unit {
-    head: HeadID,
-    position: Point,
-    neighborhood: Neighborhood,
-}
-
-struct Cache {}

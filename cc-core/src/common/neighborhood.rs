@@ -1,8 +1,7 @@
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct Adjacence(u8);
 
-pub mod adjacence {
-    use super::Adjacence;
+impl Adjacence {
     pub const LEFT /*         **/: Adjacence = Adjacence(0b_10000000);
     pub const LEFT_TOP /*     **/: Adjacence = Adjacence(0b_01000000);
     pub const TOP /*          **/: Adjacence = Adjacence(0b_00100000);
@@ -18,14 +17,14 @@ pub struct Neighborhood(u8);
 
 impl Neighborhood {
     pub const AROUND: [Adjacence; 8] = [
-        adjacence::LEFT,
-        adjacence::LEFT_TOP,
-        adjacence::TOP,
-        adjacence::RIGHT_TOP,
-        adjacence::RIGHT,
-        adjacence::RIGHT_BOTTOM,
-        adjacence::BOTTOM,
-        adjacence::LEFT_BOTTOM,
+        Adjacence::LEFT,
+        Adjacence::LEFT_TOP,
+        Adjacence::TOP,
+        Adjacence::RIGHT_TOP,
+        Adjacence::RIGHT,
+        Adjacence::RIGHT_BOTTOM,
+        Adjacence::BOTTOM,
+        Adjacence::LEFT_BOTTOM,
     ];
 
     pub fn new() -> Self {

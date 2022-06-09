@@ -1,11 +1,11 @@
 mod behavior;
-mod cache;
+mod collection;
 mod movement;
 mod state;
 mod types;
 
-pub use behavior::*;
-pub use cache::*;
-pub use movement::*;
-pub use state::*;
-pub use types::*;
+pub use self::behavior::*;
+pub use self::collection::*;
+pub use self::movement::*;
+pub use self::state::*;
+pub use self::types::*;

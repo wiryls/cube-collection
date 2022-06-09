@@ -20,6 +20,7 @@ impl Movable for Point {
         next.step(m);
         next
     }
+
     fn step(&mut self, m: Movement) -> &mut Self {
         match m {
             Movement::Idle => (),
