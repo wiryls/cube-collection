@@ -7,7 +7,7 @@ pub enum Type {
 }
 
 impl Type {
-    pub fn is_active(&self) -> bool {
+    pub fn unstable(&self) -> bool {
         *self != Type::White
     }
 
@@ -19,5 +19,9 @@ impl Type {
             Blue => matches!(that, Blue | Green),
             Green => matches!(that, Green),
         }
+    }
+
+    pub fn absorbable_actively(&self, that: &Self) -> bool {
+        self.absorbable(that) && !that.absorbable(self)
     }
 }

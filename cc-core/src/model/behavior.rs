@@ -1,5 +1,6 @@
 use super::Movement;
 
+#[derive(Clone)]
 pub struct Behavior(Option<Movement>, Automatic);
 
 impl Behavior {
@@ -57,6 +58,7 @@ impl Behavior {
     }
 }
 
+#[derive(Clone)]
 enum Automatic {
     Idle(Idle),
     Move(Move),
@@ -89,6 +91,7 @@ impl Automatic {
     }
 }
 
+#[derive(Clone)]
 struct Idle;
 
 impl Idle {
@@ -103,6 +106,7 @@ impl Idle {
     fn next(&mut self) {}
 }
 
+#[derive(Clone)]
 struct Move {
     // stateless
     is_loop: bool,
@@ -145,6 +149,7 @@ impl Move {
     }
 }
 
+#[derive(Clone)]
 struct Team(Vec<Automatic>);
 
 impl Team {

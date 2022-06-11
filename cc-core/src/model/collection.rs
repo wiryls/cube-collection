@@ -1,30 +1,100 @@
-use super::{Behavior, Movement, Type};
+use super::{Behavior, Key, Movement, Type};
 use crate::common::{Adjacence, Neighborhood, Point};
 
+#[derive(Clone, Eq, Hash, PartialEq)]
 pub struct HeadID(usize);
 
+impl From<usize> for HeadID {
+    fn from(i: usize) -> Self {
+        Self(i)
+    }
+}
+
+impl From<&HeadID> for usize {
+    fn from(i: &HeadID) -> Self {
+        i.0
+    }
+}
+
+#[derive(Clone)]
 pub struct UnitID(usize);
 
+impl From<usize> for UnitID {
+    fn from(i: usize) -> Self {
+        Self(i)
+    }
+}
+
+impl From<&UnitID> for usize {
+    fn from(i: &UnitID) -> Self {
+        i.0
+    }
+}
+
+#[derive(Clone)]
 pub struct Collection {
     heads: Vec<Head>,
     units: Box<[Unit]>,
 }
 
-struct Head {
+impl Collection {
+    pub fn head(&self, id: &HeadID) -> Option<&Head> {
+        self.heads.get(id.0)
+    }
+
+    pub fn heads(&self) -> impl Iterator<Item = (HeadID, &Head)> {
+        self.heads.iter().enumerate().map(|x| (x.0.into(), x.1))
+    }
+
+    pub fn unit(&self, id: &UnitID) -> Option<&Unit> {
+        self.units.get(id.0)
+    }
+
+    pub fn groups<'a, P>(
+        &'a self,
+        filter: P,
+    ) -> impl Iterator<Item = (HeadID, &Head, impl Iterator<Item = &Unit>)>
+    where
+        P: Fn(&Head) -> bool + 'a,
+    {
+        self.heads
+            .iter()
+            .enumerate()
+            .filter(move |x| filter(x.1))
+            .map(|x| {
+                (
+                    x.0.into(),
+                    x.1,
+                    x.1.units.iter().filter_map(|x| self.units.get(x.0)),
+                )
+            })
+    }
+}
+
+#[derive(Clone)]
+pub struct Head {
     // necessary
-    kind: Type,
-    units: Vec<UnitID>,
-    behavior: Option<Behavior>,
+    pub kind: Type,
+    pub units: Vec<UnitID>,
+    pub behavior: Option<Behavior>,
     // temporary
-    edges: Option<Borders>,
+    pub edges: Option<Borders>,
 }
 
-struct Unit {
-    head: HeadID,
-    position: Point,
-    neighborhood: Neighborhood,
+#[derive(Clone)]
+pub struct Unit {
+    pub head: HeadID,
+    pub position: Point,
+    pub neighborhood: Neighborhood,
 }
 
+impl From<&Unit> for Key {
+    fn from(o: &Unit) -> Self {
+        Self::from(&o.position)
+    }
+}
+
+#[derive(Clone)]
 pub struct Borders {
     size: [usize; 3],
     data: Vec<UnitID>,
