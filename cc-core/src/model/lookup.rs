@@ -70,10 +70,15 @@ impl DisjointSet {
 
     pub fn groups(&self) -> Vec<Vec<HeadID>> {
         let mut map: HashMap<HeadID, Vec<HeadID>> = HashMap::new();
-        for (k, v) in self.0.iter() {
-            map.entry(self.root(v.clone())).or_default().push(k.clone());
-        }
-        map.into_values().collect()
+        self.0
+            .iter()
+            .for_each(|(k, v)| map.entry(self.root(v.clone())).or_default().push(k.clone()));
+        map.into_values()
+            .map(|mut x| {
+                x.sort();
+                x
+            })
+            .collect()
     }
 
     fn root(&self, index: HeadID) -> HeadID {

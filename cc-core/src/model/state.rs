@@ -16,24 +16,19 @@ impl State {
     pub fn link(&self) -> Self {
         let mut all = self.active.clone();
         let mut set = DisjointSet::default();
-        let faction = Faction::new(all.groups(|x| x.kind.unstable()).map(|x| (x.0, x.2)));
+        let faction = Faction::new(all.groups(|x| x.unstable()).map(|x| (x.0, x.2)));
         let faction = detail::Surrounding::new(&self.active, &faction);
 
         // create set
-        for (i, x) in all.heads().filter(|x| x.1.kind.unstable()) {
-            for (u, o) in faction.edges(x, Movement::Idle) {
-                if x.kind.absorbable_actively(&o.kind) {
-                    set.join(i.clone(), u)
-                }
-            }
-        }
+        all.heads().filter(|x| x.1.unstable()).for_each(|(i, x)| {
+            faction
+                .edges(x, Movement::Idle)
+                .filter(|v| x.absorbable_actively(v.1))
+                .for_each(|(u, _)| set.join(i.clone(), u))
+        });
 
         // merge set
-        for group in set.groups() {
-            for i in group {}
-
-            // TODO:
-        }
+        set.groups().into_iter().for_each(|g| all.merge(g));
 
         Self {
             active: all,
@@ -46,8 +41,8 @@ impl State {
 }
 
 mod detail {
-    use super::super::{Head, HeadID, Movement, UnitID};
-    use super::{Collection, Faction};
+    use super::super::{Head, HeadID, UnitID};
+    use super::{Collection, Faction, Movement};
 
     pub struct Surrounding<'a>(&'a Collection, &'a Faction);
 

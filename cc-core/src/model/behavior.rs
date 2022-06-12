@@ -37,6 +37,18 @@ impl Behavior {
         Behavior(force, Automatic::Team(Team(automatics)))
     }
 
+    pub fn from_options<I>(others: I) -> Option<Self>
+    where
+        I: Iterator<Item = Option<Self>>,
+    {
+        let this = Self::from_others(others.filter_map(|o| o));
+        if this.1.done() {
+            None
+        } else {
+            Some(this)
+        }
+    }
+
     pub fn get(&self) -> Movement {
         match self.0 {
             Some(m) => m,

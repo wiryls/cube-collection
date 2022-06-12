@@ -1,3 +1,5 @@
+use super::Point;
+
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct Adjacence(u8);
 
@@ -10,6 +12,46 @@ impl Adjacence {
     pub const RIGHT_BOTTOM /* **/: Adjacence = Adjacence(0b_00000100);
     pub const BOTTOM /*       **/: Adjacence = Adjacence(0b_00000010);
     pub const LEFT_BOTTOM /*  **/: Adjacence = Adjacence(0b_00000001);
+}
+
+pub trait Adjacent {
+    fn near(&self, m: Adjacence) -> Self;
+    fn step(&mut self, m: Adjacence) -> &mut Self;
+}
+
+impl Adjacent for Point {
+    fn near(&self, m: Adjacence) -> Self {
+        let mut next = self.clone();
+        next.step(m);
+        next
+    }
+
+    fn step(&mut self, m: Adjacence) -> &mut Self {
+        match m {
+            Adjacence::LEFT => self.x -= 1,
+            Adjacence::LEFT_TOP => {
+                self.x -= 1;
+                self.y -= 1;
+            }
+            Adjacence::TOP => self.y -= 1,
+            Adjacence::RIGHT_TOP => {
+                self.x += 1;
+                self.y -= 1;
+            }
+            Adjacence::RIGHT => self.x += 1,
+            Adjacence::RIGHT_BOTTOM => {
+                self.x += 1;
+                self.y += 1;
+            }
+            Adjacence::BOTTOM => self.y += 1,
+            Adjacence::LEFT_BOTTOM => {
+                self.x -= 1;
+                self.y += 1;
+            }
+            _ => (),
+        }
+        self
+    }
 }
 
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
@@ -29,6 +71,12 @@ impl Neighborhood {
 
     pub fn new() -> Self {
         Self::default()
+    }
+
+    pub fn from(it: impl Iterator<Item = Adjacence>) -> Self {
+        let mut n = Self::new();
+        it.for_each(|a| n.set(a));
+        n
     }
 
     pub fn set(&mut self, mask: Adjacence) {
