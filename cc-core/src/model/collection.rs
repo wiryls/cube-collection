@@ -89,21 +89,23 @@ impl Collection {
         {
             let mut crystal = heads.swap_remove(i);
 
-            // reconstruct units
+            // [1] reconstruct units
+            // - move others.units into crystal.units
             crystal
                 .1
                 .units
-                .reserve_exact(heads.iter().map(|other| other.1.units.len()).sum());
+                .reserve(heads.iter().map(|other| other.1.units.len()).sum());
             heads
                 .iter_mut()
                 .for_each(|other| crystal.1.units.extend(other.1.units.drain(..)));
+            // - reset "head" and "neighborhood"
             crystal.1.units.sort();
             distill(self.units.iter_mut(), crystal.1.units.iter())
                 .for_each(|u| u.head = crystal.0.clone());
             reconstruct_neighborhood(distill(self.units.iter_mut(), crystal.1.units.iter()));
 
-            // reconstruct behavior
-            crystal.1.behavior = Behavior::from_options(
+            // [2] reconstruct behavior
+            crystal.1.behavior = Behavior::from_iter(
                 iter::once(crystal.1.behavior.take()).chain(
                     heads
                         .iter_mut()
@@ -112,7 +114,7 @@ impl Collection {
                 ),
             );
 
-            // reconstruct edges.
+            // [3] reconstruct edges.
             heads.iter_mut().for_each(|o| o.1.edges = None);
             crystal.1.edges = Some(Borders::new(
                 distill_with_index(self.units.iter_mut(), crystal.1.units.iter())
@@ -120,16 +122,34 @@ impl Collection {
             ));
         }
     }
+
+    pub fn clean(&mut self) {
+        let marks = self
+            .heads()
+            .filter(|x| x.1.units.is_empty())
+            .map(|x| x.0)
+            .collect::<Vec<_>>();
+
+        for i in marks.iter().rev() {
+            self.heads.swap_remove(i.0);
+        }
+
+        for i in marks {
+            if let Some(x) = self.heads.get_mut(i.0) {
+                distill(self.units.iter_mut(), x.units.iter()).for_each(|u| u.head = i.clone());
+            }
+        }
+    }
 }
 
 #[derive(Clone)]
 pub struct Head {
     // necessary
-    pub kind: Type,
-    pub units: Vec<UnitID>,
-    pub behavior: Option<Behavior>,
+    kind: Type,
+    units: Vec<UnitID>,
+    behavior: Option<Behavior>,
     // temporary
-    pub edges: Option<Borders>,
+    edges: Option<Borders>,
 }
 
 impl Head {
@@ -144,13 +164,21 @@ impl Head {
     pub fn absorbable_actively(&self, that: &Self) -> bool {
         self.kind.absorbable_actively(&that.kind)
     }
+
+    pub fn edges(&self, m: Movement) -> &[UnitID] {
+        const EMPTY: [UnitID; 0] = [];
+        self.edges
+            .as_ref()
+            .map(|x| x.get(m))
+            .unwrap_or(EMPTY.as_slice())
+    }
 }
 
 #[derive(Clone)]
 pub struct Unit {
-    pub head: HeadID,
-    pub position: Point,
-    pub neighborhood: Neighborhood,
+    head: HeadID,
+    position: Point,
+    neighborhood: Neighborhood,
 }
 
 impl From<&Unit> for Key {

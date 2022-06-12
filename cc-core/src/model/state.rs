@@ -29,6 +29,7 @@ impl State {
 
         // merge set
         set.groups().into_iter().for_each(|g| all.merge(g));
+        all.clean();
 
         Self {
             active: all,
@@ -37,11 +38,14 @@ impl State {
         }
     }
 
-    pub fn next(&self, movement: Movement) /* -> Self */ {}
+    pub fn next(&self, movement: Movement) /* -> Self */
+    {
+        // TODO:
+    }
 }
 
 mod detail {
-    use super::super::{Head, HeadID, UnitID};
+    use super::super::{Head, HeadID};
     use super::{Collection, Faction, Movement};
 
     pub struct Surrounding<'a>(&'a Collection, &'a Faction);
@@ -56,13 +60,9 @@ mod detail {
             h: &'a Head,
             m: Movement,
         ) -> impl Iterator<Item = (HeadID, &Head)> + 'a {
-            const EMPTY: [UnitID; 0] = [];
-            h.edges
-                .as_ref()
-                .map(|x| x.get(m))
-                .unwrap_or(EMPTY.as_slice())
+            h.edges(m)
                 .into_iter()
-                .filter_map(|u| self.0.unit(u).and_then(|u| self.1.get(u.position)))
+                .filter_map(|u| self.0.unit(u).and_then(|u| self.1.get(u)))
                 .filter_map(|i| self.0.head(&i).map(|h| (i, h)))
         }
     }
