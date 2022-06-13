@@ -11,7 +11,7 @@ impl Type {
         *self != Type::White
     }
 
-    pub fn absorbable(&self, that: &Self) -> bool {
+    pub fn absorbable(&self, that: Self) -> bool {
         use Type::*;
         match self {
             White => false,
@@ -21,7 +21,7 @@ impl Type {
         }
     }
 
-    pub fn absorbable_actively(&self, that: &Self) -> bool {
-        self.absorbable(that) && !that.absorbable(self)
+    pub fn absorbable_actively(&self, that: Self) -> bool {
+        self.absorbable(that) && !that.absorbable(self.clone())
     }
 }

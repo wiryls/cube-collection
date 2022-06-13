@@ -11,13 +11,11 @@ impl From<usize> for HeadID {
         Self(i)
     }
 }
-
 impl From<HeadID> for usize {
     fn from(i: HeadID) -> Self {
         i.0
     }
 }
-
 impl From<&HeadID> for usize {
     fn from(i: &HeadID) -> Self {
         i.0
@@ -32,7 +30,11 @@ impl From<usize> for UnitID {
         Self(i)
     }
 }
-
+impl From<UnitID> for usize {
+    fn from(i: UnitID) -> Self {
+        i.0
+    }
+}
 impl From<&UnitID> for usize {
     fn from(i: &UnitID) -> Self {
         i.0
@@ -40,138 +42,13 @@ impl From<&UnitID> for usize {
 }
 
 #[derive(Clone)]
-pub struct Collection {
-    heads: Vec<Head>,
-    units: Box<[Unit]>,
-}
-
-impl Collection {
-    pub fn head(&self, id: &HeadID) -> Option<&Head> {
-        self.heads.get(id.0)
-    }
-
-    pub fn heads(&self) -> impl Iterator<Item = (HeadID, &Head)> {
-        self.heads.iter().enumerate().map(|x| (x.0.into(), x.1))
-    }
-
-    pub fn unit(&self, id: &UnitID) -> Option<&Unit> {
-        self.units.get(id.0)
-    }
-
-    pub fn groups<'a, P>(
-        &'a self,
-        filter: P,
-    ) -> impl Iterator<Item = (HeadID, &Head, impl Iterator<Item = &Unit>)>
-    where
-        P: Fn(&Head) -> bool + 'a,
-    {
-        self.heads
-            .iter()
-            .enumerate()
-            .filter(move |x| filter(x.1))
-            .map(|x| {
-                (
-                    x.0.into(),
-                    x.1,
-                    x.1.units.iter().filter_map(|x| self.units.get(x.0)),
-                )
-            })
-    }
-
-    pub fn merge(&mut self, group: Vec<HeadID>) {
-        let mut heads = distill_with_index(self.heads.iter_mut(), group.into_iter())
-            .map(|(i, head)| (HeadID::from(i), head))
-            .collect::<Vec<_>>();
-
-        if let Some(i) = heads
-            .iter()
-            .position(|head| heads.iter().all(|other| head.1.absorbable(other.1)))
-        {
-            let mut crystal = heads.swap_remove(i);
-
-            // [1] reconstruct units
-            // - move others.units into crystal.units
-            crystal
-                .1
-                .units
-                .reserve(heads.iter().map(|other| other.1.units.len()).sum());
-            heads
-                .iter_mut()
-                .for_each(|other| crystal.1.units.extend(other.1.units.drain(..)));
-            // - reset "head" and "neighborhood"
-            crystal.1.units.sort();
-            distill(self.units.iter_mut(), crystal.1.units.iter())
-                .for_each(|u| u.head = crystal.0.clone());
-            reconstruct_neighborhood(distill(self.units.iter_mut(), crystal.1.units.iter()));
-
-            // [2] reconstruct behavior
-            crystal.1.behavior = Behavior::from_iter(
-                iter::once(crystal.1.behavior.take()).chain(
-                    heads
-                        .iter_mut()
-                        .filter(|other| other.1.absorbable(crystal.1))
-                        .map(|other| other.1.behavior.take()),
-                ),
-            );
-
-            // [3] reconstruct edges.
-            heads.iter_mut().for_each(|o| o.1.edges = None);
-            crystal.1.edges = Some(Borders::new(
-                distill_with_index(self.units.iter_mut(), crystal.1.units.iter())
-                    .map(|(i, unit)| (i.into(), unit.neighborhood)),
-            ));
-        }
-    }
-
-    pub fn clean(&mut self) {
-        let marks = self
-            .heads()
-            .filter(|x| x.1.units.is_empty())
-            .map(|x| x.0)
-            .collect::<Vec<_>>();
-
-        for i in marks.iter().rev() {
-            self.heads.swap_remove(i.0);
-        }
-
-        for i in marks {
-            if let Some(x) = self.heads.get_mut(i.0) {
-                distill(self.units.iter_mut(), x.units.iter()).for_each(|u| u.head = i.clone());
-            }
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct Head {
+struct Head {
     // necessary
     kind: Type,
     units: Vec<UnitID>,
     behavior: Option<Behavior>,
     // temporary
     edges: Option<Borders>,
-}
-
-impl Head {
-    pub fn unstable(&self) -> bool {
-        self.kind.unstable()
-    }
-
-    pub fn absorbable(&self, that: &Self) -> bool {
-        self.kind.absorbable(&that.kind)
-    }
-
-    pub fn absorbable_actively(&self, that: &Self) -> bool {
-        self.kind.absorbable_actively(&that.kind)
-    }
-
-    pub fn edges(&self, m: Movement) -> &[UnitID] {
-        const EMPTY: [UnitID; 0] = [];
-        self.edges
-            .as_ref()
-            .map(|x| x.get(m))
-            .unwrap_or(EMPTY.as_slice())
-    }
 }
 
 #[derive(Clone)]
@@ -186,6 +63,138 @@ impl From<&Unit> for Key {
         Self::from(&o.position)
     }
 }
+
+#[derive(Clone)]
+pub struct Collection {
+    heads: Vec<Head>,
+    units: Box<[Unit]>,
+}
+
+impl Collection {
+    // pub fn head(&self, id: &HeadID) -> Option<&Head> {
+    //     self.heads.get(id)
+    // }
+
+    // pub fn heads(&self) -> impl Iterator<Item = (HeadID, &Head)> {
+    //     self.heads.iter().enumerate().map(|x| (x.0.into(), x.1))
+    // }
+
+    // pub fn unit(&self, id: &UnitID) -> Option<&Unit> {
+    //     self.units.get(id.0)
+    // }
+
+    // pub fn groups<'a, P>(
+    //     &'a self,
+    //     filter: P,
+    // ) -> impl Iterator<Item = (HeadID, &Head, impl Iterator<Item = &Unit>)>
+    // where
+    //     P: Fn(&Head) -> bool + 'a,
+    // {
+    //     self.heads
+    //         .iter()
+    //         .enumerate()
+    //         .filter(move |x| filter(x.1))
+    //         .map(|x| {
+    //             (
+    //                 x.0.into(),
+    //                 x.1,
+    //                 x.1.units.iter().filter_map(|x| self.units.get(x.0)),
+    //             )
+    //         })
+    // }
+
+    pub fn merge(&mut self, heads: impl Iterator<Item = HeadID>) {
+        let mut they = pick_indexed(self.heads.iter_mut(), heads).collect::<Vec<_>>();
+
+        if let Some(winner) = they
+            .iter()
+            .position(|this| they.iter().all(|that| this.1.kind.absorbable(that.1.kind)))
+        {
+            let mut this = they.swap_remove(winner);
+
+            // [1] reconstruct units
+            // - move they.units into this.units, and then sort
+            // - update units.head and units.neighborhood
+            this.1
+                .units
+                .reserve(they.iter().map(|that| that.1.units.len()).sum());
+            this.1
+                .units
+                .extend(they.iter_mut().map(|that| that.1.units.drain(..)).flatten());
+            this.1.units.sort();
+            pick(self.units.iter_mut(), this.1.units.iter()).for_each(|u| u.head = this.0.clone());
+            update_neighborhood(pick(self.units.iter_mut(), this.1.units.iter()));
+
+            // [2] reconstruct behavior
+            this.1.behavior = Behavior::from_iter(
+                iter::once(this.1.behavior.take()).chain(
+                    they.iter_mut()
+                        .filter(|that| that.1.kind.absorbable(this.1.kind))
+                        .map(|that| that.1.behavior.take()),
+                ),
+            );
+
+            // [3] reconstruct edges.
+            they.iter_mut().for_each(|o| o.1.edges = None);
+            this.1.edges = Some(Borders::new(
+                pick_indexed(
+                    self.units.iter_mut(),
+                    this.1.units.iter().map(|u| u.clone()),
+                )
+                .map(|(i, u)| (i, u.neighborhood)),
+            ));
+        }
+    }
+
+    pub fn clean(&mut self) {
+        let marks = self
+            .heads
+            .iter()
+            .enumerate()
+            .filter(|x| x.1.units.is_empty())
+            .map(|x| x.0)
+            .collect::<Vec<_>>();
+
+        marks.iter().rev().for_each(|&i| {
+            let _ = self.heads.swap_remove(i);
+        });
+
+        let limit = self.heads.len();
+        pick_indexed(
+            self.heads.iter_mut(),
+            marks.into_iter().filter(move |&i| i < limit),
+        )
+        .for_each(|(i, head)| {
+            pick(self.units.iter_mut(), head.units.iter()).for_each(|u| u.head = i.into())
+        });
+    }
+
+    // fn update_headid(&mut self, x: &mut Head) {
+    //     pick(self.units.iter_mut(), x.units.iter()).for_each(|u| u.head = i.into());
+    // }
+}
+
+// impl Head {
+//     fn unstable(&self) -> bool {
+//         self.kind.unstable()
+//     }
+
+//     fn absorbable(&self, that: &Self) -> bool {
+//         self.kind.absorbable(&that.kind)
+//     }
+
+//     fn absorbable_actively(&self, that: &Self) -> bool {
+//         self.kind.absorbable_actively(&that.kind)
+//     }
+
+//     fn edges(&self, m: Movement) -> &[UnitID] {
+//         const EMPTY: [UnitID; 0] = [];
+//         self.edges
+//             .as_ref()
+//             .map(|x| x.get(m))
+//             .unwrap_or(EMPTY.as_slice())
+//     }
+// }
 
 #[derive(Clone)]
 pub struct Borders {
@@ -225,7 +234,7 @@ impl Borders {
     }
 }
 
-fn reconstruct_neighborhood<'a, I>(it: I)
+fn update_neighborhood<'a, I>(it: I)
 where
     I: Iterator<Item = &'a mut Unit>,
 {
@@ -240,7 +249,7 @@ where
     });
 }
 
-fn distill<'a, I, T, U, V>(mut it: I, is: U) -> impl Iterator<Item = &'a mut T>
+fn pick<'a, I, T, U, V>(mut it: I, is: U) -> impl Iterator<Item = &'a mut T>
 where
     I: Iterator<Item = &'a mut T> + 'a,
     T: 'a,
@@ -256,7 +265,7 @@ where
                 Some(x)
             }
             Some(k) if x > k => {
-                o = Some(x.into());
+                o = Some(x);
                 Some(x - k)
             }
             Some(_) => None,
@@ -264,12 +273,12 @@ where
         .filter_map(move |n| it.nth(n))
 }
 
-fn distill_with_index<'a, I, T, U, V>(mut it: I, is: U) -> impl Iterator<Item = (usize, &'a mut T)>
+fn pick_indexed<'a, I, T, U, V>(mut it: I, is: U) -> impl Iterator<Item = (V, &'a mut T)>
 where
     I: Iterator<Item = &'a mut T>,
     T: 'a,
     U: Iterator<Item = V>,
-    V: Into<usize>,
+    V: Into<usize> + From<usize>, // or replace From<usize> with clone
 {
     let mut o: Option<usize> = None;
     is.map(|x| x.into())
@@ -284,5 +293,5 @@ where
             }
             Some(_) => None,
         })
-        .filter_map(move |(i, n)| it.nth(n).map(|x| (i, x)))
+        .filter_map(move |(i, n)| it.nth(n).map(|x| (i.into(), x)))
 }
