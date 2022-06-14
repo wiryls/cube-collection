@@ -115,15 +115,14 @@ impl Collection {
             // [1] reconstruct units
             // - move they.units into this.units, and then sort
             // - update units.head and units.neighborhood
-            this.1
-                .units
-                .reserve(they.iter().map(|that| that.1.units.len()).sum());
-            this.1
-                .units
-                .extend(they.iter_mut().map(|that| that.1.units.drain(..)).flatten());
-            this.1.units.sort();
-            pick(self.units.iter_mut(), this.1.units.iter()).for_each(|u| u.head = this.0.clone());
-            update_neighborhood(pick(self.units.iter_mut(), this.1.units.iter()));
+            let unitids = &mut this.1.units;
+            unitids.reserve(they.iter().map(|that| that.1.units.len()).sum());
+            unitids.extend(they.iter_mut().map(|that| that.1.units.drain(..)).flatten());
+            unitids.sort();
+
+            let mut units: Vec<_> = pick(self.units.iter_mut(), unitids.iter()).collect();
+            units.update_head(this.0);
+            units.update_neighborhood();
 
             // [2] reconstruct behavior
             this.1.behavior = Behavior::from_iter(
@@ -137,11 +136,8 @@ impl Collection {
             // [3] reconstruct edges.
             they.iter_mut().for_each(|o| o.1.edges = None);
             this.1.edges = Some(Borders::new(
-                pick_indexed(
-                    self.units.iter_mut(),
-                    this.1.units.iter().map(|u| u.clone()),
-                )
-                .map(|(i, u)| (i, u.neighborhood)),
+                read_indexed(&self.units, unitids.iter().cloned())
+                    .map(|(i, u)| (i, u.neighborhood)),
             ));
         }
     }
@@ -154,19 +150,15 @@ impl Collection {
             .filter(|x| x.1.units.is_empty())
             .map(|x| x.0)
             .collect::<Vec<_>>();
-
-        marks.iter().rev().for_each(|&i| {
-            let _ = self.heads.swap_remove(i);
-        });
+        for i in marks.iter().rev() {
+            _ = self.heads.swap_remove(*i);
+        }
 
         let limit = self.heads.len();
-        pick_indexed(
-            self.heads.iter_mut(),
-            marks.into_iter().filter(move |&i| i < limit),
-        )
-        .for_each(|(i, head)| {
-            pick(self.units.iter_mut(), head.units.iter()).for_each(|u| u.head = i.into())
-        });
+        let marks = marks.into_iter().filter(move |&i| i < limit);
+        for (i, head) in pick_indexed(self.heads.iter_mut(), marks) {
+            pick(self.units.iter_mut(), head.units.iter()).for_each(|u| u.head = i.into());
+        }
     }
 
     // fn update_headid(&mut self, x: &mut Head) {
@@ -234,19 +226,36 @@ impl Borders {
     }
 }
 
-fn update_neighborhood<'a, I>(it: I)
+trait WritableUnitsExtension {
+    fn update_head(&mut self, i: HeadID);
+    fn update_neighborhood(&mut self);
+}
+
+impl WritableUnitsExtension for [&mut Unit] {
+    fn update_head(&mut self, i: HeadID) {
+        self.iter_mut().for_each(|u| u.head = i.clone());
+    }
+
+    fn update_neighborhood(&mut self) {
+        let co = Collision::new(self.iter().map(|u| u.position));
+        self.iter_mut().for_each(|u| {
+            u.neighborhood = Neighborhood::from(
+                Neighborhood::AROUND
+                    .into_iter()
+                    .filter(|&o| co.hit(u.position.near(o))),
+            )
+        });
+    }
+}
+
+fn read_indexed<'a, T, U, V>(it: &'a [T], is: U) -> impl Iterator<Item = (V, &'a T)>
 where
-    I: Iterator<Item = &'a mut Unit>,
+    T: 'a,
+    U: Iterator<Item = V>,
+    V: Into<usize> + From<usize>,
 {
-    let us = it.collect::<Vec<_>>();
-    let co = Collision::new(us.iter().map(|u| u.position));
-    us.into_iter().for_each(|u| {
-        u.neighborhood = Neighborhood::from(
-            Neighborhood::AROUND
-                .into_iter()
-                .filter(|o| co.hit(u.position.near(*o))),
-        )
-    });
+    is.map(|i| i.into())
+        .filter_map(|i| it.get(i).map(|x| (i.into(), x)))
 }
 
 fn pick<'a, I, T, U, V>(mut it: I, is: U) -> impl Iterator<Item = &'a mut T>
@@ -256,20 +265,24 @@ where
     U: Iterator<Item = V>,
     V: Into<usize>,
 {
-    let mut o: Option<usize> = None;
+    let mut last = 0;
+    let mut init = true;
+    let monotonic_increasing = move |next| {
+        if next > last {
+            let step = next - last - 1;
+            last = next;
+            Some(step)
+        } else if last == 0 && init {
+            init = false;
+            Some(0)
+        } else {
+            None
+        }
+    };
+
+    // ignore non-monotonic-increasing numbers.
     is.map(|x| x.into())
-        .filter_map(move |x| match o {
-            None => {
-                let x = x;
-                o = Some(x);
-                Some(x)
-            }
-            Some(k) if x > k => {
-                o = Some(x);
-                Some(x - k)
-            }
-            Some(_) => None,
-        })
+        .filter_map(monotonic_increasing)
         .filter_map(move |n| it.nth(n))
 }
 
@@ -278,20 +291,25 @@ where
     I: Iterator<Item = &'a mut T>,
     T: 'a,
     U: Iterator<Item = V>,
-    V: Into<usize> + From<usize>, // or replace From<usize> with clone
+    V: Into<usize> + From<usize>,
 {
-    let mut o: Option<usize> = None;
+    let mut last = 0;
+    let mut init = true;
+    let monotonic_increasing = move |next| {
+        if next > last {
+            let step = next - last - 1;
+            last = next;
+            Some((next, step))
+        } else if last == 0 && init {
+            init = false;
+            Some((0, 0))
+        } else {
+            None
+        }
+    };
+
+    // ignore non-monotonic-increasing numbers.
     is.map(|x| x.into())
-        .filter_map(move |x| match o {
-            None => {
-                o = Some(x);
-                Some((x, x))
-            }
-            Some(k) if x > k => {
-                o = Some(x);
-                Some((x, x - k))
-            }
-            Some(_) => None,
-        })
+        .filter_map(monotonic_increasing)
         .filter_map(move |(i, n)| it.nth(n).map(|x| (i.into(), x)))
 }
