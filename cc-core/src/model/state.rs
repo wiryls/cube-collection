@@ -1,10 +1,10 @@
 use std::rc::Rc;
 
-use super::{Collection, Collision, DisjointSet, Faction, Movement};
+use super::{Background, Collection, Collision, DisjointSet, Faction, Movement};
 
 pub struct State {
     active: Collection,
-    stable: Rc<Collection>,
+    frozen: Rc<Background>,
     closed: Rc<Collision>,
 }
 
@@ -35,7 +35,7 @@ impl State {
 
         Self {
             active: all,
-            stable: self.stable.clone(),
+            frozen: self.frozen.clone(),
             closed: self.closed.clone(),
         }
     }

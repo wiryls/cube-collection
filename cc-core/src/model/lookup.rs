@@ -69,10 +69,13 @@ impl DisjointSet {
     }
 
     pub fn groups(&self) -> Vec<Vec<HeadID>> {
-        let mut map: HashMap<HeadID, Vec<HeadID>> = HashMap::new();
-        self.0
-            .iter()
-            .for_each(|(k, v)| map.entry(self.root(v.clone())).or_default().push(k.clone()));
+        let mut map = HashMap::with_capacity(self.0.len() / 2);
+        self.0.iter().for_each(|(k, v)| {
+            map.entry(self.root(v.clone()))
+                .or_insert_with(Vec::new)
+                .push(k.clone())
+        });
+
         map.into_values()
             .map(|mut x| {
                 x.sort();
@@ -81,15 +84,14 @@ impl DisjointSet {
             .collect()
     }
 
-    fn root(&self, index: HeadID) -> HeadID {
-        let mut index = index;
+    fn root(&self, mut index: HeadID) -> HeadID {
         while let Some(upper) = self.0.get(&index).filter(|upper| **upper != index) {
             index = upper.clone();
         }
         index
     }
 
-    fn root_mut(&mut self, index: HeadID) -> &mut HeadID {
+    fn root_mut(&mut self, mut index: HeadID) -> &mut HeadID {
         let mut root = index.clone();
         loop {
             let upper = self.parent_mut(root.clone());
@@ -99,7 +101,6 @@ impl DisjointSet {
             root = upper.clone();
         }
 
-        let mut index = index;
         while index != root {
             let upper = self.parent_mut(index);
             index = upper.clone();
