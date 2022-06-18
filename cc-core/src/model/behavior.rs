@@ -23,19 +23,11 @@ impl Behavior {
         )
     }
 
-    pub fn from_iter<I>(others: I) -> Option<Self>
+    pub fn from_iter<I>(others: I) -> Self
     where
-        I: IntoIterator<Item = Option<Self>>,
+        I: IntoIterator<Item = Self>,
     {
-        let (m, mut automatics): (Vec<_>, Vec<_>) = others
-            .into_iter()
-            .flat_map(|x| x)
-            .map(|x| (x.0, x.1))
-            .unzip();
-
-        if m.is_empty() {
-            return None;
-        }
+        let (m, mut automatics): (Vec<_>, Vec<_>) = others.into_iter().map(|x| (x.0, x.1)).unzip();
 
         let m = if m.windows(2).all(|w| w[0] == w[1]) {
             m.first().copied().flatten()
@@ -45,9 +37,9 @@ impl Behavior {
 
         automatics.retain(|a| !matches!(a, Automatic::Idle));
         match automatics.len() {
-            0 => Some(Behavior(m, Automatic::Idle)),
-            1 => Some(Behavior(m, automatics.into_iter().next().unwrap())),
-            _ => Some(Behavior(m, Automatic::Team(Team(automatics)))),
+            0 => Behavior(m, Automatic::Idle),
+            1 => Behavior(m, automatics.into_iter().next().unwrap_or_default()),
+            _ => Behavior(m, Automatic::Team(Team(automatics))),
         }
     }
 
@@ -70,6 +62,10 @@ impl Behavior {
         self.0 = None;
         self.1.next();
     }
+
+    pub fn take(&mut self) -> Self {
+        Self(self.0.take(), std::mem::take(&mut self.1))
+    }
 }
 
 #[derive(Clone)]
@@ -82,29 +78,35 @@ enum Automatic {
 impl Automatic {
     pub fn get(&self) -> Movement {
         match self {
-            Automatic::Idle => Movement::Idle,
-            Automatic::Move(x) => x.get(),
-            Automatic::Team(x) => x.get(),
+            Self::Idle => Movement::Idle,
+            Self::Move(x) => x.get(),
+            Self::Team(x) => x.get(),
         }
     }
 
     pub fn done(&self) -> bool {
         match self {
-            Automatic::Idle => true,
-            Automatic::Move(x) => x.done(),
-            Automatic::Team(x) => x.done(),
+            Self::Idle => true,
+            Self::Move(x) => x.done(),
+            Self::Team(x) => x.done(),
         }
     }
 
     pub fn next(&mut self) {
         match self {
-            Automatic::Idle => return,
-            Automatic::Move(x) => x.next(),
-            Automatic::Team(x) => x.next(),
+            Self::Idle => return,
+            Self::Move(x) => x.next(),
+            Self::Team(x) => x.next(),
         }
         if self.done() {
-            *self = Automatic::Idle;
+            *self = Self::Idle;
         }
+    }
+}
+
+impl Default for Automatic {
+    fn default() -> Self {
+        Self::Idle
     }
 }
 

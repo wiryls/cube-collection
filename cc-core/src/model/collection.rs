@@ -1,47 +1,15 @@
 use std::iter;
 
-use super::{Behavior, Collision, DisjointSet, Key, Movement, Type};
-use crate::common::{Adjacence, Adjacent, Neighborhood, Point};
+use super::{Behavior, Borders, Collision, DisjointSet, HeadID, Restriction, Type, UnitID};
+use crate::common::{Adjacent, Neighborhood, Point};
 
-#[derive(Clone, Eq, Hash, PartialEq, PartialOrd, Ord)]
-pub struct HeadID(usize);
+pub struct Restrictions(Box<[Restriction]>);
 
-impl From<usize> for HeadID {
-    fn from(i: usize) -> Self {
-        Self(i)
+impl Restrictions {
+    pub fn new(collection: &Collection) -> Self {
+        Self(collection.heads.iter().map(|h| h.restrict).collect())
     }
 }
-impl From<HeadID> for usize {
-    fn from(i: HeadID) -> Self {
-        i.0
-    }
-}
-impl From<&HeadID> for usize {
-    fn from(i: &HeadID) -> Self {
-        i.0
-    }
-}
-
-#[derive(Clone, Eq, Hash, PartialEq, PartialOrd, Ord)]
-pub struct UnitID(usize);
-
-impl From<usize> for UnitID {
-    fn from(i: usize) -> Self {
-        Self(i)
-    }
-}
-impl From<UnitID> for usize {
-    fn from(i: UnitID) -> Self {
-        i.0
-    }
-}
-impl From<&UnitID> for usize {
-    fn from(i: &UnitID) -> Self {
-        i.0
-    }
-}
-
-pub struct Background(Box<[(Point, Neighborhood)]>);
 
 #[derive(Clone)]
 pub struct Collection {
@@ -54,8 +22,9 @@ struct Head {
     // necessary
     kind: Type,
     units: Box<[UnitID]>,
-    behavior: Option<Behavior>,
+    behavior: Behavior,
     // calculated
+    restrict: Restriction,
     borders: Borders,
 }
 
@@ -66,25 +35,14 @@ struct Unit {
     neighborhood: Neighborhood,
 }
 
-pub enum Patch {
-    Join(Vec<Vec<HeadID>>),
-    // Move(Box<[(HeadID, Status)]>),
-}
-
 impl Collection {
-    pub fn next(join: DisjointSet /*, order: Order*/) {}
+    pub fn next(&self, set: DisjointSet, res: Option<Restrictions>) {
+        let x = set.groups().filter_map(|v| self.link(v));
+    }
 
-    // pub fn head(&self, id: &HeadID) -> Option<&Head> {
-    //     self.heads.get(id)
-    // }
-
-    // pub fn heads(&self) -> impl Iterator<Item = (HeadID, &Head)> {
-    //     self.heads.iter().enumerate().map(|x| (x.0.into(), x.1))
-    // }
-
-    // pub fn unit(&self, id: &UnitID) -> Option<&Unit> {
-    //     self.units.get(id.0)
-    // }
+    fn link(&self, v: Vec<HeadID>) -> Option<usize> {
+        todo!()
+    }
 
     // pub fn groups<'a, P>(
     //     &'a self,
@@ -164,72 +122,15 @@ impl Collection {
     }
 }
 
-// impl Head {
-//     fn unstable(&self) -> bool {
-//         self.kind.unstable()
-//     }
+/////////////////////////////////////////////////////////////////////////////
+//// utilities
 
-//     fn absorbable(&self, that: &Self) -> bool {
-//         self.kind.absorbable(&that.kind)
-//     }
-
-//     fn absorbable_actively(&self, that: &Self) -> bool {
-//         self.kind.absorbable_actively(&that.kind)
-//     }
-
-//     fn edges(&self, m: Movement) -> &[UnitID] {
-//         const EMPTY: [UnitID; 0] = [];
-//         self.edges
-//             .as_ref()
-//             .map(|x| x.get(m))
-//             .unwrap_or(EMPTY.as_slice())
-//     }
-// }
-
-#[derive(Clone)]
-pub struct Borders {
-    size: [usize; 3],
-    list: Box<[UnitID]>,
-}
-
-impl Borders {
-    pub fn new<'a, T>(it: T) -> Self
-    where
-        T: Iterator<Item = (UnitID, Neighborhood)>,
-    {
-        let v = it.collect::<Vec<_>>();
-        let mut list = Vec::with_capacity(v.len() * 4);
-        let mut size: [usize; 3] = [0, 0, 0];
-
-        const RIGHT: Adjacence = Adjacence::RIGHT;
-        const NOT_RIGHT: [Adjacence; 3] = [Adjacence::LEFT, Adjacence::BOTTOM, Adjacence::TOP];
-        for (i, a) in NOT_RIGHT.into_iter().enumerate() {
-            list.extend(v.iter().filter(|o| !o.1.has(a)).map(|o| o.0.clone()));
-            size[i] = list.len();
-        }
-        list.extend(v.into_iter().filter(|o| !o.1.has(RIGHT)).map(|o| o.0));
-
-        let list = list.into();
-        Self { size, list }
-    }
-
-    pub fn get(&self, m: Movement) -> &[UnitID] {
-        match m {
-            Movement::Idle => &self.list,
-            Movement::Left => &self.list[..self.size[0]],
-            Movement::Down => &self.list[self.size[0]..self.size[1]],
-            Movement::Up => &self.list[self.size[1]..self.size[2]],
-            Movement::Right => &self.list[self.size[2]..],
-        }
-    }
-}
-
-trait WritableUnitsExtension {
+trait MutableUnitsExtension {
     fn update_head(&mut self, i: HeadID);
     fn update_neighborhood(&mut self);
 }
 
-impl WritableUnitsExtension for [&mut Unit] {
+impl MutableUnitsExtension for [&mut Unit] {
     fn update_head(&mut self, i: HeadID) {
         self.iter_mut().for_each(|u| u.head = i.clone());
     }

@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
-use super::HeadID;
-use crate::common::Point;
+use super::{HeadID, Movement, UnitID};
+use crate::common::{Adjacence, Neighborhood, Point};
 
 #[derive(Eq, Hash, PartialEq)]
 pub struct Key(u64);
@@ -68,20 +68,18 @@ impl DisjointSet {
         *r = l;
     }
 
-    pub fn groups(&self) -> Vec<Vec<HeadID>> {
-        let mut map = HashMap::with_capacity(self.0.len() / 2);
+    pub fn groups(&self) -> impl Iterator<Item = Vec<HeadID>> {
+        let mut sets = HashMap::with_capacity(self.0.len() / 2);
         self.0.iter().for_each(|(k, v)| {
-            map.entry(self.root(v.clone()))
+            sets.entry(self.root(v.clone()))
                 .or_insert_with(Vec::new)
                 .push(k.clone())
         });
 
-        map.into_values()
-            .map(|mut x| {
-                x.sort();
-                x
-            })
-            .collect()
+        sets.into_values().map(|mut x| {
+            x.sort();
+            x
+        })
     }
 
     fn root(&self, mut index: HeadID) -> HeadID {
@@ -114,5 +112,43 @@ impl DisjointSet {
 
     fn parent_mut(&mut self, index: HeadID) -> &mut HeadID {
         self.0.entry(index.clone()).or_insert(index)
+    }
+}
+
+#[derive(Clone)]
+pub struct Borders {
+    size: [usize; 3],
+    list: Box<[UnitID]>,
+}
+
+impl Borders {
+    pub fn new<'a, T>(it: T) -> Self
+    where
+        T: Iterator<Item = (UnitID, Neighborhood)>,
+    {
+        let v = it.collect::<Vec<_>>();
+        let mut list = Vec::with_capacity(v.len() * 4);
+        let mut size: [usize; 3] = [0, 0, 0];
+
+        const RIGHT: Adjacence = Adjacence::RIGHT;
+        const NOT_RIGHT: [Adjacence; 3] = [Adjacence::LEFT, Adjacence::BOTTOM, Adjacence::TOP];
+        for (i, a) in NOT_RIGHT.into_iter().enumerate() {
+            list.extend(v.iter().filter(|o| !o.1.has(a)).map(|o| o.0.clone()));
+            size[i] = list.len();
+        }
+        list.extend(v.into_iter().filter(|o| !o.1.has(RIGHT)).map(|o| o.0));
+
+        let list = list.into();
+        Self { size, list }
+    }
+
+    pub fn get(&self, m: Movement) -> &[UnitID] {
+        match m {
+            Movement::Idle => &self.list,
+            Movement::Left => &self.list[..self.size[0]],
+            Movement::Down => &self.list[self.size[0]..self.size[1]],
+            Movement::Up => &self.list[self.size[1]..self.size[2]],
+            Movement::Right => &self.list[self.size[2]..],
+        }
     }
 }
