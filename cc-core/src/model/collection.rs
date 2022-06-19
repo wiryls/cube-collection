@@ -1,4 +1,4 @@
-use std::iter;
+use std::{convert::identity, iter, ops::Index};
 
 use super::{Behavior, Borders, Collision, DisjointSet, HeadID, Restriction, Type, UnitID};
 use crate::common::{Adjacent, Neighborhood, Point};
@@ -37,32 +37,55 @@ struct Unit {
 
 impl Collection {
     pub fn next(&self, set: DisjointSet, res: Option<Restrictions>) {
-        let x = set.groups().filter_map(|v| self.link(v));
-    }
+        enum Mapping {
+            Copy(HeadID),
+            Link(HeadID, Box<[HeadID]>),
+        }
 
-    fn link(&self, v: Vec<HeadID>) -> Option<usize> {
+        let mut mapping = (0..self.heads.len())
+            .map(Into::into)
+            .map(Mapping::Copy)
+            .map(Some)
+            .collect::<Box<_>>();
+
+        for (main, side) in set.groups().filter_map(|group| self.pick(group)) {
+            for i in side.iter() {
+                if let Some(m) = mapping.get_mut(usize::from(i)) {
+                    *m = None;
+                }
+            }
+            if let Some(m) = mapping.get_mut(usize::from(&main)) {
+                *m = Some(Mapping::Link(main, side));
+            }
+        }
+
+        let mut units = self.units.clone();
+        let mut heads = Vec::from(mapping)
+            .into_iter()
+            .filter_map(identity)
+            .map(|x| match x {
+                Mapping::Copy(_) => todo!(),
+                Mapping::Link(_, _) => todo!(),
+            });
+
         todo!()
     }
 
-    // pub fn groups<'a, P>(
-    //     &'a self,
-    //     filter: P,
-    // ) -> impl Iterator<Item = (HeadID, &Head, impl Iterator<Item = &Unit>)>
-    // where
-    //     P: Fn(&Head) -> bool + 'a,
-    // {
-    //     self.heads
-    //         .iter()
-    //         .enumerate()
-    //         .filter(move |x| filter(x.1))
-    //         .map(|x| {
-    //             (
-    //                 x.0.into(),
-    //                 x.1,
-    //                 x.1.units.iter().filter_map(|x| self.units.get(x.0)),
-    //             )
-    //         })
-    // }
+    fn pick(&self, group: Vec<HeadID>) -> Option<(HeadID, Box<[HeadID]>)> {
+        let mut group = group
+            .into_iter()
+            .filter_map(|i| self.heads.get(usize::from(i.clone())).map(|x| (i, x)))
+            .collect::<Vec<_>>();
+
+        group
+            .iter()
+            .position(|this| group.iter().all(|that| this.1.kind.absorbable(that.1.kind)))
+            .map(|one| {
+                let head = group.swap_remove(one).0;
+                let tail = group.into_iter().map(|x| x.0).collect();
+                (head, tail)
+            })
+    }
 
     pub fn merge(&mut self, heads: impl Iterator<Item = HeadID>) {
         let mut they = pick_indexed(self.heads.iter_mut(), heads).collect::<Vec<_>>();
@@ -153,7 +176,7 @@ where
     U: Iterator<Item = V>,
     V: Into<usize> + From<usize>,
 {
-    is.map(|i| i.into())
+    is.map(Into::into)
         .filter_map(|i| it.get(i).map(|x| (i.into(), x)))
 }
 
