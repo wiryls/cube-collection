@@ -28,10 +28,10 @@ impl State {
         // });
 
         // merge set
-        set.groups()
-            .into_iter()
-            .for_each(|g| all.merge(g.into_iter()));
-        all.clean();
+        // set.groups()
+        //     .into_iter()
+        //     .for_each(|g| all.merge(g.into_iter()));
+        // all.clean();
 
         Self {
             active: all,

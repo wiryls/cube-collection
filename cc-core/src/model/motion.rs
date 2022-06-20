@@ -1,18 +1,18 @@
 use super::Movement;
 
 #[derive(Clone)]
-pub struct Behavior(Option<Movement>, Automatic);
+pub struct Motion(Option<Movement>, Automatic);
 
-impl Behavior {
+impl Motion {
     pub fn new() -> Self {
-        Behavior(None, Automatic::Idle)
+        Motion(None, Automatic::Idle)
     }
 
     pub fn from_sequence<'a, I>(is_loop: bool, movements: I) -> Self
     where
         I: Iterator<Item = (Movement, usize)>,
     {
-        Behavior(
+        Motion(
             None,
             Automatic::Move(Move {
                 is_loop,
@@ -37,9 +37,9 @@ impl Behavior {
 
         automatics.retain(|a| !matches!(a, Automatic::Idle));
         match automatics.len() {
-            0 => Behavior(m, Automatic::Idle),
-            1 => Behavior(m, automatics.into_iter().next().unwrap_or_default()),
-            _ => Behavior(m, Automatic::Team(Team(automatics))),
+            0 => Motion(m, Automatic::Idle),
+            1 => Motion(m, automatics.into_iter().next().unwrap_or_default()),
+            _ => Motion(m, Automatic::Team(Team(automatics))),
         }
     }
 

@@ -32,3 +32,16 @@ impl Movable for Point {
         self
     }
 }
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Restriction {
+    Free,
+    Knock,
+    Block,
+}
+
+impl Default for Restriction {
+    fn default() -> Self {
+        Self::Free
+    }
+}

@@ -76,10 +76,7 @@ impl DisjointSet {
                 .push(k.clone())
         });
 
-        sets.into_values().map(|mut x| {
-            x.sort();
-            x
-        })
+        sets.into_values()
     }
 
     fn root(&self, mut index: HeadID) -> HeadID {
