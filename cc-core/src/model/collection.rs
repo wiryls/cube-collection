@@ -1,10 +1,5 @@
-use std::convert::identity;
-
-use super::{Borders, Collision, DisjointSet, HeadID, Motion, Restriction, Type, UnitID};
-use crate::{
-    common::{Adjacent, Neighborhood, Point},
-    Movement,
-};
+use super::{Borders, Collision, DisjointSet, HeadID, Motion, Movement, Restriction, Type, UnitID};
+use crate::common::{self, Neighborhood, Point};
 
 pub struct Restrictions(Box<[Restriction]>);
 
@@ -24,7 +19,7 @@ pub struct Collection {
 struct Head {
     // necessary
     kind: Type,
-    units: Box<[UnitID]>,
+    units: Box<[UnitID]>, // sorted
     motion: Motion,
     // calculated
     movement: Movement,
@@ -42,36 +37,46 @@ struct Unit {
 impl Collection {
     pub fn next(&self, merge: DisjointSet, action: Option<Restrictions>) -> Self {
         let mut units = self.units.clone();
-        let mut heads = self
+        let heads = self
             .mappings(merge)
-            .map(|x| match x {
-                Mapping::Copy(o) => {
-                    use Restriction::*;
-                    match action.as_ref().and_then(|r| r.0.get(usize::from(&o.0))) {
-                        None => o.1.clone(),
-                        Some(r) => match r {
-                            Free => todo!(),
-                            Knock => todo!(),
-                            Block => todo!(),
-                        },
+            .map(|m| match m.source {
+                Source::Copy { head } => {
+                    let mut x = head.refer.clone();
+
+                    let i = usize::from(&head.index);
+                    if let Some(&restrict) = action.as_ref().and_then(|r| r.0.get(i)) {
+                        x.movement = x.motion.get();
+                        x.restrict = restrict;
+                        x.motion.next();
+                        Self::wind_up(&mut x, &mut units);
                     }
+
+                    x
                 }
-                Mapping::Link(o, os) => {
-                    let size = o.1.units.len() + os.iter().map(|x| x.1.units.len()).sum::<usize>();
+                Source::Link { head, tail } => {
                     let list = {
+                        let size = head.refer.units.len();
+                        let size = size + tail.iter().map(|o| o.refer.units.len()).sum::<usize>();
                         let mut list = Vec::with_capacity(size);
-                        list.extend_from_slice(&o.1.units);
-                        os.iter().for_each(|o| list.extend_from_slice(&o.1.units));
+                        list.extend_from_slice(&head.refer.units);
+                        tail.iter()
+                            .for_each(|o| list.extend_from_slice(&o.refer.units));
                         list.into_boxed_slice()
                     };
 
-                    let behavior = {};
+                    let motion = Motion::from_iter(
+                        std::iter::once(&head.refer.motion).chain(
+                            tail.iter()
+                                .filter(|o| o.refer.kind.absorbable(head.refer.kind))
+                                .map(|o| &o.refer.motion),
+                        ),
+                    );
 
-                    // units: Box<[UnitID]>;
-                    // behavior: Behavior;
-
-                    // restrict: Restriction;
-                    // borders: Borders;
+                    let borders = Borders::new(
+                        list.iter()
+                            .map(usize::from)
+                            .filter_map(|i| self.units.get(i).map(|u| (i.into(), u.neighborhood))),
+                    );
 
                     todo!()
                 }
@@ -86,32 +91,54 @@ impl Collection {
             .heads
             .iter()
             .enumerate()
-            .map(|(i, x)| Some(Mapping::Copy((i.into(), x))))
+            .map(Mapping::from_copied)
             .collect::<Vec<_>>();
 
         for group in set.groups() {
             let mut group = group
                 .into_iter()
-                .filter_map(|i| self.heads.get(usize::from(&i)).map(|x| (i, x)))
+                .map(usize::from)
+                .filter_map(|i| self.heads.get(i).map(|x| IndexedHead::new(i, x)))
                 .collect::<Vec<_>>();
 
-            if let Some((main, side)) = group
+            if let Some((head, tail)) = group
                 .iter()
-                .position(|this| group.iter().all(|that| this.1.kind.absorbable(that.1.kind)))
-                .map(|one| (group.swap_remove(one), group))
+                .position(|l| group.iter().all(|r| l.refer.kind.absorbable(r.refer.kind)))
+                .map(|i| (group.swap_remove(i), group))
             {
-                for i in side.iter() {
-                    if let Some(m) = mappings.get_mut(usize::from(&i.0)) {
-                        *m = None;
-                    }
+                for i in tail.iter().map(|i| usize::from(&i.index)) {
+                    mappings[i].moving = true; // mark to remove
                 }
-                if let Some(m) = mappings.get_mut(usize::from(&main.0)) {
-                    *m = Some(Mapping::Link(main, side.into()));
-                }
+                let i = usize::from(&head.index);
+                mappings[i] = Mapping::from_linked(head, tail.into());
             }
         }
 
-        mappings.into_iter().filter_map(identity)
+        let mut i = 0;
+        let mut n = mappings.len();
+        while i < n {
+            if mappings[i].moving {
+                n -= 1;
+                while i < n && mappings[n].moving {
+                    n -= 1;
+                }
+                if i < n {
+                    mappings.swap(i, n);
+                    mappings[i].moving = true; // mark as moved
+                }
+            }
+            i += 1;
+        }
+        mappings.into_iter().take(n)
+    }
+
+    fn wind_up(x: &mut Head, units: &mut Box<[Unit]>) {
+        use {super::Movable, Movement::Idle, Restriction::Free};
+        if matches!(x.restrict, Free) && !matches!(x.movement, Idle) {
+            for u in pick(units.iter_mut(), x.units.iter()) {
+                u.position.step(x.movement);
+            }
+        }
     }
 
     // pub fn merge(&mut self, heads: impl Iterator<Item = HeadID>) {
@@ -134,15 +161,6 @@ impl Collection {
     //         let mut units: Vec<_> = pick(self.units.iter_mut(), unitids.iter()).collect();
     //         units.update_head(this.0);
     //         units.update_neighborhood();
-
-    //         // [2] reconstruct behavior
-    //         this.1.behavior = Motion::from_iter(
-    //             iter::once(this.1.behavior.take()).chain(
-    //                 they.iter_mut()
-    //                     .filter(|that| that.1.kind.absorbable(this.1.kind))
-    //                     .map(|that| that.1.behavior.take()),
-    //             ),
-    //         );
 
     //         // [3] reconstruct edges.
     //         this.1.borders = Borders::new(
@@ -172,11 +190,48 @@ impl Collection {
     // }
 }
 
-type IndexedHead<'a> = (HeadID, &'a Head);
+struct IndexedHead<'a> {
+    index: HeadID,
+    refer: &'a Head,
+}
 
-enum Mapping<'a> {
-    Copy(IndexedHead<'a>),
-    Link(IndexedHead<'a>, Box<[IndexedHead<'a>]>),
+impl<'a> IndexedHead<'a> {
+    fn new<I: Into<HeadID>>(index: I, refer: &'a Head) -> Self {
+        let index = index.into();
+        Self { index, refer }
+    }
+}
+
+enum Source<'a> {
+    Copy {
+        head: IndexedHead<'a>,
+    },
+    Link {
+        head: IndexedHead<'a>,
+        tail: Box<[IndexedHead<'a>]>,
+    },
+}
+
+struct Mapping<'a> {
+    moving: bool,
+    source: Source<'a>,
+}
+
+impl<'a> Mapping<'a> {
+    fn from_copied<I: Into<HeadID>>(pack: (I, &'a Head)) -> Self {
+        let head = IndexedHead::new(pack.0.into(), pack.1);
+        Self {
+            moving: false,
+            source: Source::Copy { head },
+        }
+    }
+
+    fn from_linked(head: IndexedHead<'a>, tail: Box<[IndexedHead<'a>]>) -> Self {
+        Self {
+            moving: false,
+            source: Source::Link { head, tail },
+        }
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -195,6 +250,7 @@ impl MutableUnitsExtension for [&mut Unit] {
     fn update_neighborhood(&mut self) {
         let co = Collision::new(self.iter().map(|u| u.position));
         self.iter_mut().for_each(|u| {
+            use common::Adjacent;
             u.neighborhood = Neighborhood::from(
                 Neighborhood::AROUND
                     .into_iter()
@@ -202,16 +258,6 @@ impl MutableUnitsExtension for [&mut Unit] {
             )
         });
     }
-}
-
-fn read_indexed<'a, T, U, V>(it: &'a [T], is: U) -> impl Iterator<Item = (V, &'a T)>
-where
-    T: 'a,
-    U: Iterator<Item = V>,
-    V: Into<usize> + From<usize>,
-{
-    is.map(Into::into)
-        .filter_map(|i| it.get(i).map(|x| (i.into(), x)))
 }
 
 fn pick<'a, I, T, U, V>(mut it: I, is: U) -> impl Iterator<Item = &'a mut T>

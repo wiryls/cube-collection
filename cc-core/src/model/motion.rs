@@ -23,11 +23,11 @@ impl Motion {
         )
     }
 
-    pub fn from_iter<I>(others: I) -> Self
+    pub fn from_iter<'a, I>(others: I) -> Self
     where
-        I: IntoIterator<Item = Self>,
+        I: Iterator<Item = &'a Self>,
     {
-        let (m, mut automatics): (Vec<_>, Vec<_>) = others.into_iter().map(|x| (x.0, x.1)).unzip();
+        let (m, mut a): (Vec<_>, Vec<_>) = others.map(|x| (x.0.clone(), &x.1)).unzip();
 
         let m = if m.windows(2).all(|w| w[0] == w[1]) {
             m.first().copied().flatten()
@@ -35,11 +35,11 @@ impl Motion {
             None
         };
 
-        automatics.retain(|a| !matches!(a, Automatic::Idle));
-        match automatics.len() {
+        a.retain(|x| !matches!(x, Automatic::Idle));
+        match a.len() {
             0 => Motion(m, Automatic::Idle),
-            1 => Motion(m, automatics.into_iter().next().unwrap_or_default()),
-            _ => Motion(m, Automatic::Team(Team(automatics))),
+            1 => Motion(m, a.into_iter().next().cloned().unwrap_or_default()),
+            _ => Motion(m, Automatic::Team(Team(a.into_iter().cloned().collect()))),
         }
     }
 
