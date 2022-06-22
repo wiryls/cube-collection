@@ -39,47 +39,37 @@ impl Collection {
         let mut units = self.units.clone();
         let heads = self
             .mappings(merge)
-            .map(|m| match m.source {
-                Source::Copy { head } => {
-                    let mut x = head.refer.clone();
-
-                    let i = usize::from(&head.index);
-                    if let Some(&restrict) = action.as_ref().and_then(|r| r.0.get(i)) {
-                        x.movement = x.motion.get();
-                        x.restrict = restrict;
-                        x.motion.next();
-                        Self::wind_up(&mut x, &mut units);
+            .map(|mapping| {
+                let (index, mut head) = match mapping.source {
+                    Source::Copy { head } => (head.index, head.refer.clone()),
+                    Source::Link { head, tail } => {
+                        let units = Self::link_units(&head, &tail);
+                        let motion = Self::link_motions(&head, &tail);
+                        let movement = motion.get();
+                        let borders = Self::link_boarders(&units, &self.units);
+                        let copy = Head {
+                            kind: head.refer.kind.clone(),
+                            units,
+                            motion,
+                            movement,
+                            restrict: head.refer.restrict.clone(),
+                            borders,
+                        };
+                        (head.index, copy)
                     }
+                };
 
-                    x
+                let i = usize::from(&index);
+                if let Some(&restrict) = action.as_ref().and_then(|r| r.0.get(i)) {
+                    head.movement = head.motion.get();
+                    head.restrict = restrict;
+                    head.motion.next();
+                    Self::wind_up(&mut head, &mut units);
                 }
-                Source::Link { head, tail } => {
-                    let list = {
-                        let size = head.refer.units.len();
-                        let size = size + tail.iter().map(|o| o.refer.units.len()).sum::<usize>();
-                        let mut list = Vec::with_capacity(size);
-                        list.extend_from_slice(&head.refer.units);
-                        tail.iter()
-                            .for_each(|o| list.extend_from_slice(&o.refer.units));
-                        list.into_boxed_slice()
-                    };
 
-                    let motion = Motion::from_iter(
-                        std::iter::once(&head.refer.motion).chain(
-                            tail.iter()
-                                .filter(|o| o.refer.kind.absorbable(head.refer.kind))
-                                .map(|o| &o.refer.motion),
-                        ),
-                    );
+                // TODO: update headid of units.
 
-                    let borders = Borders::new(
-                        list.iter()
-                            .map(usize::from)
-                            .filter_map(|i| self.units.get(i).map(|u| (i.into(), u.neighborhood))),
-                    );
-
-                    todo!()
-                }
+                head
             })
             .collect::<Box<_>>();
 
@@ -107,7 +97,7 @@ impl Collection {
                 .map(|i| (group.swap_remove(i), group))
             {
                 for i in tail.iter().map(|i| usize::from(&i.index)) {
-                    mappings[i].moving = true; // mark to remove
+                    mappings[i].moving = true; // a dummy mark
                 }
                 let i = usize::from(&head.index);
                 mappings[i] = Mapping::from_linked(head, tail.into());
@@ -141,53 +131,34 @@ impl Collection {
         }
     }
 
-    // pub fn merge(&mut self, heads: impl Iterator<Item = HeadID>) {
-    //     let mut they = pick_indexed(self.heads.iter_mut(), heads).collect::<Vec<_>>();
+    fn link_units(head: &IndexedHead, tail: &[IndexedHead]) -> Box<[UnitID]> {
+        let size = head.refer.units.len() + tail.iter().map(|o| o.refer.units.len()).sum::<usize>();
+        let mut list = Vec::with_capacity(size);
+        list.extend_from_slice(&head.refer.units);
+        tail.iter()
+            .for_each(|o| list.extend_from_slice(&o.refer.units));
+        list.sort();
+        list.into_boxed_slice()
+    }
 
-    //     if let Some(winner) = they
-    //         .iter()
-    //         .position(|this| they.iter().all(|that| this.1.kind.absorbable(that.1.kind)))
-    //     {
-    //         let mut this = they.swap_remove(winner);
+    fn link_motions(head: &IndexedHead, tail: &[IndexedHead]) -> Motion {
+        Motion::from_iter(
+            std::iter::once(&head.refer.motion).chain(
+                tail.iter()
+                    .filter(|o| o.refer.kind.absorbable(head.refer.kind))
+                    .map(|o| &o.refer.motion),
+            ),
+        )
+    }
 
-    //         // [1] reconstruct units
-    //         // - move they.units into this.units, and then sort
-    //         // - update units.head and units.neighborhood
-    //         let unitids = &mut this.1.units;
-    //         // unitids.reserve(they.iter().map(|that| that.1.units.len()).sum());
-    //         // unitids.extend(they.iter_mut().map(|that| that.1.units.drain(..)).flatten());
-    //         unitids.sort();
-
-    //         let mut units: Vec<_> = pick(self.units.iter_mut(), unitids.iter()).collect();
-    //         units.update_head(this.0);
-    //         units.update_neighborhood();
-
-    //         // [3] reconstruct edges.
-    //         this.1.borders = Borders::new(
-    //             read_indexed(&self.units, unitids.iter().cloned())
-    //                 .map(|(i, u)| (i, u.neighborhood)),
-    //         );
-    //     }
-    // }
-
-    // pub fn clean(&mut self) {
-    //     let marks = self
-    //         .heads
-    //         .iter()
-    //         .enumerate()
-    //         .filter(|x| x.1.units.is_empty())
-    //         .map(|x| x.0)
-    //         .collect::<Vec<_>>();
-    //     for i in marks.iter().rev() {
-    //         // _ = self.heads.swap_remove(*i);
-    //     }
-
-    //     let limit = self.heads.len();
-    //     let marks = marks.into_iter().filter(move |i| *i < limit);
-    //     for (i, head) in pick_indexed(self.heads.iter_mut(), marks) {
-    //         pick(self.units.iter_mut(), head.units.iter()).for_each(|u| u.head = i.into());
-    //     }
-    // }
+    fn link_boarders(indexes: &[UnitID], units: &[Unit]) -> Borders {
+        Borders::new(
+            indexes
+                .iter()
+                .map(usize::from)
+                .filter_map(|i| units.get(i).map(|u| (i.into(), u.neighborhood))),
+        )
+    }
 }
 
 struct IndexedHead<'a> {
