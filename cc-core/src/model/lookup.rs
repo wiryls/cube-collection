@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
-use super::{HeadID, Movement, UnitID};
-use crate::common::{Adjacence, Neighborhood, Point};
+use super::HeadID;
+use crate::common::Point;
 
 #[derive(Eq, Hash, PartialEq)]
 pub struct Key(u64);
@@ -26,7 +26,7 @@ impl Collision {
         T: Iterator<Item = U>,
         U: Into<Key>,
     {
-        Self(it.map(|k| k.into()).collect())
+        Self(it.map(Into::into).collect())
     }
 
     pub fn hit<T: Into<Key>>(&self, k: T) -> bool {
@@ -109,43 +109,5 @@ impl DisjointSet {
 
     fn parent_mut(&mut self, index: HeadID) -> &mut HeadID {
         self.0.entry(index.clone()).or_insert(index)
-    }
-}
-
-#[derive(Clone)]
-pub struct Borders {
-    size: [usize; 3],
-    list: Box<[UnitID]>,
-}
-
-impl Borders {
-    pub fn new<'a, T>(it: T) -> Self
-    where
-        T: Iterator<Item = (UnitID, Neighborhood)>,
-    {
-        let v = it.collect::<Vec<_>>();
-        let mut list = Vec::with_capacity(v.len() * 4);
-        let mut size: [usize; 3] = [0, 0, 0];
-
-        const RIGHT: Adjacence = Adjacence::RIGHT;
-        const NOT_RIGHT: [Adjacence; 3] = [Adjacence::LEFT, Adjacence::BOTTOM, Adjacence::TOP];
-        for (i, a) in NOT_RIGHT.into_iter().enumerate() {
-            list.extend(v.iter().filter(|o| !o.1.has(a)).map(|o| o.0.clone()));
-            size[i] = list.len();
-        }
-        list.extend(v.into_iter().filter(|o| !o.1.has(RIGHT)).map(|o| o.0));
-
-        let list = list.into();
-        Self { size, list }
-    }
-
-    pub fn get(&self, m: Movement) -> &[UnitID] {
-        match m {
-            Movement::Idle => &self.list,
-            Movement::Left => &self.list[..self.size[0]],
-            Movement::Down => &self.list[self.size[0]..self.size[1]],
-            Movement::Up => &self.list[self.size[1]..self.size[2]],
-            Movement::Right => &self.list[self.size[2]..],
-        }
     }
 }

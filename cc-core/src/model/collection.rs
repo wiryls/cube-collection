@@ -1,5 +1,5 @@
-use super::{Borders, Collision, DisjointSet, HeadID, Motion, Movement, Restriction, Type, UnitID};
-use crate::common::{self, Neighborhood, Point};
+use super::{Collision, DisjointSet, HeadID, Motion, Movement, Restriction, Type, UnitID};
+use crate::common::{self, Adjacence, Neighborhood, Point};
 
 pub struct Restrictions(Box<[Restriction]>);
 
@@ -15,26 +15,11 @@ pub struct Collection {
     units: Box<[Unit]>,
 }
 
-#[derive(Clone)]
-struct Head {
-    // necessary
-    kind: Type,
-    units: Box<[UnitID]>, // sorted
-    motion: Motion,
-    // calculated
-    movement: Movement,
-    restrict: Restriction,
-    borders: Borders,
-}
-
-#[derive(Clone)]
-struct Unit {
-    head: HeadID,
-    position: Point,
-    neighborhood: Neighborhood,
-}
-
 impl Collection {
+    pub fn new() -> Self {
+        todo!()
+    }
+
     pub fn next(&self, merge: DisjointSet, action: Option<Restrictions>) -> Self {
         let mut units = self.units.clone();
         let heads = self
@@ -50,10 +35,10 @@ impl Collection {
                         rebind = true;
                         reunit = true;
 
-                        let units = Self::link_units(&head, &tail);
-                        let motion = Self::link_motions(&head, &tail);
+                        let units = Self::make_units(&head, &tail);
+                        let motion = Self::make_motions(&head, &tail);
                         let movement = motion.get();
-                        let borders = Self::link_boarders(&units, &self.units);
+                        let borders = Borders::new(&self.units, &units);
                         let copy = Head {
                             kind: head.refer.kind.clone(),
                             units,
@@ -78,7 +63,7 @@ impl Collection {
                 }
 
                 if rebind || moveon || reunit {
-                    let co = reunit.then(|| Collision::new(units.iter().map(|u| u.position)));
+                    let reunit = reunit.then(|| Collision::new(units.iter().map(|u| u.position)));
 
                     for i in head.units.iter() {
                         let mut unit = &mut units[usize::from(i)];
@@ -89,12 +74,12 @@ impl Collection {
                             use super::Movable;
                             unit.position.step(head.movement);
                         }
-                        if let Some(co) = &co {
+                        if let Some(c) = &reunit {
                             use common::Adjacent;
                             unit.neighborhood = Neighborhood::from(
                                 Neighborhood::AROUND
                                     .into_iter()
-                                    .filter(|o| co.hit(unit.position.near(*o))),
+                                    .filter(|&o| c.hit(unit.position.near(o))),
                             )
                         }
                     }
@@ -105,6 +90,11 @@ impl Collection {
             .collect::<Box<_>>();
 
         Self { heads, units }
+    }
+
+    pub fn diff(&self, that: &Self) /* -> ? */
+    {
+        todo!()
     }
 
     fn mappings(&self, set: DisjointSet) -> impl Iterator<Item = Mapping> {
@@ -153,7 +143,7 @@ impl Collection {
         mappings.into_iter().take(n)
     }
 
-    fn link_units(head: &IndexedHead, tail: &[IndexedHead]) -> Box<[UnitID]> {
+    fn make_units(head: &IndexedHead, tail: &[IndexedHead]) -> Box<[UnitID]> {
         let size = head.refer.units.len() + tail.iter().map(|o| o.refer.units.len()).sum::<usize>();
         let mut list = Vec::with_capacity(size);
         list.extend_from_slice(&head.refer.units);
@@ -162,7 +152,7 @@ impl Collection {
         list.into_boxed_slice()
     }
 
-    fn link_motions(head: &IndexedHead, tail: &[IndexedHead]) -> Motion {
+    fn make_motions(head: &IndexedHead, tail: &[IndexedHead]) -> Motion {
         Motion::from_iter(
             std::iter::once(&head.refer.motion).chain(
                 tail.iter()
@@ -171,16 +161,99 @@ impl Collection {
             ),
         )
     }
+}
 
-    fn link_boarders(indexes: &[UnitID], units: &[Unit]) -> Borders {
-        Borders::new(
-            indexes
-                .iter()
-                .map(usize::from)
-                .filter_map(|i| units.get(i).map(|u| (i.into(), u.neighborhood))),
-        )
+/////////////////////////////////////////////////////////////////////////////
+// subtypes
+
+#[derive(Clone)]
+struct Head {
+    // necessary
+    kind: Type,
+    units: Box<[UnitID]>,
+    motion: Motion,
+    // calculated
+    movement: Movement,
+    restrict: Restriction,
+    borders: Borders,
+}
+
+#[derive(Clone)]
+struct Unit {
+    head: HeadID,
+    position: Point,
+    neighborhood: Neighborhood,
+}
+
+#[derive(Clone)]
+struct Borders {
+    count: [usize; 4],
+    slice: Box<[UnitID]>,
+}
+
+impl Borders {
+    pub fn new(units: &[Unit], indexes: &[UnitID]) -> Self {
+        fn loop_through(units: &[Unit], indexes: &[UnitID], mut f: impl FnMut(UnitID, usize)) {
+            const LBTR: [Adjacence; 4] = [
+                Adjacence::LEFT,
+                Adjacence::BOTTOM,
+                Adjacence::TOP,
+                Adjacence::RIGHT,
+            ];
+
+            for id in indexes.iter() {
+                let mut found = false;
+                let unit = &units[usize::from(id)];
+                for (i, a) in LBTR.into_iter().enumerate() {
+                    if !unit.neighborhood.has(a) {
+                        found = true;
+                        f(id.clone(), i + 1 /* [1, 5) */);
+                    }
+                }
+                if found {
+                    f(id.clone(), 0);
+                }
+            }
+        }
+
+        let mut count: [usize; 5] = Default::default();
+        loop_through(units, indexes, |_, i| count[i] += 1);
+        let total = count.iter().sum::<usize>();
+        for i in 1..count.len() {
+            // [  0     1       2    3      4 ]
+            // 0..left..bottom..top..right..len
+            count[i] += count[i - 1];
+        }
+
+        let mut index = count.clone();
+        index.rotate_right(1);
+        index[0] = 0;
+
+        let mut slice = vec![UnitID::from(0); total];
+        loop_through(units, indexes, |u, i| {
+            let j = index[i];
+            slice[j] = u;
+            index[i] += 1;
+        });
+
+        let count = [count[0], count[1], count[2], count[3]];
+        let slice = slice.into();
+        Self { count, slice }
+    }
+
+    pub fn get(&self, m: Movement) -> &[UnitID] {
+        match m {
+            Movement::Idle => &self.slice[..self.count[0]],
+            Movement::Left => &self.slice[self.count[0]..self.count[1]],
+            Movement::Down => &self.slice[self.count[1]..self.count[2]],
+            Movement::Up => &self.slice[self.count[2]..self.count[3]],
+            Movement::Right => &self.slice[self.count[3]..],
+        }
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// intermediate types
 
 struct IndexedHead<'a> {
     index: HeadID,
