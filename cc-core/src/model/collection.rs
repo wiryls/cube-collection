@@ -1,5 +1,10 @@
+use std::rc::Rc;
+
 use super::{Collision, DisjointSet, HeadID, Motion, Movement, Restriction, Type, UnitID};
-use crate::common::{self, Adjacence, Neighborhood, Point};
+use crate::{
+    common::{self, Adjacence, Neighborhood, Point},
+    Faction,
+};
 
 pub struct Restrictions(Box<[Restriction]>);
 
@@ -13,6 +18,7 @@ impl Restrictions {
 pub struct Collection {
     heads: Box<[Head]>,
     units: Box<[Unit]>,
+    cache: Cache,
 }
 
 impl Collection {
@@ -20,7 +26,12 @@ impl Collection {
         todo!()
     }
 
+    pub fn cubes(&self) -> impl Iterator<Item = FatCube<'_>> {
+        (0..self.heads.len()).map(|i| FatCube::new(self, i.into()))
+    }
+
     pub fn next(&self, merge: DisjointSet, action: Option<Restrictions>) -> Self {
+        let mut cache = self.cache.clone();
         let mut units = self.units.clone();
         let heads = self
             .mappings(merge)
@@ -38,14 +49,14 @@ impl Collection {
                         let units = Self::make_units(&head, &tail);
                         let motion = Self::make_motions(&head, &tail);
                         let movement = motion.get();
-                        let borders = Borders::new(&self.units, &units);
+                        let outlines = Outlines::new(&self.units, &units);
                         let copy = Head {
                             kind: head.refer.kind.clone(),
                             units,
                             motion,
                             movement,
                             restrict: head.refer.restrict.clone(),
-                            borders,
+                            outlines,
                         };
 
                         (head.index, copy)
@@ -83,13 +94,21 @@ impl Collection {
                             )
                         }
                     }
+
+                    if moveon {
+                        cache.faction = Rc::new(Self::make_faction(&units));
+                    }
                 }
 
                 head
             })
             .collect::<Box<_>>();
 
-        Self { heads, units }
+        Self {
+            heads,
+            units,
+            cache,
+        }
     }
 
     pub fn diff(&self, that: &Self) /* -> ? */
@@ -161,6 +180,63 @@ impl Collection {
             ),
         )
     }
+
+    fn make_faction(units: &[Unit]) -> Faction {
+        Faction::new(units.iter().map(|u| (u.position.into(), u.head.clone())))
+    }
+}
+
+pub struct FatCube<'a> {
+    head: &'a Head,
+    owner: &'a Collection,
+    index: HeadID,
+}
+
+impl<'a> FatCube<'a> {
+    fn new(owner: &'a Collection, index: HeadID) -> Self {
+        Self {
+            head: &owner.heads[usize::from(&index)],
+            owner,
+            index,
+        }
+    }
+
+    pub fn id(&self) -> HeadID {
+        self.index.clone()
+    }
+
+    pub fn kind(&self) -> Type {
+        self.head.kind
+    }
+
+    pub fn unstable(&self) -> bool {
+        self.head.kind != Type::White
+    }
+
+    pub fn absorbable(&self, that: &Self) -> bool {
+        self.head.kind.absorbable(that.head.kind)
+    }
+
+    pub fn absorbable_actively(&self, that: &Self) -> bool {
+        self.head.kind.absorbable_actively(that.head.kind)
+    }
+
+    pub fn movement(&self) -> Movement {
+        self.head.movement
+    }
+
+    pub fn moving(&self) -> bool {
+        self.head.movement != Movement::Idle
+    }
+
+    pub fn around(&self, m: Movement) -> impl Iterator<Item = FatCube<'a>> {
+        let faction = &self.owner.cache.faction;
+        let anchor = Outlines::anchor(self.head.units.first(), &self.owner.units);
+        self.head
+            .outlines
+            .out(anchor, m)
+            .filter_map(|o| faction.get(o).map(|i| Self::new(self.owner, i)))
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -175,7 +251,7 @@ struct Head {
     // calculated
     movement: Movement,
     restrict: Restriction,
-    borders: Borders,
+    outlines: Outlines,
 }
 
 #[derive(Clone)]
@@ -186,70 +262,88 @@ struct Unit {
 }
 
 #[derive(Clone)]
-struct Borders {
-    count: [usize; 4],
-    slice: Box<[UnitID]>,
+struct Outlines {
+    count: [usize; 3],
+    slice: Box<[Point]>,
 }
 
-impl Borders {
+impl Outlines {
     pub fn new(units: &[Unit], indexes: &[UnitID]) -> Self {
-        fn loop_through(units: &[Unit], indexes: &[UnitID], mut f: impl FnMut(UnitID, usize)) {
-            const LBTR: [Adjacence; 4] = [
-                Adjacence::LEFT,
-                Adjacence::BOTTOM,
-                Adjacence::TOP,
-                Adjacence::RIGHT,
-            ];
+        const LBTR: [Adjacence; 4] = [
+            Adjacence::LEFT,
+            Adjacence::BOTTOM,
+            Adjacence::TOP,
+            Adjacence::RIGHT,
+        ];
 
-            for id in indexes.iter() {
-                let mut found = false;
-                let unit = &units[usize::from(id)];
-                for (i, a) in LBTR.into_iter().enumerate() {
-                    if !unit.neighborhood.has(a) {
-                        found = true;
-                        f(id.clone(), i + 1 /* [1, 5) */);
-                    }
+        // count:
+        // [  0     1       2    3   ]
+        // 0..left..bottom..top..right
+        let mut count: [usize; 4] = Default::default();
+        for id in indexes.iter() {
+            let unit = &units[usize::from(id)];
+            for (i, a) in LBTR.into_iter().enumerate() {
+                if !unit.neighborhood.has(a) {
+                    count[i] += 1;
                 }
-                if found {
-                    f(id.clone(), 0);
+            }
+        }
+        for i in 1..count.len() {
+            count[i] += count[i - 1];
+        }
+
+        let mut slice = {
+            let first = Self::anchor(indexes.first(), units);
+            let total = count[3];
+            vec![first; total]
+        };
+        let mut index = {
+            let mut index = count.clone();
+            index.rotate_right(1);
+            index[0] = 0;
+            index
+        };
+        for id in indexes.iter() {
+            let unit = &units[usize::from(id)];
+            for (i, a) in LBTR.into_iter().enumerate() {
+                if !unit.neighborhood.has(a) {
+                    use common::Adjacent;
+                    *slice[index[i]].step(a) -= unit.position;
+                    index[i] += 1;
                 }
             }
         }
 
-        let mut count: [usize; 5] = Default::default();
-        loop_through(units, indexes, |_, i| count[i] += 1);
-        let total = count.iter().sum::<usize>();
-        for i in 1..count.len() {
-            // [  0     1       2    3      4 ]
-            // 0..left..bottom..top..right..len
-            count[i] += count[i - 1];
-        }
-
-        let mut index = count.clone();
-        index.rotate_right(1);
-        index[0] = 0;
-
-        let mut slice = vec![UnitID::from(0); total];
-        loop_through(units, indexes, |u, i| {
-            let j = index[i];
-            slice[j] = u;
-            index[i] += 1;
-        });
-
-        let count = [count[0], count[1], count[2], count[3]];
-        let slice = slice.into();
-        Self { count, slice }
-    }
-
-    pub fn get(&self, m: Movement) -> &[UnitID] {
-        match m {
-            Movement::Idle => &self.slice[..self.count[0]],
-            Movement::Left => &self.slice[self.count[0]..self.count[1]],
-            Movement::Down => &self.slice[self.count[1]..self.count[2]],
-            Movement::Up => &self.slice[self.count[2]..self.count[3]],
-            Movement::Right => &self.slice[self.count[3]..],
+        Self {
+            count: [count[0], count[1], count[2]],
+            slice: slice.into(),
         }
     }
+
+    pub fn out<'a>(&'a self, anchor: Point, action: Movement) -> impl Iterator<Item = Point> + 'a {
+        match action {
+            Movement::Idle => &self.slice[..],
+            Movement::Left => &self.slice[..self.count[0]],
+            Movement::Down => &self.slice[self.count[0]..self.count[1]],
+            Movement::Up => &self.slice[self.count[1]..self.count[2]],
+            Movement::Right => &self.slice[self.count[2]..],
+        }
+        .iter()
+        .map(move |o| anchor - *o)
+    }
+
+    fn anchor(index: Option<&UnitID>, units: &[Unit]) -> Point {
+        index
+            .map(usize::from)
+            .and_then(|i| units.get(i))
+            .map(|u| u.position)
+            .unwrap_or_default()
+    }
+}
+
+#[derive(Clone)]
+struct Cache {
+    faction: Rc<Faction>,
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -298,3 +392,6 @@ impl<'a> Mapping<'a> {
         }
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// utilities

@@ -37,20 +37,8 @@ impl Collision {
 pub struct Faction(HashMap<Key, HeadID>);
 
 impl Faction {
-    pub fn new<T, U, V>(it: T) -> Self
-    where
-        T: Iterator<Item = (HeadID, U)>,
-        U: Iterator<Item = V>,
-        V: Into<Key>,
-    {
-        Self(
-            it.flat_map(|(k, v)| v.map(move |x| (x.into(), k.clone())))
-                .collect(),
-        )
-    }
-
-    pub fn put<T: Into<Key>>(&mut self, k: T, v: HeadID) {
-        self.0.insert(k.into(), v);
+    pub fn new(it: impl Iterator<Item = (Key, HeadID)>) -> Self {
+        Self(it.collect())
     }
 
     pub fn get<T: Into<Key>>(&self, k: T) -> Option<HeadID> {
