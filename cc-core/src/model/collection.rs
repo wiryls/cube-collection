@@ -12,6 +12,10 @@ impl Restrictions {
     pub fn new(collection: &Collection) -> Self {
         Self(collection.heads.iter().map(|h| h.restrict).collect())
     }
+
+    pub fn set(&mut self, cube: &CollectedCube, restriction: Restriction) {
+        self.0[usize::from(&cube.index)] = restriction;
+    }
 }
 
 #[derive(Clone)]
@@ -26,11 +30,11 @@ impl Collection {
         todo!()
     }
 
-    pub fn cubes(&self) -> impl Iterator<Item = FatCube<'_>> {
-        (0..self.heads.len()).map(|i| FatCube::new(self, i.into()))
+    pub fn cubes(&self) -> impl Clone + Iterator<Item = CollectedCube<'_>> {
+        (0..self.heads.len()).map(|i| CollectedCube::new(self, i.into()))
     }
 
-    pub fn next(&self, merge: DisjointSet, action: Option<Restrictions>) -> Self {
+    pub fn transform(&self, merge: DisjointSet, action: Option<Restrictions>) -> Self {
         let mut cache = self.cache.clone();
         let mut units = self.units.clone();
         let heads = self
@@ -111,7 +115,7 @@ impl Collection {
         }
     }
 
-    pub fn diff(&self, that: &Self) /* -> ? */
+    pub fn differ(&self, _that: &Self) /* -> ? */
     {
         todo!()
     }
@@ -186,13 +190,13 @@ impl Collection {
     }
 }
 
-pub struct FatCube<'a> {
+pub struct CollectedCube<'a> {
     head: &'a Head,
     owner: &'a Collection,
     index: HeadID,
 }
 
-impl<'a> FatCube<'a> {
+impl<'a> CollectedCube<'a> {
     fn new(owner: &'a Collection, index: HeadID) -> Self {
         Self {
             head: &owner.heads[usize::from(&index)],
@@ -229,12 +233,14 @@ impl<'a> FatCube<'a> {
         self.head.movement != Movement::Idle
     }
 
-    pub fn around(&self, m: Movement) -> impl Iterator<Item = FatCube<'a>> {
-        let faction = &self.owner.cache.faction;
+    pub fn outlines(&self, m: Movement) -> impl Iterator<Item = Point> + 'a {
         let anchor = Outlines::anchor(self.head.units.first(), &self.owner.units);
-        self.head
-            .outlines
-            .out(anchor, m)
+        self.head.outlines.out(anchor, m)
+    }
+
+    pub fn neighbors(&self, m: Movement) -> impl Iterator<Item = CollectedCube<'a>> {
+        let faction = &self.owner.cache.faction;
+        self.outlines(m)
             .filter_map(|o| faction.get(o).map(|i| Self::new(self.owner, i)))
     }
 }
