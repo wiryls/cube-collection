@@ -1,5 +1,5 @@
 use super::Collision;
-use crate::common::{Adjacent, Neighborhood, Point};
+use crate::common::{Neighborhood, Point};
 
 pub struct Background {
     units: Box<[(Point, Neighborhood)]>,
@@ -21,7 +21,7 @@ impl Background {
                         Neighborhood::from(
                             Neighborhood::AROUND
                                 .into_iter()
-                                .filter(|&a| collision.hit(point.near(a))),
+                                .filter(|&a| collision.hit(point + a.into())),
                         ),
                     )
                 })

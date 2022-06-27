@@ -6,6 +6,12 @@ pub struct Point<T = i32> {
     pub y: T,
 }
 
+impl<T> Point<T> {
+    pub const fn new(x: T, y: T) -> Self {
+        Self { x, y }
+    }
+}
+
 impl<T> Add for Point<T>
 where
     T: Add<Output = T>,

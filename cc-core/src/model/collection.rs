@@ -86,15 +86,13 @@ impl Collection {
                             unit.head = index.clone();
                         }
                         if moveon {
-                            use super::Movable;
-                            unit.position.step(head.movement);
+                            unit.position += head.movement.into();
                         }
                         if let Some(c) = &reunit {
-                            use common::Adjacent;
                             unit.neighborhood = Neighborhood::from(
                                 Neighborhood::AROUND
                                     .into_iter()
-                                    .filter(|&o| c.hit(unit.position.near(o))),
+                                    .filter(|&o| c.hit(unit.position + o.into())),
                             )
                         }
                     }
@@ -313,8 +311,9 @@ impl Outlines {
             let unit = &units[usize::from(id)];
             for (i, a) in LBTR.into_iter().enumerate() {
                 if !unit.neighborhood.has(a) {
-                    use common::Adjacent;
-                    *slice[index[i]].step(a) -= unit.position;
+                    let point = &mut slice[index[i]];
+                    *point += a.into();
+                    *point -= unit.position;
                     index[i] += 1;
                 }
             }

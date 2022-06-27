@@ -9,27 +9,23 @@ pub enum Movement {
     Right,
 }
 
-pub trait Movable {
-    fn near(&self, m: Movement) -> Self;
-    fn step(&mut self, m: Movement) -> &mut Self;
+impl Movement {
+    const IDLE: Point = Point::new(0, 0);
+    const LEFT: Point = Point::new(-1, 0);
+    const DOWN: Point = Point::new(0, 1);
+    const UP: Point = Point::new(0, -1);
+    const RIGHT: Point = Point::new(1, 0);
 }
 
-impl Movable for Point {
-    fn near(&self, m: Movement) -> Self {
-        let mut next = self.clone();
-        next.step(m);
-        next
-    }
-
-    fn step(&mut self, m: Movement) -> &mut Self {
-        match m {
-            Movement::Idle => (),
-            Movement::Left => self.x -= 1,
-            Movement::Down => self.y += 1,
-            Movement::Up => self.y -= 1,
-            Movement::Right => self.x += 1,
+impl Into<Point> for Movement {
+    fn into(self) -> Point {
+        match self {
+            Movement::Idle => Movement::IDLE,
+            Movement::Left => Movement::LEFT,
+            Movement::Down => Movement::DOWN,
+            Movement::Up => Movement::UP,
+            Movement::Right => Movement::RIGHT,
         }
-        self
     }
 }
 

@@ -14,49 +14,36 @@ impl Adjacence {
     pub const LEFT_BOTTOM /*  **/: Adjacence = Adjacence(0b_00000001);
 }
 
-pub trait Adjacent {
-    fn near(&self, m: Adjacence) -> Self;
-    fn step(&mut self, m: Adjacence) -> &mut Self;
+impl Adjacence {
+    const POINT_LEFT /*         **/: Point = Point::new(-1, 0);
+    const POINT_LEFT_TOP /*     **/: Point = Point::new(-1, -1);
+    const POINT_TOP /*          **/: Point = Point::new(0, -1);
+    const POINT_RIGHT_TOP /*    **/: Point = Point::new(1, -1);
+    const POINT_RIGHT /*        **/: Point = Point::new(1, 0);
+    const POINT_RIGHT_BOTTOM /* **/: Point = Point::new(1, 1);
+    const POINT_BOTTOM /*       **/: Point = Point::new(0, 1);
+    const POINT_LEFT_BOTTOM /*  **/: Point = Point::new(-1, 1);
+    const POINT_NONE /*         **/: Point = Point::new(0, 0);
 }
 
-impl Adjacent for Point {
-    fn near(&self, m: Adjacence) -> Self {
-        let mut next = self.clone();
-        next.step(m);
-        next
-    }
-
-    fn step(&mut self, m: Adjacence) -> &mut Self {
-        match m {
-            Adjacence::LEFT => self.x -= 1,
-            Adjacence::LEFT_TOP => {
-                self.x -= 1;
-                self.y -= 1;
-            }
-            Adjacence::TOP => self.y -= 1,
-            Adjacence::RIGHT_TOP => {
-                self.x += 1;
-                self.y -= 1;
-            }
-            Adjacence::RIGHT => self.x += 1,
-            Adjacence::RIGHT_BOTTOM => {
-                self.x += 1;
-                self.y += 1;
-            }
-            Adjacence::BOTTOM => self.y += 1,
-            Adjacence::LEFT_BOTTOM => {
-                self.x -= 1;
-                self.y += 1;
-            }
-            _ => (),
+impl Into<Point> for Adjacence {
+    fn into(self) -> Point {
+        match self {
+            LEFT => Adjacence::POINT_LEFT,
+            LEFT_TOP => Adjacence::POINT_LEFT_TOP,
+            TOP => Adjacence::POINT_TOP,
+            RIGHT_TOP => Adjacence::POINT_RIGHT_TOP,
+            RIGHT => Adjacence::POINT_RIGHT,
+            RIGHT_BOTTOM => Adjacence::POINT_RIGHT_BOTTOM,
+            BOTTOM => Adjacence::POINT_BOTTOM,
+            LEFT_BOTTOM => Adjacence::POINT_LEFT_BOTTOM,
+            _ => Adjacence::POINT_NONE,
         }
-        self
     }
 }
 
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct Neighborhood(u8);
-
 
 #[allow(dead_code)]
 impl Neighborhood {
