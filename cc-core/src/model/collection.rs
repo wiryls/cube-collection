@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use super::{Collision, DisjointSet, HeadID, Motion, Movement, Restriction, Type, UnitID};
 use crate::{
-    common::{self, Adjacence, Neighborhood, Point},
+    common::{Adjacence, Neighborhood, Point},
     Faction,
 };
 

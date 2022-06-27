@@ -29,14 +29,14 @@ impl Adjacence {
 impl Into<Point> for Adjacence {
     fn into(self) -> Point {
         match self {
-            LEFT => Adjacence::POINT_LEFT,
-            LEFT_TOP => Adjacence::POINT_LEFT_TOP,
-            TOP => Adjacence::POINT_TOP,
-            RIGHT_TOP => Adjacence::POINT_RIGHT_TOP,
-            RIGHT => Adjacence::POINT_RIGHT,
-            RIGHT_BOTTOM => Adjacence::POINT_RIGHT_BOTTOM,
-            BOTTOM => Adjacence::POINT_BOTTOM,
-            LEFT_BOTTOM => Adjacence::POINT_LEFT_BOTTOM,
+            Adjacence::LEFT => Adjacence::POINT_LEFT,
+            Adjacence::LEFT_TOP => Adjacence::POINT_LEFT_TOP,
+            Adjacence::TOP => Adjacence::POINT_TOP,
+            Adjacence::RIGHT_TOP => Adjacence::POINT_RIGHT_TOP,
+            Adjacence::RIGHT => Adjacence::POINT_RIGHT,
+            Adjacence::RIGHT_BOTTOM => Adjacence::POINT_RIGHT_BOTTOM,
+            Adjacence::BOTTOM => Adjacence::POINT_BOTTOM,
+            Adjacence::LEFT_BOTTOM => Adjacence::POINT_LEFT_BOTTOM,
             _ => Adjacence::POINT_NONE,
         }
     }

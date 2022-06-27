@@ -33,25 +33,30 @@ impl State {
         }
     }
 
-    pub fn next(&self, movement: Movement) /* -> Self */
-    {
+    pub fn next(&self, choice: Option<Movement>) -> Self {
         let mut merge = DisjointSet::default();
         let mut action = Restrictions::new(&self.active);
         let moving = self.active.cubes().filter(CollectedCube::moving);
 
-        // TODO:
         for cube in moving.clone() {
             let movement = cube.movement();
-            let blocked = cube.outlines(movement).any(|o| self.frozen.blocked(o));
 
+            let blocked = cube.outlines(movement).any(|o| self.frozen.blocked(o));
             if blocked {
+                // wall
                 action.set(&cube, Restriction::Block);
-                // marked as blocked.
+            } else {
+                // neighbors
+                cube.neighbors(movement)
+                    .filter(|that| that.movement() != movement)
+                    .filter(|that| that.absorbable(&cube) || cube.absorbable(that))
+                    .for_each(|that| merge.join(cube.id(), that.id()));
             }
 
-            // 2. no neighbors
-            cube.neighbors(cube.movement())
-                .filter(|that| that.movement() != cube.movement());
+            // add to seeds
+            // add dependencies
         }
+
+        todo!()
     }
 }
