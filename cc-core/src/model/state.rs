@@ -19,7 +19,7 @@ impl State {
 
     pub fn link(&self) -> Self {
         // create set
-        let mut merge = DisjointSet::default();
+        let mut merge = DisjointSet::new(self.active.len());
         for cube in self.active.cubes().filter(CollectedCube::unstable) {
             cube.neighbors(Movement::Idle)
                 .filter(|that| cube.absorbable_actively(that))
@@ -34,7 +34,7 @@ impl State {
     }
 
     pub fn next(&self, choice: Option<Movement>) -> Self {
-        let mut merge = DisjointSet::default();
+        let mut merge = DisjointSet::new(self.active.len());
         let mut action = Restrictions::new(&self.active);
         let moving = self.active.cubes().filter(CollectedCube::moving);
 

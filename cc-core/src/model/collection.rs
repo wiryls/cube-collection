@@ -30,6 +30,10 @@ impl Collection {
         todo!()
     }
 
+    pub fn len(&self) -> usize {
+        self.heads.len()
+    }
+
     pub fn cubes(&self) -> impl Clone + Iterator<Item = CollectedCube<'_>> {
         (0..self.heads.len()).map(|i| CollectedCube::new(self, i.into()))
     }
@@ -126,10 +130,8 @@ impl Collection {
             .map(Mapping::from_copied)
             .collect::<Vec<_>>();
 
-        for group in set.groups() {
+        for group in set.groups().iter() {
             let mut group = group
-                .into_iter()
-                .map(usize::from)
                 .filter_map(|i| self.heads.get(i).map(|x| IndexedHead::new(i, x)))
                 .collect::<Vec<_>>();
 
