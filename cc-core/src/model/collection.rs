@@ -6,18 +6,6 @@ use crate::{
     Faction,
 };
 
-pub struct Restrictions(Box<[Restriction]>);
-
-impl Restrictions {
-    pub fn new(collection: &Collection) -> Self {
-        Self(collection.heads.iter().map(|h| h.restrict).collect())
-    }
-
-    pub fn set(&mut self, cube: &CollectedCube, restriction: Restriction) {
-        self.0[usize::from(&cube.index)] = restriction;
-    }
-}
-
 #[derive(Clone)]
 pub struct Collection {
     heads: Box<[Head]>,
@@ -38,7 +26,7 @@ impl Collection {
         (0..self.heads.len()).map(|i| CollectedCube::new(self, i.into()))
     }
 
-    pub fn transform(&self, merge: DisjointSet, action: Option<Restrictions>) -> Self {
+    pub fn transform(&self, merge: DisjointSet, action: Option<&[Restriction]>) -> Self {
         let mut cache = self.cache.clone();
         let mut units = self.units.clone();
         let heads = self
@@ -72,7 +60,7 @@ impl Collection {
                 };
 
                 let i = usize::from(&index);
-                if let Some(&restrict) = action.as_ref().and_then(|r| r.0.get(i)) {
+                if let Some(&restrict) = action.and_then(|r| r.get(i)) {
                     head.movement = head.motion.get();
                     head.restrict = restrict;
                     head.motion.next();
@@ -209,6 +197,10 @@ impl<'a> CollectedCube<'a> {
         self.index.clone()
     }
 
+    pub fn index(&self) -> usize {
+        self.index.clone().into()
+    }
+
     pub fn kind(&self) -> Type {
         self.head.kind
     }
@@ -245,9 +237,9 @@ impl<'a> CollectedCube<'a> {
     }
 }
 
-impl<'a> Into<usize> for &CollectedCube<'a> {
-    fn into(self) -> usize {
-        self.id().into()
+impl<'a> From<&CollectedCube<'a>> for usize {
+    fn from(that: &CollectedCube<'a>) -> Self {
+        that.index()
     }
 }
 
