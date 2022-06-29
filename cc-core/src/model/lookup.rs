@@ -63,9 +63,7 @@ impl DisjointSet {
         let this = this.into();
         let that = that.into();
         if this < self.parents.len() && that < self.parents.len() {
-            let this = *self.root_mut(this);
-            let that = self.root_mut(that);
-            *that = this;
+            *self.root_mut(that) = *self.root_mut(this);
         }
     }
 
@@ -80,8 +78,14 @@ impl DisjointSet {
     }
 
     fn root(this: &[Option<usize>], mut index: usize) -> usize {
-        while let Some(upper) = this[index] {
-            index = upper
+        loop {
+            if let Some(upper) = this[index] {
+                if upper != index {
+                    index = upper;
+                    continue;
+                }
+            }
+            break;
         }
         index
     }
@@ -115,7 +119,7 @@ impl DisjointSet {
     }
 }
 
-pub struct Groups(Box<[(usize, usize)]>);
+pub struct Groups(Box<[(/* self */ usize, /* root */ usize)]>);
 
 impl Groups {
     pub fn iter<'a>(&'a self) -> GroupsIterator<'a> {
@@ -132,7 +136,7 @@ pub struct GroupsIterator<'a> {
 }
 
 impl<'a> Iterator for GroupsIterator<'a> {
-    type Item = SubGroupIterator<'a>;
+    type Item = GroupIterator<'a>;
     fn next(&mut self) -> Option<Self::Item> {
         let lower = self.index;
         let limit = self.group.0.len();
@@ -142,12 +146,12 @@ impl<'a> Iterator for GroupsIterator<'a> {
 
         let mut upper = self.index + 1;
         let value = self.group.0[lower];
-        while upper < limit && self.group.0[upper] == value {
+        while upper < limit && self.group.0[upper].1 == value.1 {
             upper += 1;
         }
 
         self.index = upper;
-        Some(SubGroupIterator {
+        Some(GroupIterator {
             group: self.group,
             lower,
             upper,
@@ -155,13 +159,13 @@ impl<'a> Iterator for GroupsIterator<'a> {
     }
 }
 
-pub struct SubGroupIterator<'a> {
+pub struct GroupIterator<'a> {
     group: &'a Groups,
     lower: usize,
     upper: usize,
 }
 
-impl<'a> Iterator for SubGroupIterator<'a> {
+impl<'a> Iterator for GroupIterator<'a> {
     type Item = usize;
     fn next(&mut self) -> Option<Self::Item> {
         let index = self.lower;
@@ -170,5 +174,39 @@ impl<'a> Iterator for SubGroupIterator<'a> {
         }
         self.lower += 1;
         Some(self.group.0[index].0)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn empty_disjoint_set() {
+        let set = DisjointSet::new(0);
+        let groups = set.groups();
+        assert!(groups.iter().next().is_none());
+    }
+
+    #[test]
+    fn basic_disjoint_set() {
+        let mut set = DisjointSet::new(10);
+        set.join(1, 3usize);
+        set.join(7, 9usize);
+        set.join(5, 7usize);
+        set.join(9, 3usize);
+
+        let groups = set.groups();
+        let mut it = groups.iter();
+
+        let value = it.next();
+        assert!(value.is_some());
+
+        let mut list = Vec::from_iter(value.unwrap());
+        list.sort();
+        assert_eq!(&list, &[1, 3, 5, 7, 9]);
+
+        let value = it.next();
+        assert!(value.is_none());
     }
 }

@@ -23,7 +23,7 @@ impl State {
         for cube in self.active.cubes().filter(CollectedCube::unstable) {
             cube.neighbors(Movement::Idle)
                 .filter(|that| cube.absorbable_actively(that))
-                .for_each(|that| merge.join(cube.id(), that.id()));
+                .for_each(|that| merge.join(&cube, &that));
         }
 
         // create next states
@@ -50,7 +50,7 @@ impl State {
                 cube.neighbors(movement)
                     .filter(|that| that.movement() != movement)
                     .filter(|that| that.absorbable(&cube) || cube.absorbable(that))
-                    .for_each(|that| merge.join(cube.id(), that.id()));
+                    .for_each(|that| merge.join(&cube, &that));
             }
 
             // add to seeds

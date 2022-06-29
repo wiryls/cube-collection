@@ -245,6 +245,12 @@ impl<'a> CollectedCube<'a> {
     }
 }
 
+impl<'a> Into<usize> for &CollectedCube<'a> {
+    fn into(self) -> usize {
+        self.id().into()
+    }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // subtypes
 
