@@ -234,14 +234,25 @@ impl<'a> CollectedCube<'a> {
         self.head.movement != Movement::Idle
     }
 
-    pub fn outlines(&self, m: Movement) -> impl Iterator<Item = Point> + Clone + 'a {
+    pub fn outlines_ahead(&self) -> impl Iterator<Item = Point> + Clone + 'a {
         let anchor = Outlines::anchor(self.head.units.first(), &self.owner.units);
-        self.head.outlines.out(anchor, m)
+        self.head.outlines.out(anchor, self.head.movement)
     }
 
-    pub fn neighbors(&self, m: Movement) -> impl Iterator<Item = CollectedCube<'a>> + Clone {
+    pub fn outlines(&self) -> impl Iterator<Item = Point> + Clone + 'a {
+        let anchor = Outlines::anchor(self.head.units.first(), &self.owner.units);
+        self.head.outlines.out(anchor, Movement::Idle)
+    }
+
+    pub fn neighbors_ahead(&self) -> impl Iterator<Item = CollectedCube<'a>> + Clone {
         let faction = &self.owner.cache.faction;
-        self.outlines(m)
+        self.outlines_ahead()
+            .filter_map(|o| faction.get(o).map(|i| Self::new(self.owner, i)))
+    }
+
+    pub fn neighbors(&self) -> impl Iterator<Item = CollectedCube<'a>> + Clone {
+        let faction = &self.owner.cache.faction;
+        self.outlines()
             .filter_map(|o| faction.get(o).map(|i| Self::new(self.owner, i)))
     }
 }

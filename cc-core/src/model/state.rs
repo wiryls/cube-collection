@@ -1,4 +1,7 @@
-use std::{collections::HashSet, rc::Rc};
+use std::{
+    collections::{HashSet, VecDeque},
+    rc::Rc,
+};
 
 use super::{Background, CollectedCube, Collection, DisjointSet, HeadID, Movement, Restriction};
 use crate::Conflict;
@@ -11,7 +14,7 @@ pub struct State {
 impl State {
     pub fn current() {}
 
-    pub fn diff(&self, that: &Self) /* -> Diff */
+    pub fn diff(&self, _that: &Self) /* -> Diff */
     {
         todo!()
     }
@@ -20,10 +23,10 @@ impl State {
         // create set
         let mut merged = DisjointSet::new(self.active.number_of_cubes());
         for cube in self.active.cubes().filter(CollectedCube::unstable) {
-            cube.neighbors(Movement::Idle)
-                .filter(|that| cube.absorbable_actively(that))
-                .for_each(|that| {
-                    merged.join(&cube, &that);
+            cube.neighbors()
+                .filter(|other| cube.absorbable_actively(other))
+                .for_each(|other| {
+                    merged.join(&cube, &other);
                 });
         }
 
@@ -39,7 +42,6 @@ impl State {
         let moving = self.active.cubes().filter(CollectedCube::moving);
 
         let mut merged = DisjointSet::new(limit);
-        let mut behind = Box::<[_]>::from(vec![Vec::<CollectedCube>::with_capacity(limit); limit]);
         let mut action = Box::<[_]>::from(vec![Restriction::Free; limit]);
         let mut solved = HashSet::<HeadID>::with_capacity(limit);
 
@@ -58,15 +60,15 @@ impl State {
         }
 
         // find blocked.
+        let mut successors = vec![HashSet::with_capacity(limit); limit].into_boxed_slice();
         for cube in moving.clone() {
-            let movement = cube.movement();
-            let mut blocked = cube.outlines(movement).any(|o| self.frozen.blocked(o));
+            let mut blocked = cube.outlines_ahead().any(|o| self.frozen.blocked(o));
 
             if !blocked {
-                for neighbor in cube.neighbors(movement) {
-                    if neighbor.movement() == movement {
+                for neighbor in cube.neighbors_ahead() {
+                    if neighbor.movement() == cube.movement() {
                         if !blocked {
-                            behind[neighbor.index()].push(cube.clone());
+                            successors[neighbor.index()].insert(cube.id());
                         }
                     } else if neighbor.absorbable(&cube) || cube.absorbable(&neighbor) {
                         if merged.join(&cube, &neighbor) {
@@ -87,9 +89,7 @@ impl State {
             moving
                 .clone()
                 .filter(|cube| action[cube.index()] != Restriction::Block)
-                .for_each(|cube| {
-                    it.put(cube.id(), cube.movement(), cube.outlines(cube.movement()))
-                });
+                .for_each(|cube| it.put(cube.id(), cube.movement(), cube.outlines_ahead()));
             it
         };
         for overleap in conflict.overlaps() {
@@ -101,10 +101,8 @@ impl State {
                 let movement = cube.movement();
                 for other in cubes {
                     if movement.is_orthogonal(other.movement()) {
-                        // stop now
                         determine(&other, Restriction::Block, &mut solved, &mut action);
                     } else if movement.is_opposite(other.movement()) {
-                        // push away
                         determine(&other, Restriction::Knock, &mut solved, &mut action);
                     }
                 }
@@ -115,6 +113,36 @@ impl State {
             }
         }
 
-        todo!()
+        // solve dependencies
+        let mut queue = VecDeque::with_capacity(self.active.number_of_cubes());
+        for cube in solved {
+            queue.push_back(self.active.cube(cube));
+            while let Some(cube) = queue.pop_back() {
+                let cubes = successors[cube.index()].iter();
+                if cube.unstable() {
+                    cubes
+                        .clone()
+                        .map(|other| self.active.cube(other.clone()))
+                        .filter(|other| cube.absorbable(other) || other.absorbable(&cube))
+                        .for_each(|other| {
+                            merged.join(&cube, &other);
+                        });
+                }
+
+                let restriction = action[cube.index()];
+                for other in cubes {
+                    let other = &mut action[usize::from(other)];
+                    if *other < restriction {
+                        *other = restriction;
+                    }
+                }
+            }
+        }
+
+        // output
+        Self {
+            active: self.active.transform(merged, Some(&action)),
+            frozen: self.frozen.clone(),
+        }
     }
 }
