@@ -1,4 +1,4 @@
-#[derive(Clone, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub struct HeadID(usize);
 
 impl From<usize> for HeadID {
@@ -22,7 +22,7 @@ impl From<&mut HeadID> for usize {
     }
 }
 
-#[derive(Clone, Eq, Hash, PartialEq, PartialOrd, Ord)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, PartialOrd, Ord)]
 pub struct UnitID(usize);
 
 impl From<usize> for UnitID {

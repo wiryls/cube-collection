@@ -18,8 +18,12 @@ impl Collection {
         todo!()
     }
 
-    pub fn len(&self) -> usize {
+    pub fn number_of_cubes(&self) -> usize {
         self.heads.len()
+    }
+
+    pub fn number_of_units(&self) -> usize {
+        self.units.len()
     }
 
     pub fn cubes(&self) -> impl Clone + Iterator<Item = CollectedCube<'_>> {
@@ -178,6 +182,7 @@ impl Collection {
     }
 }
 
+#[derive(Clone)]
 pub struct CollectedCube<'a> {
     head: &'a Head,
     owner: &'a Collection,

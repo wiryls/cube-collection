@@ -1,10 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
-use super::HeadID;
+use super::{HeadID, Movement};
 use crate::common::Point;
 
 #[derive(Eq, Hash, PartialEq)]
-pub struct Key(u64);
+struct Key(u64);
 
 impl From<&Point> for Key {
     fn from(o: &Point) -> Self {
@@ -21,28 +21,87 @@ impl From<Point> for Key {
 pub struct Collision(HashSet<Key>);
 
 impl Collision {
-    pub fn new<T, U>(it: T) -> Self
-    where
-        T: Iterator<Item = U>,
-        U: Into<Key>,
-    {
+    pub fn new(it: impl Iterator<Item = Point>) -> Self {
         Self(it.map(Into::into).collect())
     }
 
-    pub fn hit<T: Into<Key>>(&self, k: T) -> bool {
-        self.0.contains(&k.into())
+    pub fn hit(&self, point: Point) -> bool {
+        self.0.contains(&point.into())
     }
 }
 
 pub struct Faction(HashMap<Key, HeadID>);
 
 impl Faction {
-    pub fn new(it: impl Iterator<Item = (Key, HeadID)>) -> Self {
-        Self(it.collect())
+    pub fn new(it: impl Iterator<Item = (Point, HeadID)>) -> Self {
+        Self(it.map(|(key, value)| (key.into(), value)).collect())
     }
 
-    pub fn get<T: Into<Key>>(&self, k: T) -> Option<HeadID> {
-        self.0.get(&k.into()).cloned()
+    pub fn get(&self, point: Point) -> Option<HeadID> {
+        self.0.get(&point.into()).cloned()
+    }
+}
+
+#[derive(Default)]
+pub struct Conflict(HashMap<Key, Race>);
+
+impl Conflict {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(HashMap::with_capacity(capacity))
+    }
+
+    pub fn put(&mut self, id: HeadID, movement: Movement, points: impl Iterator<Item = Point>) {
+        points.for_each(|point| {
+            self.0
+                .entry(point.into())
+                .or_default()
+                .set(movement, id.clone())
+        });
+    }
+
+    pub fn overlaps(
+        &self,
+    ) -> impl Iterator<Item = impl Iterator<Item = (HeadID, Movement)> + '_> + '_ {
+        self.0.values().filter(Race::conflict).map(Race::whom)
+    }
+}
+
+#[derive(Default)]
+struct Race {
+    mark: u8,
+    data: [usize; 4],
+}
+
+impl Race {
+    const MASK: [u8; 4] = [0b0001, 0b0010, 0b0100, 0b1000];
+    const MOVE: [Movement; 4] = [
+        Movement::Left,
+        Movement::Down,
+        Movement::Up,
+        Movement::Right,
+    ];
+
+    fn set<T: Into<usize>>(&mut self, movement: Movement, index: T) {
+        let i = match movement {
+            Movement::Idle => return,
+            Movement::Left => 0,
+            Movement::Down => 1,
+            Movement::Up => 2,
+            Movement::Right => 3,
+        };
+        self.mark |= Race::MASK[i];
+        self.data[i] = index.into();
+    }
+
+    fn conflict(self: &&Self) -> bool {
+        self.mark & self.mark - 1 != 0
+    }
+
+    fn whom<T: From<usize>>(&self) -> impl Iterator<Item = (T, Movement)> + '_ {
+        (0..4)
+            .into_iter()
+            .filter(|i| self.mark & Race::MASK[*i] != 0)
+            .map(|i| (self.data[i].into(), Race::MOVE[i]))
     }
 }
 
@@ -59,12 +118,18 @@ impl DisjointSet {
         }
     }
 
-    pub fn join<T: Into<usize>>(&mut self, this: T, that: T) {
+    pub fn join<T: Into<usize>>(&mut self, this: T, that: T) -> bool {
         let this = this.into();
         let that = that.into();
         if this < self.parents.len() && that < self.parents.len() {
-            *self.root_mut(that) = *self.root_mut(this);
+            let that = *self.root_mut(that);
+            let this = self.root_mut(that);
+            if *this != that {
+                *this = that;
+                return true;
+            }
         }
+        false
     }
 
     pub fn groups(self) -> Groups {
@@ -136,7 +201,7 @@ pub struct GroupsIterator<'a> {
 }
 
 impl<'a> Iterator for GroupsIterator<'a> {
-    type Item = GroupIterator<'a>;
+    type Item = std::iter::Map<std::slice::Iter<'a, (usize, usize)>, fn(&(usize, usize)) -> usize>;
     fn next(&mut self) -> Option<Self::Item> {
         let lower = self.index;
         let limit = self.group.len();
@@ -151,16 +216,7 @@ impl<'a> Iterator for GroupsIterator<'a> {
         }
 
         self.index = upper;
-        Some(GroupIterator(self.group[lower..upper].into_iter()))
-    }
-}
-
-pub struct GroupIterator<'a>(std::slice::Iter<'a, (usize, usize)>);
-
-impl<'a> Iterator for GroupIterator<'a> {
-    type Item = usize;
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next().map(|x| x.0)
+        Some(self.group[lower..upper].into_iter().map(|x| x.0))
     }
 }
 
@@ -169,9 +225,51 @@ mod test {
     use super::*;
 
     #[test]
+    fn empty_conflict() {
+        let lookup = Conflict::with_capacity(0);
+        assert_eq!(lookup.overlaps().count(), 0);
+    }
+
+    #[test]
+    fn basic_conflict() {
+        let cases = [(
+            vec![
+                (HeadID::from(1), Movement::Right, vec![(1, 0), (1, 1)]),
+                (HeadID::from(2), Movement::Up, vec![(1, 0)]),
+                (HeadID::from(3), Movement::Left, vec![(1, 0)]),
+                (HeadID::from(4), Movement::Left, vec![(1, 1)]),
+            ],
+            vec![
+                vec![
+                    (HeadID::from(4), Movement::Left),
+                    (HeadID::from(1), Movement::Right),
+                ],
+                vec![
+                    (HeadID::from(3), Movement::Left),
+                    (HeadID::from(2), Movement::Up),
+                    (HeadID::from(1), Movement::Right),
+                ],
+            ],
+        )];
+
+        for (i, (input, output)) in cases.into_iter().enumerate() {
+            let mut lookup = Conflict::with_capacity(input.len());
+            for (id, movement, points) in input {
+                lookup.put(id, movement, points.into_iter().map(Into::into));
+            }
+
+            let actual = lookup
+                .overlaps()
+                .map(|x| x.collect::<Vec<_>>())
+                .collect::<Vec<_>>();
+            assert_eq!(output, actual, "case {}", i);
+        }
+    }
+
+    #[test]
     fn empty_disjoint_set() {
-        let set = DisjointSet::new(0);
-        let groups = set.groups();
+        let lookup = DisjointSet::new(0);
+        let groups = lookup.groups();
         assert!(groups.iter().next().is_none());
     }
 
@@ -191,12 +289,12 @@ mod test {
         ];
 
         for (i, case) in cases.into_iter().enumerate() {
-            let mut set = DisjointSet::new(case.0);
+            let mut lookup = DisjointSet::new(case.0);
             for link in case.1 {
-                set.join(link.0, link.1);
+                assert!(lookup.join(link.0, link.1), "case {}", i);
             }
 
-            let mut out = set
+            let mut out = lookup
                 .groups()
                 .iter()
                 .map(|x| {

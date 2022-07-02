@@ -6,6 +6,24 @@ pub struct Point<T = i32> {
     pub y: T,
 }
 
+impl<T> From<(T, T)> for Point<T> {
+    fn from(pair: (T, T)) -> Self {
+        Self {
+            x: pair.0,
+            y: pair.1,
+        }
+    }
+}
+
+impl<T: Clone> From<&(T, T)> for Point<T> {
+    fn from(pair: &(T, T)) -> Self {
+        Self {
+            x: pair.0.clone(),
+            y: pair.1.clone(),
+        }
+    }
+}
+
 impl<T> Point<T> {
     pub const fn new(x: T, y: T) -> Self {
         Self { x, y }

@@ -1,6 +1,6 @@
 use crate::common::Point;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Movement {
     Idle,
     Left,
