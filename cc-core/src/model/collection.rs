@@ -26,7 +26,11 @@ impl Collection {
         self.units.len()
     }
 
-    pub fn cubes(&self) -> impl Clone + Iterator<Item = CollectedCube<'_>> {
+    pub fn cube(&self, index: HeadID) -> CollectedCube<'_> {
+        CollectedCube::new(self, index)
+    }
+
+    pub fn cubes(&self) -> impl Iterator<Item = CollectedCube<'_>> + Clone {
         (0..self.heads.len()).map(|i| CollectedCube::new(self, i.into()))
     }
 
@@ -230,23 +234,31 @@ impl<'a> CollectedCube<'a> {
         self.head.movement != Movement::Idle
     }
 
-    pub fn outlines(&self, m: Movement) -> impl Iterator<Item = Point> + 'a {
+    pub fn outlines(&self, m: Movement) -> impl Iterator<Item = Point> + Clone + 'a {
         let anchor = Outlines::anchor(self.head.units.first(), &self.owner.units);
         self.head.outlines.out(anchor, m)
     }
 
-    pub fn neighbors(&self, m: Movement) -> impl Iterator<Item = CollectedCube<'a>> {
+    pub fn neighbors(&self, m: Movement) -> impl Iterator<Item = CollectedCube<'a>> + Clone {
         let faction = &self.owner.cache.faction;
         self.outlines(m)
             .filter_map(|o| faction.get(o).map(|i| Self::new(self.owner, i)))
     }
 }
 
-impl<'a> From<&CollectedCube<'a>> for usize {
-    fn from(that: &CollectedCube<'a>) -> Self {
+impl From<&CollectedCube<'_>> for usize {
+    fn from(that: &CollectedCube<'_>) -> Self {
         that.index()
     }
 }
+
+impl PartialEq for CollectedCube<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.index == other.index
+    }
+}
+
+impl Eq for CollectedCube<'_> {}
 
 /////////////////////////////////////////////////////////////////////////////
 // subtypes
@@ -330,7 +342,11 @@ impl Outlines {
         }
     }
 
-    pub fn out<'a>(&'a self, anchor: Point, action: Movement) -> impl Iterator<Item = Point> + 'a {
+    pub fn out<'a>(
+        &'a self,
+        anchor: Point,
+        action: Movement,
+    ) -> impl Iterator<Item = Point> + Clone + 'a {
         match action {
             Movement::Idle => &self.slice[..],
             Movement::Left => &self.slice[..self.count[0]],

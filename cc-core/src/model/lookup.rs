@@ -61,7 +61,7 @@ impl Conflict {
 
     pub fn overlaps(
         &self,
-    ) -> impl Iterator<Item = impl Iterator<Item = (HeadID, Movement)> + '_> + '_ {
+    ) -> impl Iterator<Item = impl Iterator<Item = (HeadID, Movement)> + Clone + '_> + '_ {
         self.0.values().filter(Race::conflict).map(Race::whom)
     }
 }
@@ -97,7 +97,7 @@ impl Race {
         self.mark & self.mark - 1 != 0
     }
 
-    fn whom<T: From<usize>>(&self) -> impl Iterator<Item = (T, Movement)> + '_ {
+    fn whom<T: From<usize>>(&self) -> impl Iterator<Item = (T, Movement)> + Clone + '_ {
         (0..4)
             .into_iter()
             .filter(|i| self.mark & Race::MASK[*i] != 0)
@@ -121,9 +121,9 @@ impl DisjointSet {
     pub fn join<T: Into<usize>>(&mut self, this: T, that: T) -> bool {
         let this = this.into();
         let that = that.into();
-        if this < self.parents.len() && that < self.parents.len() {
+        if this < self.parents.len() && that < self.parents.len() && this != that {
             let that = *self.root_mut(that);
-            let this = self.root_mut(that);
+            let this = self.root_mut(this);
             if *this != that {
                 *this = that;
                 return true;
@@ -241,13 +241,13 @@ mod test {
             ],
             vec![
                 vec![
-                    (HeadID::from(4), Movement::Left),
                     (HeadID::from(1), Movement::Right),
+                    (HeadID::from(4), Movement::Left),
                 ],
                 vec![
-                    (HeadID::from(3), Movement::Left),
-                    (HeadID::from(2), Movement::Up),
                     (HeadID::from(1), Movement::Right),
+                    (HeadID::from(2), Movement::Up),
+                    (HeadID::from(3), Movement::Left),
                 ],
             ],
         )];
@@ -258,11 +258,17 @@ mod test {
                 lookup.put(id, movement, points.into_iter().map(Into::into));
             }
 
+            let expect = HashSet::from_iter(output.iter().cloned());
             let actual = lookup
                 .overlaps()
-                .map(|x| x.collect::<Vec<_>>())
-                .collect::<Vec<_>>();
-            assert_eq!(output, actual, "case {}", i);
+                .map(|x| {
+                    let mut v = x.collect::<Vec<_>>();
+                    v.sort_by_key(|x| usize::from(&x.0));
+                    v
+                })
+                .collect::<HashSet<_>>();
+
+            assert_eq!(expect, actual, "case {}", i);
         }
     }
 
@@ -298,9 +304,9 @@ mod test {
                 .groups()
                 .iter()
                 .map(|x| {
-                    let mut x = x.collect::<Vec<_>>();
-                    x.sort();
-                    x
+                    let mut v = x.collect::<Vec<_>>();
+                    v.sort();
+                    v
                 })
                 .collect::<Vec<_>>();
             out.sort_by_key(|x| x.iter().copied().min());

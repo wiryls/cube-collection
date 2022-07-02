@@ -1,6 +1,6 @@
 use crate::common::Point;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum Movement {
     Idle,
     Left,
@@ -15,6 +15,26 @@ impl Movement {
     const DOWN: Point = Point::new(0, 1);
     const UP: Point = Point::new(0, -1);
     const RIGHT: Point = Point::new(1, 0);
+
+    pub fn is_opposite(&self, other: Self) -> bool {
+        use Movement::*;
+        match self {
+            Left => other == Right,
+            Down => other == Up,
+            Up => other == Down,
+            Right => other == Left,
+            Idle => false,
+        }
+    }
+
+    pub fn is_orthogonal(&self, other: Self) -> bool {
+        use Movement::*;
+        match self {
+            Left | Right => other == Up || other == Down,
+            Down | Up => other == Left || other == Right,
+            Idle => false,
+        }
+    }
 }
 
 impl Into<Point> for Movement {
@@ -29,7 +49,7 @@ impl Into<Point> for Movement {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Restriction {
     Free,
     Knock,

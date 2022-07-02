@@ -1,8 +1,7 @@
-use std::rc::Rc;
+use std::{collections::HashSet, rc::Rc};
 
+use super::{Background, CollectedCube, Collection, DisjointSet, HeadID, Movement, Restriction};
 use crate::Conflict;
-
-use super::{Background, CollectedCube, Collection, DisjointSet, Movement, Restriction};
 
 pub struct State {
     active: Collection,
@@ -40,9 +39,23 @@ impl State {
         let moving = self.active.cubes().filter(CollectedCube::moving);
 
         let mut merged = DisjointSet::new(limit);
-        let mut action = Box::<[_]>::from(vec![Restriction::Free; limit]);
-        let mut solved = Vec::with_capacity(limit);
         let mut behind = Box::<[_]>::from(vec![Vec::<CollectedCube>::with_capacity(limit); limit]);
+        let mut action = Box::<[_]>::from(vec![Restriction::Free; limit]);
+        let mut solved = HashSet::<HeadID>::with_capacity(limit);
+
+        fn determine(
+            cube: &CollectedCube,
+            restriction: Restriction,
+            solved: &mut HashSet<HeadID>,
+            action: &mut [Restriction],
+        ) {
+            let index = cube.index();
+            if solved.insert(cube.id()) {
+                action[index] = restriction;
+            } else if action[index] < restriction {
+                action[index] = restriction;
+            }
+        }
 
         // find blocked.
         for cube in moving.clone() {
@@ -64,8 +77,7 @@ impl State {
             }
 
             if blocked {
-                action[cube.index()] = Restriction::Block;
-                solved.push(cube.index());
+                determine(&cube, Restriction::Block, &mut solved, &mut action);
             }
         }
 
@@ -80,6 +92,28 @@ impl State {
                 });
             it
         };
+        for overleap in conflict.overlaps() {
+            let cubes = overleap.map(|x| self.active.cube(x.0));
+            if let Some(cube) = cubes
+                .clone()
+                .find(|cube| cubes.clone().all(|other| cube.absorbable_actively(&other)))
+            {
+                let movement = cube.movement();
+                for other in cubes {
+                    if movement.is_orthogonal(other.movement()) {
+                        // stop now
+                        determine(&other, Restriction::Block, &mut solved, &mut action);
+                    } else if movement.is_opposite(other.movement()) {
+                        // push away
+                        determine(&other, Restriction::Knock, &mut solved, &mut action);
+                    }
+                }
+            } else {
+                for cube in cubes {
+                    determine(&cube, Restriction::Block, &mut solved, &mut action);
+                }
+            }
+        }
 
         todo!()
     }
