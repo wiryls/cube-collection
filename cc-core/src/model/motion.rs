@@ -1,70 +1,52 @@
 use super::Movement;
 
 #[derive(Clone)]
-pub struct Motion(Option<Movement>, Automatic);
+pub struct Motion(Automatic);
 
 impl Motion {
     pub fn new() -> Self {
-        Motion(None, Automatic::Idle)
+        Motion(Automatic::Idle)
     }
 
     pub fn from_sequence<'a, I>(is_loop: bool, movements: I) -> Self
     where
         I: Iterator<Item = (Movement, usize)>,
     {
-        Motion(
-            None,
-            Automatic::Move(Move {
-                is_loop,
-                movements: movements.collect(),
-                count: 0,
-                index: 0,
-            }),
-        )
+        Motion(Automatic::Move(Move {
+            is_loop,
+            movements: movements.collect(),
+            count: 0,
+            index: 0,
+        }))
     }
 
     pub fn from_iter<'a, I>(others: I) -> Self
     where
         I: Iterator<Item = &'a Self>,
     {
-        let (m, mut a): (Vec<_>, Vec<_>) = others.map(|x| (x.0.clone(), &x.1)).unzip();
-
-        let m = if m.windows(2).all(|w| w[0] == w[1]) {
-            m.first().copied().flatten()
-        } else {
-            None
-        };
-
-        a.retain(|x| !matches!(x, Automatic::Idle));
-        match a.len() {
-            0 => Motion(m, Automatic::Idle),
-            1 => Motion(m, a.into_iter().next().cloned().unwrap_or_default()),
-            _ => Motion(m, Automatic::Team(Team(a.into_iter().cloned().collect()))),
+        let mut auto = others.map(|x| &x.0).collect::<Vec<_>>();
+        auto.retain(|x| !matches!(x, Automatic::Idle));
+        match auto.len() {
+            0 => Motion(Automatic::Idle),
+            1 => Motion(auto.into_iter().next().cloned().unwrap_or_default()),
+            _ => Motion(Automatic::Team(Team(auto.into_iter().cloned().collect()))),
         }
     }
 
     pub fn get(&self) -> Movement {
-        match self.0 {
-            Some(m) => m,
-            None => self.1.get(),
-        }
-    }
-
-    pub fn set(&mut self, m: Movement) {
-        self.0 = Some(m)
+        self.0.get()
     }
 
     pub fn done(&self) -> bool {
-        self.0.is_none() && self.1.done()
+        self.0.done()
     }
 
     pub fn next(&mut self) {
-        self.0 = None;
-        self.1.next();
+        self.0.next();
     }
 
     pub fn take(&mut self) -> Self {
-        Self(self.0.take(), std::mem::take(&mut self.1))
+        Self(std::mem::take(&mut self.0))
     }
 }
 

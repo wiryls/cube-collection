@@ -38,13 +38,6 @@ impl State {
     }
 
     pub fn next(&self, choice: Option<Movement>) -> Self {
-        let limit = self.active.number_of_cubes();
-        let moving = self.active.cubes().filter(CollectedCube::moving);
-
-        let mut merged = DisjointSet::new(limit);
-        let mut action = Box::<[_]>::from(vec![Restriction::Free; limit]);
-        let mut solved = HashSet::<HeadID>::with_capacity(limit);
-
         fn determine(
             cube: &CollectedCube,
             restriction: Restriction,
@@ -59,7 +52,14 @@ impl State {
             }
         }
 
-        // find blocked.
+        let limit = self.active.number_of_cubes();
+        let moving = self.active.cubes().filter(CollectedCube::moving);
+
+        let mut merged = DisjointSet::new(limit);
+        let mut action = Box::<[_]>::from(vec![Restriction::Free; limit]);
+        let mut solved = HashSet::<HeadID>::with_capacity(limit);
+
+        // find blocked and build dependencies.
         let mut successors = vec![HashSet::with_capacity(limit); limit].into_boxed_slice();
         for cube in moving.clone() {
             let mut blocked = cube.outlines_ahead().any(|o| self.frozen.blocked(o));
@@ -83,11 +83,10 @@ impl State {
             }
         }
 
-        // build conflict table and find locked.
+        // build conflict table and find knocked.
         let conflict = {
             let mut it = Conflict::with_capacity(self.active.number_of_units());
             moving
-                .clone()
                 .filter(|cube| action[cube.index()] != Restriction::Block)
                 .for_each(|cube| it.put(cube.id(), cube.movement(), cube.outlines_ahead()));
             it
@@ -131,9 +130,10 @@ impl State {
 
                 let restriction = action[cube.index()];
                 for other in cubes {
-                    let other = &mut action[usize::from(other)];
-                    if *other < restriction {
-                        *other = restriction;
+                    let this = &mut action[usize::from(other)];
+                    if *this < restriction {
+                        *this = restriction;
+                        queue.push_back(self.active.cube(other.clone()));
                     }
                 }
             }

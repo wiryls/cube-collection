@@ -78,17 +78,21 @@ impl Collection {
                 }
 
                 if rebind || moveon || reunit {
-                    let reunit = reunit.then(|| Collision::new(units.iter().map(|u| u.position)));
-
+                    let point = head.movement.into();
                     for i in head.units.iter() {
                         let mut unit = &mut units[usize::from(i)];
                         if rebind {
                             unit.head = index.clone();
                         }
                         if moveon {
-                            unit.position += head.movement.into();
+                            unit.position += point;
                         }
-                        if let Some(c) = &reunit {
+                    }
+
+                    if reunit {
+                        let c = Collision::new(units.iter().map(|u| u.position));
+                        for i in head.units.iter() {
+                            let mut unit = &mut units[usize::from(i)];
                             unit.neighborhood = Neighborhood::from(
                                 Neighborhood::AROUND
                                     .into_iter()
@@ -429,6 +433,3 @@ impl<'a> Mapping<'a> {
         }
     }
 }
-
-/////////////////////////////////////////////////////////////////////////////
-// utilities
