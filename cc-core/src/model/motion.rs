@@ -1,18 +1,18 @@
 use super::Movement;
 
 #[derive(Clone)]
-pub struct Motion(Automatic);
+pub struct Motion(Any);
 
 impl Motion {
     pub fn new() -> Self {
-        Motion(Automatic::Idle)
+        Motion(Any::Stop)
     }
 
     pub fn from_sequence<'a, I>(is_loop: bool, movements: I) -> Self
     where
-        I: Iterator<Item = (Movement, usize)>,
+        I: Iterator<Item = (Option<Movement>, usize)>,
     {
-        Motion(Automatic::Move(Move {
+        Motion(Any::Move(Move {
             is_loop,
             movements: movements.collect(),
             count: 0,
@@ -25,20 +25,18 @@ impl Motion {
         I: Iterator<Item = &'a Self>,
     {
         let mut auto = others.map(|x| &x.0).collect::<Vec<_>>();
-        auto.retain(|x| !matches!(x, Automatic::Idle));
+        auto.retain(|x| !matches!(x, Any::Stop));
         match auto.len() {
-            0 => Motion(Automatic::Idle),
+            0 => Motion(Any::Stop),
             1 => Motion(auto.into_iter().next().cloned().unwrap_or_default()),
-            _ => Motion(Automatic::Team(Team(auto.into_iter().cloned().collect()))),
+            _ => Motion(Any::Team(Buffered::new(Team(
+                auto.into_iter().cloned().collect(),
+            )))),
         }
     }
 
-    pub fn get(&self) -> Movement {
-        self.0.get()
-    }
-
-    pub fn done(&self) -> bool {
-        self.0.done()
+    pub fn current(&self) -> Option<Movement> {
+        self.0.current()
     }
 
     pub fn next(&mut self) {
@@ -50,45 +48,51 @@ impl Motion {
     }
 }
 
-#[derive(Clone)]
-enum Automatic {
-    Idle,
-    Move(Move),
-    Team(Team),
+trait Automatic {
+    fn current(&self) -> Option<Movement>;
+    fn running(&self) -> bool;
+    fn next(&mut self);
 }
 
-impl Automatic {
-    pub fn get(&self) -> Movement {
+#[derive(Clone)]
+enum Any {
+    Stop,
+    Move(Move),
+    Team(Buffered<Team>),
+}
+
+impl Default for Any {
+    fn default() -> Self {
+        Self::Stop
+    }
+}
+
+impl Automatic for Any {
+    fn current(&self) -> Option<Movement> {
         match self {
-            Self::Idle => Movement::Idle,
-            Self::Move(x) => x.get(),
-            Self::Team(x) => x.get(),
+            Self::Stop => None,
+            Self::Move(x) => x.current(),
+            Self::Team(x) => x.current(),
         }
     }
 
-    pub fn done(&self) -> bool {
+    fn running(&self) -> bool {
         match self {
-            Self::Idle => true,
-            Self::Move(x) => x.done(),
-            Self::Team(x) => x.done(),
+            Self::Stop => false,
+            Self::Move(x) => x.running(),
+            Self::Team(x) => x.running(),
         }
     }
 
-    pub fn next(&mut self) {
+    fn next(&mut self) {
         match self {
-            Self::Idle => return,
+            Self::Stop => return,
             Self::Move(x) => x.next(),
             Self::Team(x) => x.next(),
         }
-        if self.done() {
-            *self = Self::Idle;
+        if self.running() {
+            *self = Self::Stop;
         }
-    }
-}
-
-impl Default for Automatic {
-    fn default() -> Self {
-        Self::Idle
     }
 }
 
@@ -96,23 +100,23 @@ impl Default for Automatic {
 struct Move {
     // stateless
     is_loop: bool,
-    movements: Box<[(Movement, usize)]>,
+    movements: Box<[(Option<Movement>, usize)]>,
     // stateful
     count: usize,
     index: usize,
 }
 
-impl Move {
-    fn get(&self) -> Movement {
+impl Automatic for Move {
+    fn current(&self) -> Option<Movement> {
         if self.index == self.movements.len() {
-            Movement::Idle
+            None
         } else {
             self.movements[self.index].0
         }
     }
 
-    fn done(&self) -> bool {
-        self.index == self.movements.len()
+    fn running(&self) -> bool {
+        self.index != self.movements.len()
     }
 
     fn next(&mut self) {
@@ -136,22 +140,46 @@ impl Move {
 }
 
 #[derive(Clone)]
-struct Team(Vec<Automatic>);
+struct Team(Vec<Any>);
 
-impl Team {
-    fn get(&self) -> Movement {
-        match self.0.first().map(|x| x.get()) {
-            Some(m) if self.0.iter().skip(1).all(|x| m == x.get()) => m,
-            _ => Movement::Idle,
+impl Automatic for Team {
+    fn current(&self) -> Option<Movement> {
+        match self.0.first().map(Automatic::current) {
+            Some(m) if self.0.iter().skip(1).all(|x| m == x.current()) => m,
+            _ => None,
         }
     }
 
-    fn done(&self) -> bool {
-        self.0.iter().all(|m| m.done())
+    fn running(&self) -> bool {
+        self.0.iter().any(Automatic::running)
     }
 
     fn next(&mut self) {
-        self.0.iter_mut().for_each(|m| m.next());
-        self.0.retain(|m| !m.done());
+        self.0.iter_mut().for_each(Automatic::next);
+        self.0.retain(Automatic::running);
+    }
+}
+
+#[derive(Clone)]
+struct Buffered<T: Automatic + Clone>(Option<Movement>, T);
+
+impl<T: Automatic + Clone> Buffered<T> {
+    fn new(inner: T) -> Self {
+        Self(inner.current(), inner)
+    }
+}
+
+impl<T: Automatic + Clone> Automatic for Buffered<T> {
+    fn current(&self) -> Option<Movement> {
+        self.0
+    }
+
+    fn running(&self) -> bool {
+        self.1.running()
+    }
+
+    fn next(&mut self) {
+        self.1.next();
+        self.0 = self.1.current();
     }
 }

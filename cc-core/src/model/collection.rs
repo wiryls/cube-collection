@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use super::{Collision, DisjointSet, HeadID, Motion, Movement, Restriction, Type, UnitID};
+use super::{Action, Collision, DisjointSet, HeadID, Motion, Movement, Restriction, Type, UnitID};
 use crate::{
     common::{Adjacence, Neighborhood, Point},
     Faction,
@@ -18,30 +18,21 @@ impl Collection {
         todo!()
     }
 
-    pub fn number_of_cubes(&self) -> usize {
-        self.heads.len()
+    pub fn getter(&self, input: Option<Movement>) -> Collected {
+        Collected {
+            input,
+            collection: self,
+        }
     }
 
-    pub fn number_of_units(&self) -> usize {
-        self.units.len()
-    }
-
-    pub fn cube(&self, index: HeadID) -> CollectedCube<'_> {
-        CollectedCube::new(self, index)
-    }
-
-    pub fn cubes(&self) -> impl Iterator<Item = CollectedCube<'_>> + Clone {
-        (0..self.heads.len()).map(|i| CollectedCube::new(self, i.into()))
-    }
-
-    pub fn transform(&self, merge: DisjointSet, action: Option<&[Restriction]>) -> Self {
-        let mut cache = self.cache.clone();
+    pub fn transform(&self, groups: DisjointSet, actions: Option<&[Option<Action>]>) -> Self {
+        let mut remake_faction = false;
         let mut units = self.units.clone();
         let heads = self
-            .mappings(merge)
+            .mappings(groups)
             .map(|mapping| {
                 let mut rebind = mapping.moving;
-                let mut moveon = false;
+                let mut moveon = None;
                 let mut reunit = false;
 
                 let (index, mut head) = match mapping.source {
@@ -52,14 +43,12 @@ impl Collection {
 
                         let units = Self::make_units(&head, &tail);
                         let motion = Self::make_motions(&head, &tail);
-                        let movement = motion.get();
                         let outlines = Outlines::new(&self.units, &units);
                         let copy = Head {
                             kind: head.refer.kind.clone(),
                             units,
                             motion,
-                            movement,
-                            restrict: head.refer.restrict.clone(),
+                            action: head.refer.action.clone(),
                             outlines,
                         };
 
@@ -67,48 +56,57 @@ impl Collection {
                     }
                 };
 
-                let i = usize::from(&index);
-                if let Some(&restrict) = action.and_then(|r| r.get(i)) {
-                    head.movement = head.motion.get();
-                    head.restrict = restrict;
+                if let Some(actions) = actions {
                     head.motion.next();
+                    head.action = actions.get(usize::from(&index)).cloned().flatten();
 
-                    use {Movement::Idle, Restriction::Free};
-                    moveon = matches!(restrict, Free) && !matches!(head.movement, Idle);
+                    if let Some(action) = &head.action {
+                        if action.restriction == Restriction::Free {
+                            moveon = Some(action.movement.into());
+                        }
+                    }
                 }
 
-                if rebind || moveon || reunit {
-                    let point = head.movement.into();
+                if rebind || moveon.is_some() || reunit {
                     for i in head.units.iter() {
                         let mut unit = &mut units[usize::from(i)];
                         if rebind {
                             unit.head = index.clone();
                         }
-                        if moveon {
+                        if let Some(point) = moveon {
                             unit.position += point;
                         }
                     }
 
                     if reunit {
-                        let c = Collision::new(units.iter().map(|u| u.position));
+                        let collision = Collision::new(
+                            head.units.iter().map(|u| units[usize::from(u)].position),
+                        );
+
                         for i in head.units.iter() {
                             let mut unit = &mut units[usize::from(i)];
                             unit.neighborhood = Neighborhood::from(
                                 Neighborhood::AROUND
                                     .into_iter()
-                                    .filter(|&o| c.hit(unit.position + o.into())),
+                                    .filter(|&o| collision.hit(unit.position + o.into())),
                             )
                         }
                     }
 
-                    if moveon {
-                        cache.faction = Rc::new(Self::make_faction(&units));
-                    }
+                    remake_faction = true;
                 }
 
                 head
             })
             .collect::<Box<_>>();
+
+        let cache = Cache {
+            faction: if remake_faction {
+                Rc::new(Self::make_faction(&units))
+            } else {
+                self.cache.faction.clone()
+            },
+        };
 
         Self {
             heads,
@@ -191,89 +189,171 @@ impl Collection {
 }
 
 #[derive(Clone)]
+pub struct Collected<'a> {
+    input: Option<Movement>,
+    collection: &'a Collection,
+}
+
+impl Collected<'_> {
+    pub fn number_of_cubes(&self) -> usize {
+        self.collection.heads.len()
+    }
+
+    pub fn number_of_units(&self) -> usize {
+        self.collection.units.len()
+    }
+
+    pub fn cube(&self, index: HeadID) -> CollectedCube<'_> {
+        CollectedCube::new(self, index)
+    }
+
+    pub fn cubes(&self) -> impl Iterator<Item = CollectedCube<'_>> + Clone {
+        (0..self.collection.heads.len()).map(|i| CollectedCube::new(self, i.into()))
+    }
+}
+
+trait Cubic {
+    fn index(&self) -> &HeadID;
+    fn value<'a>(&'a self) -> &'a Head;
+    fn owner<'a>(&'a self) -> &'a Collected<'a>;
+}
+
+impl<T: Cubic> BasicCube for T {
+    fn index(&self) -> usize {
+        self.index().into()
+    }
+    fn id(&self) -> HeadID {
+        self.index().clone()
+    }
+    fn kind(&self) -> Type {
+        self.value().kind
+    }
+    fn unstable(&self) -> bool {
+        self.kind() != Type::White
+    }
+    fn absorbable<U: BasicCube>(&self, that: &U) -> bool {
+        self.kind().absorbable(that.kind())
+    }
+    fn absorbable_actively<U: BasicCube>(&self, that: &U) -> bool {
+        self.kind().absorbable_actively(that.kind())
+    }
+}
+
+pub trait BasicCube {
+    fn index(&self) -> usize;
+    fn id(&self) -> HeadID;
+    fn kind(&self) -> Type;
+    fn unstable(&self) -> bool;
+    fn absorbable<T: BasicCube>(&self, that: &T) -> bool;
+    fn absorbable_actively<T: BasicCube>(&self, that: &T) -> bool;
+}
+
+#[derive(Clone)]
 pub struct CollectedCube<'a> {
-    head: &'a Head,
-    owner: &'a Collection,
+    owner: &'a Collected<'a>,
+    value: &'a Head,
     index: HeadID,
 }
 
-impl<'a> CollectedCube<'a> {
-    fn new(owner: &'a Collection, index: HeadID) -> Self {
-        Self {
-            head: &owner.heads[usize::from(&index)],
-            owner,
-            index,
-        }
+impl Cubic for CollectedCube<'_> {
+    fn index(&self) -> &HeadID {
+        &self.index
     }
-
-    pub fn id(&self) -> HeadID {
-        self.index.clone()
+    fn value<'a>(&'a self) -> &'a Head {
+        self.value
     }
-
-    pub fn index(&self) -> usize {
-        self.index.clone().into()
-    }
-
-    pub fn kind(&self) -> Type {
-        self.head.kind
-    }
-
-    pub fn unstable(&self) -> bool {
-        self.head.kind != Type::White
-    }
-
-    pub fn absorbable(&self, that: &Self) -> bool {
-        self.head.kind.absorbable(that.head.kind)
-    }
-
-    pub fn absorbable_actively(&self, that: &Self) -> bool {
-        self.head.kind.absorbable_actively(that.head.kind)
-    }
-
-    pub fn movement(&self) -> Movement {
-        self.head.movement
-    }
-
-    pub fn moving(&self) -> bool {
-        self.head.movement != Movement::Idle
-    }
-
-    pub fn outlines_ahead(&self) -> impl Iterator<Item = Point> + Clone + 'a {
-        let anchor = Outlines::anchor(self.head.units.first(), &self.owner.units);
-        self.head.outlines.out(anchor, self.head.movement)
-    }
-
-    pub fn outlines(&self) -> impl Iterator<Item = Point> + Clone + 'a {
-        let anchor = Outlines::anchor(self.head.units.first(), &self.owner.units);
-        self.head.outlines.out(anchor, Movement::Idle)
-    }
-
-    pub fn neighbors_ahead(&self) -> impl Iterator<Item = CollectedCube<'a>> + Clone {
-        let faction = &self.owner.cache.faction;
-        self.outlines_ahead()
-            .filter_map(|o| faction.get(o).map(|i| Self::new(self.owner, i)))
-    }
-
-    pub fn neighbors(&self) -> impl Iterator<Item = CollectedCube<'a>> + Clone {
-        let faction = &self.owner.cache.faction;
-        self.outlines()
-            .filter_map(|o| faction.get(o).map(|i| Self::new(self.owner, i)))
+    fn owner<'a>(&'a self) -> &'a Collected<'a> {
+        self.owner
     }
 }
 
 impl From<&CollectedCube<'_>> for usize {
     fn from(that: &CollectedCube<'_>) -> Self {
-        that.index()
+        BasicCube::index(that)
     }
 }
 
-impl PartialEq for CollectedCube<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.index == other.index
+impl<'a> CollectedCube<'a> {
+    fn new(owner: &'a Collected, index: HeadID) -> Self {
+        Self {
+            owner,
+            value: &owner.collection.heads[usize::from(&index)],
+            index,
+        }
+    }
+
+    pub fn movable(&self) -> Option<Movement> {
+        if self.value.kind == Type::Blue && self.owner.input.is_some() {
+            self.owner.input
+        } else {
+            self.value.motion.current()
+        }
+    }
+
+    pub fn into_movable(self) -> Option<CollectedMovableCube<'a>> {
+        self.movable().map(|movement| CollectedMovableCube {
+            index: self.index,
+            value: self.value,
+            owner: self.owner,
+            movement,
+        })
+    }
+
+    pub fn outlines(&self) -> impl Iterator<Item = Point> + Clone + 'a {
+        let anchor = Outlines::anchor(self.value.units.first(), &self.owner.collection.units);
+        self.value.outlines.all(anchor)
+    }
+
+    pub fn neighbors(&self) -> impl Iterator<Item = CollectedCube<'a>> + Clone {
+        let faction = &self.owner.collection.cache.faction;
+        self.outlines()
+            .filter_map(|o| faction.get(o).map(|i| Self::new(self.owner, i)))
     }
 }
 
-impl Eq for CollectedCube<'_> {}
+#[derive(Clone)]
+pub struct CollectedMovableCube<'a> {
+    index: HeadID,
+    value: &'a Head,
+    owner: &'a Collected<'a>,
+    movement: Movement,
+}
+
+impl Cubic for CollectedMovableCube<'_> {
+    fn index(&self) -> &HeadID {
+        &self.index
+    }
+    fn value<'a>(&'a self) -> &'a Head {
+        self.value
+    }
+    fn owner<'a>(&'a self) -> &'a Collected<'a> {
+        self.owner
+    }
+}
+
+impl From<&CollectedMovableCube<'_>> for usize {
+    fn from(that: &CollectedMovableCube<'_>) -> Self {
+        BasicCube::index(that)
+    }
+}
+
+impl<'a> CollectedMovableCube<'a> {
+    pub fn movement(&self) -> Movement {
+        self.movement
+    }
+
+    pub fn outlines_in_front(&self) -> impl Iterator<Item = Point> + Clone + 'a {
+        let movement = self.movement();
+        let anchor = Outlines::anchor(self.value.units.first(), &self.owner.collection.units);
+        self.value.outlines.one(anchor, movement)
+    }
+
+    pub fn neighbors_in_front(&self) -> impl Iterator<Item = CollectedCube<'a>> + Clone {
+        let faction = &self.owner.collection.cache.faction;
+        self.outlines_in_front()
+            .filter_map(|o| faction.get(o).map(|i| CollectedCube::new(self.owner, i)))
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // subtypes
@@ -285,8 +365,7 @@ struct Head {
     units: Box<[UnitID]>,
     motion: Motion,
     // calculated
-    movement: Movement,
-    restrict: Restriction,
+    action: Option<Action>,
     outlines: Outlines,
 }
 
@@ -357,13 +436,12 @@ impl Outlines {
         }
     }
 
-    pub fn out<'a>(
+    pub fn one<'a>(
         &'a self,
         anchor: Point,
-        action: Movement,
+        movement: Movement,
     ) -> impl Iterator<Item = Point> + Clone + 'a {
-        match action {
-            Movement::Idle => &self.slice[..],
+        match movement {
             Movement::Left => &self.slice[..self.count[0]],
             Movement::Down => &self.slice[self.count[0]..self.count[1]],
             Movement::Up => &self.slice[self.count[1]..self.count[2]],
@@ -371,6 +449,10 @@ impl Outlines {
         }
         .iter()
         .map(move |o| anchor - *o)
+    }
+
+    pub fn all<'a>(&'a self, anchor: Point) -> impl Iterator<Item = Point> + Clone + 'a {
+        (&self.slice[..]).iter().map(move |o| anchor - *o)
     }
 
     fn anchor(index: Option<&UnitID>, units: &[Unit]) -> Point {

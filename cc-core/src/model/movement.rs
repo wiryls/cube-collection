@@ -1,8 +1,7 @@
 use crate::common::Point;
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum Movement {
-    Idle,
     Left,
     Down,
     Up,
@@ -10,29 +9,30 @@ pub enum Movement {
 }
 
 impl Movement {
-    const IDLE: Point = Point::new(0, 0);
     const LEFT: Point = Point::new(-1, 0);
     const DOWN: Point = Point::new(0, 1);
     const UP: Point = Point::new(0, -1);
     const RIGHT: Point = Point::new(1, 0);
 
-    pub fn is_opposite(&self, other: Self) -> bool {
+    pub fn opposite(&self) -> Self {
         use Movement::*;
         match self {
-            Left => other == Right,
-            Down => other == Up,
-            Up => other == Down,
-            Right => other == Left,
-            Idle => false,
+            Left => Right,
+            Down => Up,
+            Up => Down,
+            Right => Left,
         }
+    }
+
+    pub fn is_opposite(&self, other: Self) -> bool {
+        self.opposite() == other
     }
 
     pub fn is_orthogonal(&self, other: Self) -> bool {
         use Movement::*;
         match self {
-            Left | Right => other == Up || other == Down,
-            Down | Up => other == Left || other == Right,
-            Idle => false,
+            Left | Right => matches!(other, Up | Down),
+            Down | Up => matches!(other, Left | Right),
         }
     }
 }
@@ -40,7 +40,6 @@ impl Movement {
 impl Into<Point> for Movement {
     fn into(self) -> Point {
         match self {
-            Movement::Idle => Movement::IDLE,
             Movement::Left => Movement::LEFT,
             Movement::Down => Movement::DOWN,
             Movement::Up => Movement::UP,
@@ -52,12 +51,27 @@ impl Into<Point> for Movement {
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Restriction {
     Free,
-    Knock,
-    Block,
+    Lock,
+    Stop,
 }
 
 impl Default for Restriction {
     fn default() -> Self {
         Self::Free
+    }
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct Action {
+    pub movement: Movement,
+    pub restriction: Restriction,
+}
+
+impl Action {
+    pub fn new(movement: Movement, restriction: Restriction) -> Self {
+        Self {
+            movement,
+            restriction,
+        }
     }
 }

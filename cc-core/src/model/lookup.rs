@@ -83,7 +83,6 @@ impl Race {
 
     fn set<T: Into<usize>>(&mut self, movement: Movement, index: T) {
         let i = match movement {
-            Movement::Idle => return,
             Movement::Left => 0,
             Movement::Down => 1,
             Movement::Up => 2,
@@ -111,14 +110,14 @@ pub struct DisjointSet {
 }
 
 impl DisjointSet {
-    pub fn new(capacity: usize) -> Self {
+    pub fn new(size: usize) -> Self {
         Self {
-            parents: vec![None; capacity].into(),
-            existed: Vec::with_capacity(capacity / 2),
+            parents: vec![None; size].into(),
+            existed: Vec::with_capacity(size / 2),
         }
     }
 
-    pub fn join<T: Into<usize>>(&mut self, this: T, that: T) -> bool {
+    pub fn join<T: Into<usize>, U: Into<usize>>(&mut self, this: T, that: U) -> bool {
         let this = this.into();
         let that = that.into();
         if this < self.parents.len() && that < self.parents.len() && this != that {

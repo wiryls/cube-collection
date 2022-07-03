@@ -26,5 +26,5 @@ pub struct Size {
 
 pub struct Command {
     pub is_loop: bool,
-    pub movements: Vec<(Movement, usize)>,
+    pub movements: Vec<(Option<Movement>, usize)>,
 }
