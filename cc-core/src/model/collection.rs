@@ -222,18 +222,23 @@ impl<T: Cubic> BasicCube for T {
     fn index(&self) -> usize {
         self.index().into()
     }
+
     fn id(&self) -> HeadID {
         self.index().clone()
     }
+
     fn kind(&self) -> Type {
         self.value().kind
     }
+
     fn unstable(&self) -> bool {
         self.kind() != Type::White
     }
+
     fn absorbable<U: BasicCube>(&self, that: &U) -> bool {
         self.kind().absorbable(that.kind())
     }
+
     fn absorbable_actively<U: BasicCube>(&self, that: &U) -> bool {
         self.kind().absorbable_actively(that.kind())
     }
@@ -259,9 +264,11 @@ impl Cubic for CollectedCube<'_> {
     fn index(&self) -> &HeadID {
         &self.index
     }
+
     fn value<'a>(&'a self) -> &'a Head {
         self.value
     }
+
     fn owner<'a>(&'a self) -> &'a Collected<'a> {
         self.owner
     }
@@ -323,9 +330,11 @@ impl Cubic for CollectedMovableCube<'_> {
     fn index(&self) -> &HeadID {
         &self.index
     }
+
     fn value<'a>(&'a self) -> &'a Head {
         self.value
     }
+
     fn owner<'a>(&'a self) -> &'a Collected<'a> {
         self.owner
     }

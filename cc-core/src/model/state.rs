@@ -41,7 +41,7 @@ impl State {
     }
 
     pub fn next(&self, input: Option<Movement>) -> Self {
-        fn determine<T: BasicCube>(
+        fn suppose<T: BasicCube>(
             cube: &T,
             restriction: Restriction,
             solved: &mut HashSet<HeadID>,
@@ -65,11 +65,13 @@ impl State {
         let mut solved = HashSet::<HeadID>::with_capacity(len);
 
         // find blocked and build dependencies.
+        // TODO: optimize the successors
         let mut successors = vec![HashSet::with_capacity(len); len].into_boxed_slice();
         for cube in movable.clone() {
             let mut blocked = cube.outlines_in_front().any(|o| self.frozen.blocked(o));
 
             if !blocked {
+                // theoretically, neighbors are all movable.
                 for neighbor in cube.neighbors_in_front().filter_map(moving) {
                     if neighbor.movement() == cube.movement() {
                         if !blocked {
@@ -84,16 +86,16 @@ impl State {
             }
 
             if blocked {
-                determine(&cube, Restriction::Stop, &mut solved, &mut action);
+                suppose(&cube, Restriction::Stop, &mut solved, &mut action);
             }
         }
 
         // build conflict table and find knocked.
         let conflict = {
             let mut it = Conflict::with_capacity(get.number_of_units());
-            for cube in movable.filter(|cube| action[cube.index()] != Restriction::Stop) {
-                it.put(cube.id(), cube.movement(), cube.outlines_in_front());
-            }
+            movable
+                .filter(|cube| action[cube.index()] == Restriction::Free)
+                .for_each(|cube| it.put(cube.id(), cube.movement(), cube.outlines_in_front()));
             it
         };
         for overleap in conflict.overlaps() {
@@ -106,14 +108,14 @@ impl State {
                 let movement = cube.movement();
                 for other in cubes.filter_map(moving) {
                     if movement.is_orthogonal(other.movement()) {
-                        determine(&other, Restriction::Stop, &mut solved, &mut action);
+                        suppose(&other, Restriction::Stop, &mut solved, &mut action);
                     } else if movement.is_opposite(other.movement()) {
-                        determine(&other, Restriction::Lock, &mut solved, &mut action);
+                        suppose(&other, Restriction::Lock, &mut solved, &mut action);
                     }
                 }
             } else {
                 for cube in cubes {
-                    determine(&cube, Restriction::Stop, &mut solved, &mut action);
+                    suppose(&cube, Restriction::Stop, &mut solved, &mut action);
                 }
             }
         }
