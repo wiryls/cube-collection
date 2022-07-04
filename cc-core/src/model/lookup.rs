@@ -120,7 +120,7 @@ impl DisjointSet {
         }
     }
 
-    pub fn join<T: Into<usize>, U: Into<usize>>(&mut self, this: T, that: U) -> bool {
+    pub fn join<T: Into<usize>, U: Into<usize>>(&mut self, this: T, that: U) {
         let this = this.into();
         let that = that.into();
         if this < self.parents.len() && that < self.parents.len() && this != that {
@@ -128,10 +128,8 @@ impl DisjointSet {
             let this = self.root_mut(this);
             if *this != that {
                 *this = that;
-                return true;
             }
         }
-        false
     }
 
     pub fn groups(self) -> Groups {
@@ -329,7 +327,7 @@ mod test {
         for (i, case) in cases.into_iter().enumerate() {
             let mut lookup = DisjointSet::new(case.0);
             for link in case.1 {
-                assert!(lookup.join(link.0, link.1), "case {}", i);
+                lookup.join(link.0, link.1);
             }
 
             let mut out = lookup

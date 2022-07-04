@@ -4,7 +4,7 @@ use std::{
 };
 
 use super::{
-    Action, Background, BasicCube, CollectedCube, Collection, Conflict, DisjointSet, HeadID,
+    Action, Background, BasicCube, CollectedCube, Collection, Conflict, DisjointSet, HeadID, Item,
     Movement, Restriction, Successors,
 };
 
@@ -14,17 +14,22 @@ pub struct State {
 }
 
 impl State {
-    pub fn current() {}
+    pub fn current(&self) -> impl Iterator<Item = Item> + '_ {
+        let offset = self.active.number_of_units();
+        self.active.iter().chain(self.frozen.iter(offset))
+    }
 
-    pub fn diff(&self, _that: &Self) /* -> Diff */
+    pub fn differ(&self, _that: &Self) /* -> Diff */
     {
+        // self.current()
+
         todo!()
     }
 
     pub fn link(&self) -> Self {
         // create set
         let get = self.active.getter(None);
-        let mut groups = DisjointSet::new(get.number_of_cubes());
+        let mut groups = DisjointSet::new(self.active.number_of_cubes());
         for cube in get.cubes().filter(BasicCube::unstable) {
             for other in cube.neighbors() {
                 if cube.absorbable_actively(&other) {
@@ -55,17 +60,18 @@ impl State {
             }
         }
 
+        let number_of_cubes = self.active.number_of_cubes();
+        let number_of_units = self.active.number_of_units();
         let get = self.active.getter(input);
-        let len = get.number_of_cubes();
         let moving = CollectedCube::into_movable;
         let movable = get.cubes().filter_map(moving);
 
-        let mut groups = DisjointSet::new(len);
-        let mut action = Box::<[_]>::from(vec![Restriction::Free; len]);
-        let mut solved = HashSet::<HeadID>::with_capacity(len);
+        let mut groups = DisjointSet::new(number_of_cubes);
+        let mut action = Box::<[_]>::from(vec![Restriction::Free; number_of_cubes]);
+        let mut solved = HashSet::<HeadID>::with_capacity(number_of_cubes);
 
         // find blocked and build dependencies.
-        let mut successors = Successors::new(len);
+        let mut successors = Successors::new(number_of_cubes);
         for cube in movable.clone() {
             let mut blocked = cube.outlines_in_front().any(|o| self.frozen.blocked(o));
 
@@ -77,9 +83,8 @@ impl State {
                             successors.insert(neighbor.id(), cube.id());
                         }
                     } else if neighbor.absorbable(&cube) || cube.absorbable(&neighbor) {
-                        if groups.join(&cube, &neighbor) {
-                            blocked = true;
-                        }
+                        groups.join(&cube, &neighbor);
+                        blocked = true;
                     }
                 }
             }
@@ -91,7 +96,7 @@ impl State {
 
         // build conflict table and find knocked.
         let conflict = {
-            let mut it = Conflict::with_capacity(get.number_of_units());
+            let mut it = Conflict::with_capacity(number_of_units);
             movable
                 .filter(|cube| action[cube.index()] == Restriction::Free)
                 .for_each(|cube| it.put(cube.id(), cube.movement(), cube.outlines_in_front()));
@@ -120,7 +125,7 @@ impl State {
         }
 
         // solve dependencies
-        let mut queue = VecDeque::with_capacity(get.number_of_cubes());
+        let mut queue = VecDeque::with_capacity(number_of_cubes);
         for cube in solved {
             queue.push_back(get.cube(cube));
             while let Some(cube) = queue.pop_back() {
@@ -130,9 +135,7 @@ impl State {
                         .clone()
                         .map(|other| get.cube(other.clone()))
                         .filter(|other| cube.absorbable(other) || other.absorbable(&cube))
-                        .for_each(|other| {
-                            groups.join(&cube, &other);
-                        });
+                        .for_each(|other| groups.join(&cube, &other));
                 }
 
                 let restriction = action[cube.index()];

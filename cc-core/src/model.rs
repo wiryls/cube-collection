@@ -1,6 +1,7 @@
 mod background;
 mod collection;
 mod handle;
+mod item;
 mod lookup;
 mod motion;
 mod movement;
@@ -11,6 +12,7 @@ use self::background::*;
 use self::handle::*;
 
 pub use self::collection::*;
+pub use self::item::*;
 pub use self::lookup::*;
 pub use self::motion::*;
 pub use self::movement::*;

@@ -1,18 +1,18 @@
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub enum Type {
+pub enum Kind {
     White,
     Red,
     Blue,
     Green,
 }
 
-impl Type {
+impl Kind {
     pub fn unstable(&self) -> bool {
-        *self != Type::White
+        *self != Kind::White
     }
 
     pub fn absorbable(&self, that: Self) -> bool {
-        use Type::*;
+        use Kind::*;
         match self {
             White => false,
             Red => matches!(that, Red | Blue | Green),

@@ -1,5 +1,5 @@
 use super::common::Point;
-use super::model::{Movement, Type};
+use super::model::{Movement, Kind};
 
 pub struct Seed {
     pub info: Info,
@@ -14,7 +14,7 @@ pub struct Info {
 }
 
 pub struct Cube {
-    pub kind: Type,
+    pub kind: Kind,
     pub body: Vec<Point>,
     pub command: Option<Command>,
 }

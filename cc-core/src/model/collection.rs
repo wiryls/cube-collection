@@ -1,6 +1,8 @@
 use std::rc::Rc;
 
-use super::{Action, Collision, DisjointSet, HeadID, Motion, Movement, Restriction, Type, UnitID};
+use super::{
+    Action, Collision, DisjointSet, HeadID, Item, Kind, Motion, Movement, Restriction, UnitID,
+};
 use crate::{
     common::{Adjacence, Neighborhood, Point},
     Faction,
@@ -18,9 +20,19 @@ impl Collection {
         todo!()
     }
 
-    pub fn differ(&self, _that: &Self) /* -> ? */
-    {
-        todo!()
+    pub fn iter(&self) -> CollectionIter {
+        CollectionIter {
+            collection: self,
+            iterator: self.units.iter().enumerate(),
+        }
+    }
+
+    pub fn number_of_cubes(&self) -> usize {
+        self.heads.len()
+    }
+
+    pub fn number_of_units(&self) -> usize {
+        self.units.len()
     }
 
     pub fn getter(&self, input: Option<Movement>) -> Collected {
@@ -188,6 +200,28 @@ impl Collection {
     }
 }
 
+pub struct CollectionIter<'a> {
+    collection: &'a Collection,
+    iterator: std::iter::Enumerate<std::slice::Iter<'a, Unit>>,
+}
+
+impl Iterator for CollectionIter<'_> {
+    type Item = Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iterator.next().map(|(i, u)| {
+            let head = &self.collection.heads[usize::from(&u.head)];
+            Item {
+                id: i.into(),
+                kind: head.kind,
+                action: head.action.clone(),
+                position: u.position,
+                neighborhood: u.neighborhood,
+            }
+        })
+    }
+}
+
 #[derive(Clone)]
 pub struct Collected<'a> {
     input: Option<Movement>,
@@ -195,14 +229,6 @@ pub struct Collected<'a> {
 }
 
 impl Collected<'_> {
-    pub fn number_of_cubes(&self) -> usize {
-        self.collection.heads.len()
-    }
-
-    pub fn number_of_units(&self) -> usize {
-        self.collection.units.len()
-    }
-
     pub fn cube(&self, index: HeadID) -> CollectedCube<'_> {
         CollectedCube::new(self, index)
     }
@@ -227,12 +253,12 @@ impl<T: Cubic> BasicCube for T {
         self.index().clone()
     }
 
-    fn kind(&self) -> Type {
+    fn kind(&self) -> Kind {
         self.value().kind
     }
 
     fn unstable(&self) -> bool {
-        self.kind() != Type::White
+        self.kind() != Kind::White
     }
 
     fn absorbable<U: BasicCube>(&self, that: &U) -> bool {
@@ -247,7 +273,7 @@ impl<T: Cubic> BasicCube for T {
 pub trait BasicCube {
     fn index(&self) -> usize;
     fn id(&self) -> HeadID;
-    fn kind(&self) -> Type;
+    fn kind(&self) -> Kind;
     fn unstable(&self) -> bool;
     fn absorbable<T: BasicCube>(&self, that: &T) -> bool;
     fn absorbable_actively<T: BasicCube>(&self, that: &T) -> bool;
@@ -290,7 +316,7 @@ impl<'a> CollectedCube<'a> {
     }
 
     pub fn movable(&self) -> Option<Movement> {
-        if self.owner.input.is_some() && self.value.kind == Type::Blue {
+        if self.owner.input.is_some() && self.value.kind == Kind::Blue {
             self.owner.input
         } else {
             self.value.motion.current()
@@ -370,7 +396,7 @@ impl<'a> CollectedMovableCube<'a> {
 #[derive(Clone)]
 struct Head {
     // necessary
-    kind: Type,
+    kind: Kind,
     units: Box<[UnitID]>,
     motion: Motion,
     // calculated
