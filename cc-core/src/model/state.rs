@@ -5,7 +5,7 @@ use std::{
 
 use super::{
     Action, Background, BasicCube, CollectedCube, Collection, Conflict, DisjointSet, HeadID,
-    Movement, Restriction,
+    Movement, Restriction, Successors,
 };
 
 pub struct State {
@@ -65,8 +65,7 @@ impl State {
         let mut solved = HashSet::<HeadID>::with_capacity(len);
 
         // find blocked and build dependencies.
-        // TODO: optimize the successors
-        let mut successors = vec![HashSet::with_capacity(len); len].into_boxed_slice();
+        let mut successors = Successors::new(len);
         for cube in movable.clone() {
             let mut blocked = cube.outlines_in_front().any(|o| self.frozen.blocked(o));
 
@@ -75,7 +74,7 @@ impl State {
                 for neighbor in cube.neighbors_in_front().filter_map(moving) {
                     if neighbor.movement() == cube.movement() {
                         if !blocked {
-                            successors[neighbor.index()].insert(cube.id());
+                            successors.insert(neighbor.id(), cube.id());
                         }
                     } else if neighbor.absorbable(&cube) || cube.absorbable(&neighbor) {
                         if groups.join(&cube, &neighbor) {
@@ -125,7 +124,7 @@ impl State {
         for cube in solved {
             queue.push_back(get.cube(cube));
             while let Some(cube) = queue.pop_back() {
-                let cubes = successors[cube.index()].iter();
+                let cubes = successors.walk(cube.id());
                 if cube.unstable() {
                     cubes
                         .clone()

@@ -8,13 +8,18 @@ use crate::{
 
 #[derive(Clone)]
 pub struct Collection {
-    heads: Box<[Head]>,
     units: Box<[Unit]>,
+    heads: Box<[Head]>,
     cache: Cache,
 }
 
 impl Collection {
     pub fn new() -> Self {
+        todo!()
+    }
+
+    pub fn differ(&self, _that: &Self) /* -> ? */
+    {
         todo!()
     }
 
@@ -109,15 +114,10 @@ impl Collection {
         };
 
         Self {
-            heads,
             units,
+            heads,
             cache,
         }
-    }
-
-    pub fn differ(&self, _that: &Self) /* -> ? */
-    {
-        todo!()
     }
 
     fn mappings(&self, set: DisjointSet) -> impl Iterator<Item = Mapping> {
@@ -290,7 +290,7 @@ impl<'a> CollectedCube<'a> {
     }
 
     pub fn movable(&self) -> Option<Movement> {
-        if self.value.kind == Type::Blue && self.owner.input.is_some() {
+        if self.owner.input.is_some() && self.value.kind == Type::Blue {
             self.owner.input
         } else {
             self.value.motion.current()

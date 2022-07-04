@@ -1,4 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    borrow::Borrow,
+    collections::{hash_set, HashMap, HashSet},
+};
 
 use super::{HeadID, Movement};
 use crate::common::Point;
@@ -216,6 +219,36 @@ impl<'a> Iterator for GroupsIterator<'a> {
 
         self.index = upper;
         Some(self.group[lower..upper].into_iter().map(|x| x.0))
+    }
+}
+
+pub struct Successors(Box<[Option<HashSet<HeadID>>]>, HashSet<HeadID>);
+
+impl Successors {
+    pub fn new(maximum: usize) -> Self {
+        Self(vec![None; maximum].into_boxed_slice(), HashSet::new())
+    }
+
+    pub fn insert<T, U>(&mut self, index: T, value: U)
+    where
+        T: Borrow<HeadID>,
+        U: Borrow<HeadID>,
+    {
+        let index = usize::from(index.borrow());
+        let limit = self.0.len();
+        if let Some(set) = self.0.get_mut(index) {
+            let build = || HashSet::with_capacity(4.max(limit / 4));
+            set.get_or_insert_with(build).insert(value.borrow().clone());
+        }
+    }
+
+    pub fn walk<T: Borrow<HeadID>>(&mut self, index: T) -> hash_set::Iter<'_, HeadID> {
+        let index = usize::from(index.borrow());
+        match self.0.get(index) {
+            Some(Some(set)) => set,
+            _ => &self.1,
+        }
+        .iter()
     }
 }
 
