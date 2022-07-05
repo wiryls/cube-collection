@@ -15,16 +15,7 @@ impl Background {
         let units = it
             .flat_map(|points| {
                 let collision = Collision::new(points.clone());
-                points.map(move |point| {
-                    (
-                        point,
-                        Neighborhood::from(
-                            Neighborhood::AROUND
-                                .into_iter()
-                                .filter(|&a| collision.hit(point + a.into())),
-                        ),
-                    )
-                })
+                points.map(move |point| (point, collision.neighborhood(point)))
             })
             .collect::<Box<_>>();
         let block = Collision::new(units.iter().map(|u| u.0));

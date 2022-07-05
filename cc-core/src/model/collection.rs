@@ -34,7 +34,7 @@ impl Collection {
             }));
             let end = units.len();
 
-            let indexes = Vec::from_iter((begin..end).map(UnitID::from)).into_boxed_slice();
+            let indexes = (begin..end).map(UnitID::from).collect::<Box<_>>();
             let outlines = Outlines::new(&units, &indexes);
             heads.push(Head {
                 kind,
