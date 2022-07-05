@@ -4,26 +4,84 @@ use std::{
 };
 
 use super::{
-    Action, Background, BasicCube, CollectedCube, Collection, Conflict, DisjointSet, HeadID, Item,
-    Movement, Restriction, Successors,
+    Action, Background, BasicCube, CollectedCube, Collection, Conflict, Diff, DisjointSet, HeadID,
+    Item, Kind, Motion, Movement, Restriction, Successors,
 };
+use crate::{common::Point, Seed};
 
 pub struct State {
+    region: (i32, i32),
     active: Collection,
     frozen: Rc<Background>,
+    target: Rc<Box<[Point]>>,
 }
 
 impl State {
+    pub fn new(seed: &Seed) -> Self {
+        let region = (seed.size.width, seed.size.height);
+        let active = Collection::new(
+            seed.cubes
+                .iter()
+                .filter(|cube| cube.kind != Kind::White || cube.command.is_none())
+                .map(|cube| {
+                    (
+                        cube.kind,
+                        cube.body.as_slice(),
+                        match &cube.command {
+                            None => Motion::new(),
+                            Some(command) => Motion::from_sequence(
+                                command.is_loop,
+                                command.movements.iter().cloned(),
+                            ),
+                        },
+                    )
+                }),
+        );
+        let frozen = Background::new(
+            seed.cubes
+                .iter()
+                .filter(|cube| cube.kind == Kind::White && cube.command.is_none())
+                .map(|cube| cube.body.iter().cloned()),
+        )
+        .into();
+        let target = seed.destnations.clone().into_boxed_slice().into();
+
+        Self {
+            region,
+            active,
+            frozen,
+            target,
+        }
+    }
+
     pub fn current(&self) -> impl Iterator<Item = Item> + '_ {
         let offset = self.active.number_of_units();
         self.active.iter().chain(self.frozen.iter(offset))
     }
 
-    pub fn differ(&self, _that: &Self) /* -> Diff */
-    {
-        // self.current()
+    pub fn differ<'a>(&'a self, that: &'a Self) -> impl Iterator<Item = Diff> + 'a {
+        let comparable = self.region == that.region
+            && self.active.number_of_units() == that.active.number_of_units()
+            && std::ptr::eq(self.frozen.as_ref(), that.frozen.as_ref());
 
-        todo!()
+        let maximum = if comparable {
+            self.active.number_of_units()
+        } else {
+            0
+        };
+
+        self.active
+            .iter()
+            .zip(that.active.iter())
+            .filter(|(l, r)| l.id == r.id)
+            .map(|(l, r)| Diff {
+                id: r.id,
+                kind: (l.kind != r.kind).then(|| r.kind),
+                action: (l.action != r.action).then(|| r.action),
+                position: (l.position != r.position).then(|| r.position),
+                neighborhood: (l.neighborhood != r.neighborhood).then(|| r.neighborhood),
+            })
+            .take(maximum)
     }
 
     pub fn link(&self) -> Self {
@@ -40,8 +98,10 @@ impl State {
 
         // create next states
         Self {
+            region: self.region.clone(),
             active: self.active.transform(groups, None),
             frozen: self.frozen.clone(),
+            target: self.target.clone(),
         }
     }
 
@@ -73,7 +133,9 @@ impl State {
         // find blocked and build dependencies.
         let mut successors = Successors::new(number_of_cubes);
         for cube in movable.clone() {
-            let mut blocked = cube.outlines_in_front().any(|o| self.frozen.blocked(o));
+            let mut blocked = cube
+                .outlines_in_front()
+                .any(|o| self.outside(o) || self.frozen.blocked(o));
 
             if !blocked {
                 // theoretically, neighbors are all movable.
@@ -157,8 +219,14 @@ impl State {
             .collect::<Vec<_>>();
 
         Self {
+            region: self.region.clone(),
             active: self.active.transform(groups, Some(&action)),
             frozen: self.frozen.clone(),
+            target: self.target.clone(),
         }
+    }
+
+    fn outside(&self, o: Point) -> bool {
+        !(0 <= o.x && o.x < self.region.0 && 0 <= o.y && o.y < self.region.1)
     }
 }

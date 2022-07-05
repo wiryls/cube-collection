@@ -4,7 +4,7 @@ use std::{
 };
 
 use super::{HeadID, Movement};
-use crate::common::Point;
+use crate::common::{Neighborhood, Point};
 
 #[derive(Eq, Hash, PartialEq)]
 struct Key(u64);
@@ -30,6 +30,14 @@ impl Collision {
 
     pub fn hit(&self, point: Point) -> bool {
         self.0.contains(&point.into())
+    }
+
+    pub fn neighborhood(&self, point: Point) -> Neighborhood {
+        Neighborhood::from(
+            Neighborhood::AROUND
+                .into_iter()
+                .filter(|&o| self.hit(point + o.into())),
+        )
     }
 }
 

@@ -16,8 +16,43 @@ pub struct Collection {
 }
 
 impl Collection {
-    pub fn new() -> Self {
-        todo!()
+    pub fn new<'a, I>(it: I) -> Self
+    where
+        I: Iterator<Item = (Kind, &'a [Point], Motion)> + 'a,
+    {
+        let mut units = Vec::new();
+        let mut heads = Vec::new();
+        for (kind, points, motion) in it {
+            let offset = heads.len();
+            let collision = Collision::new(points.iter().cloned());
+
+            let begin = units.len();
+            units.extend(points.iter().enumerate().map(|(i, &point)| Unit {
+                head: HeadID::from(offset + i),
+                position: point,
+                neighborhood: collision.neighborhood(point),
+            }));
+            let end = units.len();
+
+            let indexes = Vec::from_iter((begin..end).map(UnitID::from)).into_boxed_slice();
+            let outlines = Outlines::new(&units, &indexes);
+            heads.push(Head {
+                kind,
+                units: indexes,
+                motion,
+                action: None,
+                outlines,
+            })
+        }
+        let cache = Cache {
+            faction: Self::make_faction(units.as_slice()).into(),
+        };
+
+        Self {
+            units: units.into(),
+            heads: heads.into(),
+            cache,
+        }
     }
 
     pub fn iter(&self) -> CollectionIter {
@@ -102,11 +137,7 @@ impl Collection {
 
                         for i in head.units.iter() {
                             let mut unit = &mut units[usize::from(i)];
-                            unit.neighborhood = Neighborhood::from(
-                                Neighborhood::AROUND
-                                    .into_iter()
-                                    .filter(|&o| collision.hit(unit.position + o.into())),
-                            )
+                            unit.neighborhood = collision.neighborhood(unit.position);
                         }
                     }
 
