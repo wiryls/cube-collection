@@ -1,4 +1,4 @@
-# [Project Cube Collection](https://wiryls.github.io/ProjectCubeCollection/)
+# [Project Cube Collection](https://wiryls.github.io/cc/)
 
 This is a simple HTML5 puzzle game based on [Egret](https://www.egret.com/).
 
@@ -11,7 +11,7 @@ This is a simple HTML5 puzzle game based on [Egret](https://www.egret.com/).
 Use:
 
 - `Arrow Keys` to move,
-- `Enter` next level,
+- `Enter` next level if ready,
 - `R` as restart,
 - `N` to skip this level,
 - `ESC` to reset the game.
