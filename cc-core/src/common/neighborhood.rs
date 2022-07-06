@@ -42,7 +42,7 @@ impl Into<Point> for Adjacence {
     }
 }
 
-#[derive(Clone, Copy, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Neighborhood(u8);
 
 #[allow(dead_code)]

@@ -9,12 +9,12 @@ mod state;
 mod types;
 
 use self::background::*;
+use self::collection::*;
 use self::handle::*;
+use self::lookup::*;
+use self::motion::*;
 
-pub use self::collection::*;
-pub use self::item::*;
-pub use self::lookup::*;
-pub use self::motion::*;
-pub use self::movement::*;
-pub use self::state::*;
-pub use self::types::*;
+pub use self::item::{Diff, Item};
+pub use self::movement::{Action, Movement, Restriction};
+pub use self::state::State;
+pub use self::types::Kind;

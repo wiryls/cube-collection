@@ -48,7 +48,7 @@ impl Into<Point> for Movement {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Restriction {
     Free,
     Lock,
@@ -61,7 +61,7 @@ impl Default for Restriction {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Action {
     pub movement: Movement,
     pub restriction: Restriction,

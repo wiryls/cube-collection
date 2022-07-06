@@ -1,5 +1,5 @@
 use super::common::Point;
-use super::model::{Movement, Kind};
+use super::model::{Kind, Movement};
 
 pub struct Seed {
     pub info: Info,

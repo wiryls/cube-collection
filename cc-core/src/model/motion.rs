@@ -42,10 +42,6 @@ impl Motion {
     pub fn next(&mut self) {
         self.0.next();
     }
-
-    pub fn take(&mut self) -> Self {
-        Self(std::mem::take(&mut self.0))
-    }
 }
 
 trait Automatic {

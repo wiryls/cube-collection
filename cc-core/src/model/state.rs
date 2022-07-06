@@ -7,7 +7,7 @@ use super::{
     Action, Background, BasicCube, CollectedCube, Collection, Conflict, Diff, DisjointSet, HeadID,
     Item, Kind, Motion, Movement, Restriction, Successors,
 };
-use crate::{common::Point, Seed};
+use crate::{common::Point, seed::Seed};
 
 pub struct State {
     region: (i32, i32),
@@ -22,7 +22,7 @@ impl State {
         let active = Collection::new(
             seed.cubes
                 .iter()
-                .filter(|cube| cube.kind != Kind::White || cube.command.is_none())
+                .filter(|cube| cube.kind != Kind::White || cube.command.is_some())
                 .map(|cube| {
                     (
                         cube.kind,
@@ -54,6 +54,17 @@ impl State {
         }
     }
 
+    pub fn progress(&self) -> (usize, usize) {
+        let total = self.target.len();
+        let done = self
+            .target
+            .iter()
+            .filter(|&&point| self.frozen.blocked(point) || self.active.exists(point))
+            .count();
+
+        (done, total)
+    }
+
     pub fn current(&self) -> impl Iterator<Item = Item> + '_ {
         let offset = self.active.number_of_units();
         self.active.iter().chain(self.frozen.iter(offset))
@@ -73,7 +84,12 @@ impl State {
         self.active
             .iter()
             .zip(that.active.iter())
-            .filter(|(l, r)| l.id == r.id)
+            .filter(|(l, r)| {
+                l.kind != r.kind
+                    || l.action != r.action
+                    || l.position != r.position
+                    || l.neighborhood != r.neighborhood
+            })
             .map(|(l, r)| Diff {
                 id: r.id,
                 kind: (l.kind != r.kind).then(|| r.kind),

@@ -1,5 +1,5 @@
 mod neighborhood;
 mod point;
 
-pub use self::neighborhood::*;
-pub use self::point::*;
+pub use self::neighborhood::{Adjacence, Neighborhood};
+pub use self::point::Point;

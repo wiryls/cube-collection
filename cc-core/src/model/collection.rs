@@ -1,12 +1,10 @@
 use std::rc::Rc;
 
 use super::{
-    Action, Collision, DisjointSet, HeadID, Item, Kind, Motion, Movement, Restriction, UnitID,
+    Action, Collision, DisjointSet, Faction, HeadID, Item, Kind, Motion, Movement, Restriction,
+    UnitID,
 };
-use crate::{
-    common::{Adjacence, Neighborhood, Point},
-    Faction,
-};
+use crate::common::{Adjacence, Neighborhood, Point};
 
 #[derive(Clone)]
 pub struct Collection {
@@ -75,6 +73,10 @@ impl Collection {
             input,
             collection: self,
         }
+    }
+
+    pub fn exists(&self, point: Point) -> bool {
+        self.cache.faction.get(point).is_some()
     }
 
     pub fn transform(&self, groups: DisjointSet, actions: Option<&[Option<Action>]>) -> Self {
@@ -243,7 +245,7 @@ impl Iterator for CollectionIter<'_> {
         self.iterator.next().map(|(i, u)| {
             let head = &self.collection.heads[usize::from(&u.head)];
             Item {
-                id: i.into(),
+                id: i,
                 kind: head.kind,
                 action: head.action.clone(),
                 position: u.position,
@@ -489,8 +491,8 @@ impl Outlines {
             for (i, a) in LBTR.into_iter().enumerate() {
                 if !unit.neighborhood.has(a) {
                     let point = &mut slice[index[i]];
-                    *point += a.into();
                     *point -= unit.position;
+                    *point -= a.into();
                     index[i] += 1;
                 }
             }
@@ -579,5 +581,46 @@ impl<'a> Mapping<'a> {
             moving: false,
             source: Source::Link { head, tail },
         }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// tests
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn outlines() {
+        let units = vec![
+            Unit {
+                head: 0.into(),
+                position: Point::new(0, 0),
+                neighborhood: Neighborhood::from([Adjacence::BOTTOM].into_iter()),
+            },
+            Unit {
+                head: 0.into(),
+                position: Point::new(0, 1),
+                neighborhood: Neighborhood::from([Adjacence::TOP].into_iter()),
+            },
+        ];
+        let outlines = Outlines::new(&units, &[0, 1].map(UnitID::from));
+
+        let expected = vec![Point::new(0, 1), Point::new(0, 2)];
+        let actual = Vec::from_iter(outlines.one(Point::new(1, 1), Movement::Left));
+        assert_eq!(actual, expected);
+
+        let expected = vec![Point::new(2, 1), Point::new(2, 2)];
+        let actual = Vec::from_iter(outlines.one(Point::new(1, 1), Movement::Right));
+        assert_eq!(actual, expected);
+
+        let expected = vec![Point::new(1, 0)];
+        let actual = Vec::from_iter(outlines.one(Point::new(1, 1), Movement::Up));
+        assert_eq!(actual, expected);
+
+        let expected = vec![Point::new(1, 3)];
+        let actual = Vec::from_iter(outlines.one(Point::new(1, 1), Movement::Down));
+        assert_eq!(actual, expected);
     }
 }
