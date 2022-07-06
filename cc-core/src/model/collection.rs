@@ -70,7 +70,7 @@ impl Collection {
         self.units.len()
     }
 
-    pub fn getter(&self, input: Option<Movement>) -> Collected {
+    pub fn collected(&self, input: Option<Movement>) -> Collected {
         Collected {
             input,
             collection: self,
