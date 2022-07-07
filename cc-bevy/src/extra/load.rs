@@ -12,7 +12,7 @@ use iyes_loopless::prelude::*;
 /// commands.insert_resource(LoadSeeds::new("INDEX_PATH"))
 /// ```
 ///
-/// to start loading ```Res<seed::Seeds>```.
+/// to start loading ```Res<Seeds>```.
 pub struct LoaderPlugin;
 impl Plugin for LoaderPlugin {
     fn build(&self, app: &mut App) {
@@ -20,7 +20,7 @@ impl Plugin for LoaderPlugin {
             .add_asset_loader(loader::TOMLSourceLoader::default())
             .add_asset_loader(loader::TOMLIndexLoader::default())
             .add_asset::<loader::Index>()
-            .add_asset::<seed::Seed>()
+            .add_asset::<seed::CubeWorldSeed>()
             .add_system(load_seeds.run_if_resource_exists::<LoadSeeds>());
     }
 }
@@ -42,7 +42,7 @@ impl LoadSeeds {
 enum LoadSeedsState {
     Pending(String),
     Finding(Handle<loader::Index>),
-    Loading(Vec<Handle<seed::Seed>>),
+    Loading(Vec<Handle<seed::CubeWorldSeed>>),
     Stopped,
 }
 
@@ -59,7 +59,7 @@ fn load_seeds(
     mut load_updated: EventWriter<LoadSeedsUpdated>,
     server: Res<AssetServer>,
     index_assets: Res<Assets<loader::Index>>,
-    seeds_assets: Res<Assets<seed::Seed>>,
+    seeds_assets: Res<Assets<seed::CubeWorldSeed>>,
 ) {
     use bevy::asset::LoadState;
     match &status.0 {
@@ -116,7 +116,7 @@ fn load_seeds(
                 load_updated.send(LoadSeedsUpdated::Failure { which });
                 status.0 = LoadSeedsState::Stopped {};
             } else if done == total {
-                let output: seed::Seeds = handles
+                let output: seed::CubeWorldSeeds = handles
                     .iter()
                     .filter_map(|x| seeds_assets.get(x))
                     .map(|x| x.clone())

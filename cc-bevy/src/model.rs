@@ -1,6 +1,3 @@
-pub mod behavior;
-pub mod body;
-pub mod common;
-pub mod cube;
-pub mod port;
+pub mod component;
 pub mod seed;
+pub mod system;

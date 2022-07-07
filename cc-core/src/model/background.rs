@@ -23,7 +23,7 @@ impl Background {
         Self { units, block }
     }
 
-    pub fn blocked(&self, point: Point) -> bool {
+    pub fn is_blocked(&self, point: Point) -> bool {
         self.block.hit(point)
     }
 

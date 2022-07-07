@@ -20,7 +20,7 @@ mod tests {
          *****/
 
         // STEP 00
-        let game = State::new(&Seed {
+        let seed = Seed {
             info: Info {
                 title: "test".into(),
                 author: "test".into(),
@@ -47,51 +47,9 @@ mod tests {
                 },
             ],
             destnations: vec![Point::new(1, 0), Point::new(0, 2)],
-        });
-        assert_eq!(game.progress(), (1, 2));
-        assert!(game.current().eq([
-            Item {
-                id: 0,
-                kind: Kind::Blue,
-                action: None,
-                position: Point::new(0, 0),
-                neighborhood: Neighborhood::new(),
-            },
-            Item {
-                id: 1,
-                kind: Kind::Green,
-                action: None,
-                position: Point::new(0, 1),
-                neighborhood: Neighborhood::new(),
-            },
-            Item {
-                id: 2,
-                kind: Kind::White,
-                action: None,
-                position: Point::new(1, 0),
-                neighborhood: Neighborhood::new(),
-            },
-        ]
-        .into_iter()));
-
-        // STEP 01
-        let next = game.link();
-        assert_eq!(next.progress(), (1, 2));
-        assert!(game.differ(&next).eq([
-            Diff {
-                id: 0,
-                neighborhood: Some(Neighborhood::from([Adjacence::BOTTOM].into_iter())),
-                ..Default::default()
-            },
-            Diff {
-                id: 1,
-                kind: Some(Kind::Blue),
-                neighborhood: Some(Neighborhood::from([Adjacence::TOP].into_iter())),
-                ..Default::default()
-            },
-        ]
-        .into_iter()));
-        assert!(next.current().eq([
+        };
+        let mut game = World::new(&seed);
+        let stat = [
             Item {
                 id: 0,
                 kind: Kind::Blue,
@@ -113,93 +71,64 @@ mod tests {
                 position: Point::new(1, 0),
                 neighborhood: Neighborhood::new(),
             },
-        ]
-        .into_iter()));
+        ];
+        assert!(game.iter().eq(stat.into_iter()));
+        assert_eq!(game.progress(), (1, 2));
 
-        // STEP 02
-        let game = next;
-        let next = game.next(Some(Movement::Right));
-        assert_eq!(next.progress(), (1, 2));
-
-        let action = Some(Some(Action {
+        // STEP 01
+        let todo = Some(Some(Action {
             movement: Movement::Right,
             restriction: Restriction::Stop,
         }));
-
-        assert!(game.differ(&next).eq([
+        let diff = [
             Diff {
                 id: 0,
-                action: action.clone(),
+                action: todo.clone(),
                 ..Default::default()
             },
             Diff {
                 id: 1,
-                action: action.clone(),
+                action: todo.clone(),
                 ..Default::default()
             },
-        ]
-        .into_iter()));
-        assert!(next.current().eq([
-            Item {
-                id: 0,
-                kind: Kind::Blue,
-                action: action.clone().unwrap(),
-                position: Point::new(0, 0),
-                neighborhood: Neighborhood::from([Adjacence::BOTTOM].into_iter()),
-            },
-            Item {
-                id: 1,
-                kind: Kind::Blue,
-                action: action.clone().unwrap(),
-                position: Point::new(0, 1),
-                neighborhood: Neighborhood::from([Adjacence::TOP].into_iter()),
-            },
-            Item {
-                id: 2,
-                kind: Kind::White,
-                action: None,
-                position: Point::new(1, 0),
-                neighborhood: Neighborhood::new(),
-            },
-        ]
-        .into_iter()));
+        ];
+        assert!(game.input(Some(Movement::Right)).eq(diff.into_iter()));
+        assert_eq!(game.progress(), (1, 2));
+        assert_eq!(game.commit().count(), 0);
+        assert_eq!(game.progress(), (1, 2));
 
-        // STEP 03
-        let game = next;
-        let next = game.next(Some(Movement::Down));
-        assert_eq!(next.progress(), (2, 2));
-
-        let action = Some(Some(Action {
+        // STEP 02
+        let todo = Some(Some(Action {
             movement: Movement::Down,
             restriction: Restriction::Free,
         }));
-        assert!(game.differ(&next).eq([
+        let diff = [
             Diff {
                 id: 0,
-                action: action.clone(),
+                action: todo.clone(),
                 position: Some(Point::new(0, 1)),
                 ..Default::default()
             },
             Diff {
                 id: 1,
-                action: action.clone(),
+                action: todo.clone(),
                 position: Some(Point::new(0, 2)),
                 ..Default::default()
             },
-        ]
-        .into_iter()));
-        assert!(next.current().eq([
+        ];
+        assert!(game.input(Some(Movement::Down)).eq(diff.into_iter()));
+        let stat = [
             Item {
                 id: 0,
                 kind: Kind::Blue,
-                action: action.clone().unwrap(),
+                action: todo.clone().unwrap(),
                 position: Point::new(0, 1),
                 neighborhood: Neighborhood::from([Adjacence::BOTTOM].into_iter()),
             },
             Item {
                 id: 1,
                 kind: Kind::Blue,
-                action: action.clone().unwrap(),
+                action: todo.clone().unwrap(),
                 position: Point::new(0, 2),
                 neighborhood: Neighborhood::from([Adjacence::TOP].into_iter()),
             },
@@ -210,7 +139,10 @@ mod tests {
                 position: Point::new(1, 0),
                 neighborhood: Neighborhood::new(),
             },
-        ]
-        .into_iter()));
+        ];
+        assert!(game.iter().eq(stat.into_iter()));
+        assert_eq!(game.progress(), (2, 2));
+        assert_eq!(game.commit().count(), 0);
+        assert_eq!(game.progress(), (2, 2));
     }
 }

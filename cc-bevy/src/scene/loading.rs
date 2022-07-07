@@ -16,7 +16,7 @@ impl Plugin for LoadingScene {
                 ConditionSet::new()
                     .run_in_state(State::Loading)
                     .with_system(loading_status)
-                    .with_system(loading_success.run_if_resource_exists::<seed::Seeds>())
+                    .with_system(loading_success.run_if_resource_exists::<seed::CubeWorldSeeds>())
                     .into(),
             );
     }

@@ -7,9 +7,59 @@ use super::{
     Action, Background, BasicCube, CollectedCube, Collection, Conflict, Diff, DisjointSet, HeadID,
     Item, Kind, Motion, Movement, Restriction, Successors,
 };
-use crate::{common::Point, seed::Seed};
+use crate::{common::Point, seed::Cube, seed::Seed};
 
-pub struct State {
+/////////////////////////////////////////////////////////////////////////////
+// world
+
+pub struct World {
+    base: State,
+    last: Option<State>,
+    next: Option<State>,
+}
+
+impl World {
+    pub fn new(seed: &Seed) -> Self {
+        Self {
+            base: State::new(&seed).link(),
+            last: None,
+            next: None,
+        }
+    }
+
+    pub fn progress(&self) -> (usize, usize) {
+        self.latest().progress()
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = Item> + '_ {
+        self.latest().current()
+    }
+
+    pub fn input(&mut self, movement: Option<Movement>) -> impl Iterator<Item = Diff> + '_ {
+        self.last = self.next.replace(self.base.input(movement));
+        let last = self.last.as_ref().unwrap_or(&self.base);
+        let next = self.next.as_ref().unwrap_or(&self.base);
+        last.differ(next)
+    }
+
+    pub fn commit(&mut self) -> impl Iterator<Item = Diff> + '_ {
+        if let Some(mut that) = self.next.take() {
+            std::mem::swap(&mut self.base, &mut that);
+            self.last.insert(that).differ(&self.base)
+        } else {
+            self.base.differ(&self.base)
+        }
+    }
+
+    fn latest(&self) -> &State {
+        self.next.as_ref().unwrap_or(&self.base)
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// subtypes
+
+struct State {
     region: (i32, i32),
     active: Collection,
     frozen: Rc<Background>,
@@ -17,25 +67,26 @@ pub struct State {
 }
 
 impl State {
-    pub fn new(seed: &Seed) -> Self {
+    fn new(seed: &Seed) -> Self {
+        fn raw_cube(cube: &Cube) -> (Kind, &[Point], Motion) {
+            (
+                cube.kind,
+                cube.body.as_slice(),
+                match &cube.command {
+                    None => Motion::new(),
+                    Some(command) => {
+                        Motion::from_sequence(command.is_loop, command.movements.iter().cloned())
+                    }
+                },
+            )
+        }
+
         let region = (seed.size.width, seed.size.height);
         let active = Collection::new(
             seed.cubes
                 .iter()
                 .filter(|cube| cube.kind != Kind::White || cube.command.is_some())
-                .map(|cube| {
-                    (
-                        cube.kind,
-                        cube.body.as_slice(),
-                        match &cube.command {
-                            None => Motion::new(),
-                            Some(command) => Motion::from_sequence(
-                                command.is_loop,
-                                command.movements.iter().cloned(),
-                            ),
-                        },
-                    )
-                }),
+                .map(raw_cube),
         );
         let frozen = Background::new(
             seed.cubes
@@ -54,26 +105,27 @@ impl State {
         }
     }
 
-    pub fn progress(&self) -> (usize, usize) {
+    fn progress(&self) -> (usize, usize) {
         let total = self.target.len();
         let done = self
             .target
             .iter()
-            .filter(|&&point| self.frozen.blocked(point) || self.active.exists(point))
+            .filter(|&&point| self.frozen.is_blocked(point) || self.active.exists(point))
             .count();
 
         (done, total)
     }
 
-    pub fn current(&self) -> impl Iterator<Item = Item> + '_ {
+    fn current(&self) -> impl Iterator<Item = Item> + '_ {
         let offset = self.active.number_of_units();
         self.active.iter().chain(self.frozen.iter(offset))
     }
 
-    pub fn differ<'a>(&'a self, that: &'a Self) -> impl Iterator<Item = Diff> + 'a {
-        let comparable = self.region == that.region
-            && self.active.number_of_units() == that.active.number_of_units()
-            && std::ptr::eq(self.frozen.as_ref(), that.frozen.as_ref());
+    fn differ<'a>(&'a self, that: &'a Self) -> impl Iterator<Item = Diff> + 'a {
+        let comparable = !std::ptr::eq(self, that)
+            && std::ptr::eq(self.frozen.as_ref(), that.frozen.as_ref())
+            && self.region == that.region
+            && self.active.number_of_units() == that.active.number_of_units();
 
         let maximum = if comparable {
             self.active.number_of_units()
@@ -81,9 +133,8 @@ impl State {
             0
         };
 
-        self.active
-            .iter()
-            .zip(that.active.iter())
+        std::iter::zip(self.active.iter(), that.active.iter())
+            .take(maximum)
             .filter(|(l, r)| {
                 l.kind != r.kind
                     || l.action != r.action
@@ -97,10 +148,9 @@ impl State {
                 position: (l.position != r.position).then(|| r.position),
                 neighborhood: (l.neighborhood != r.neighborhood).then(|| r.neighborhood),
             })
-            .take(maximum)
     }
 
-    pub fn link(&self) -> Self {
+    fn link(&self) -> Self {
         // create set
         let collected = self.active.collected(None);
         let mut groups = DisjointSet::new(self.active.number_of_cubes());
@@ -121,7 +171,7 @@ impl State {
         }
     }
 
-    pub fn next(&self, input: Option<Movement>) -> Self {
+    fn input(&self, input: Option<Movement>) -> Self {
         fn suppose<T: BasicCube>(
             cube: &T,
             restriction: Restriction,
@@ -148,7 +198,7 @@ impl State {
         for cube in collected.cubes().filter_map(moving) {
             let mut blocked = cube
                 .outlines_in_front()
-                .any(|o| self.outside(o) || self.frozen.blocked(o));
+                .any(|o| self.is_outside(o) || self.frozen.is_blocked(o));
 
             if !blocked {
                 for neighbor in cube.neighbors_in_front() {
@@ -246,7 +296,7 @@ impl State {
         }
     }
 
-    fn outside(&self, o: Point) -> bool {
+    fn is_outside(&self, o: Point) -> bool {
         !(0 <= o.x && o.x < self.region.0 && 0 <= o.y && o.y < self.region.1)
     }
 }

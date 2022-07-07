@@ -16,5 +16,5 @@ use self::motion::*;
 
 pub use self::item::{Diff, Item};
 pub use self::movement::{Action, Movement, Restriction};
-pub use self::state::State;
+pub use self::state::World;
 pub use self::types::Kind;

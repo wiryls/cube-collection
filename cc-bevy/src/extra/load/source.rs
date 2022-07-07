@@ -1,4 +1,5 @@
-use crate::model::{behavior, cube, seed};
+use crate::model::seed::CubeWorldSeed;
+use cc_core::seed;
 use serde::Deserialize;
 use snafu::{ensure, Snafu};
 
@@ -50,7 +51,7 @@ struct Command {
 }
 
 impl Source {
-    pub fn into_seed(self) -> Result<seed::Seed, Error> {
+    pub fn into_seed(self) -> Result<CubeWorldSeed, Error> {
         ensure!(
             !self.info.title.is_empty(),
             MissingField {
@@ -69,10 +70,10 @@ impl Source {
         for line in self.map.raw.lines() {
             for c in line.chars() {
                 match c {
-                    'W' => builder.make_cube(cube::Type::White),
-                    'R' => builder.make_cube(cube::Type::Red),
-                    'B' => builder.make_cube(cube::Type::Blue),
-                    'G' => builder.make_cube(cube::Type::Green),
+                    'W' => builder.make_cube(seed::Kind::White),
+                    'R' => builder.make_cube(seed::Kind::Red),
+                    'B' => builder.make_cube(seed::Kind::Blue),
+                    'G' => builder.make_cube(seed::Kind::Green),
                     'x' => builder.make_destination(),
                     ' ' => builder.make_empty(),
                     '~' => builder.copy_left()?,
@@ -89,11 +90,11 @@ impl Source {
             let mut b = CommandBuilder::new(m.is_loop);
             for c in m.content.chars() {
                 match c {
-                    'I' => put(&mut b, &mut n).put(behavior::Movement::Idle),
-                    'L' => put(&mut b, &mut n).put(behavior::Movement::Left),
-                    'D' => put(&mut b, &mut n).put(behavior::Movement::Down),
-                    'U' => put(&mut b, &mut n).put(behavior::Movement::Up),
-                    'R' => put(&mut b, &mut n).put(behavior::Movement::Right),
+                    'I' => put(&mut b, &mut n).put(None),
+                    'L' => put(&mut b, &mut n).put(Some(seed::Movement::Left)),
+                    'D' => put(&mut b, &mut n).put(Some(seed::Movement::Down)),
+                    'U' => put(&mut b, &mut n).put(Some(seed::Movement::Up)),
+                    'R' => put(&mut b, &mut n).put(Some(seed::Movement::Right)),
                     '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' if !b.is_empty() => {
                         n.push(c)
                     }
@@ -116,18 +117,17 @@ impl Source {
             builder
         }
 
-        Ok(builder.into())
+        Ok(CubeWorldSeed::new(builder.into()))
     }
 }
 
-#[derive(Default)]
 struct LevelBuilder {
     // output
     i: seed::Info,
     h: i32,
     w: i32,
     cs: Vec<seed::Cube>,
-    ds: Vec<seed::Location>,
+    ds: Vec<seed::Point>,
 
     // cached
     x: i32,
@@ -165,7 +165,12 @@ impl LevelBuilder {
                 title: i.title,
                 author: i.author,
             },
-            ..Default::default()
+            h: 0,
+            w: 0,
+            cs: Vec::new(),
+            ds: Vec::new(),
+            x: 0,
+            m: Indexer(Vec::new()),
         }
     }
 
@@ -186,23 +191,15 @@ impl LevelBuilder {
     }
 
     fn make_destination(&mut self) {
-        let l = seed::Location {
-            x: self.x,
-            y: self.h,
-        };
-
-        self.ds.push(l);
+        self.ds.push(seed::Point::new(self.x, self.h));
         self.make(None);
     }
 
-    fn make_cube(&mut self, kind: cube::Type) {
+    fn make_cube(&mut self, kind: seed::Kind) {
         let i = self.cs.len();
         let c = seed::Cube {
             kind,
-            body: vec![seed::Location {
-                x: self.x,
-                y: self.h,
-            }],
+            body: vec![seed::Point::new(self.x, self.h)],
             command: None,
         };
 
@@ -220,7 +217,7 @@ impl LevelBuilder {
         {
             None => Err(Error::Uncopiable { position: (x, y) }),
             Some((i, c)) => {
-                c.body.push(seed::Location { x: x + 1, y });
+                c.body.push(seed::Point::new(x + 1, y));
                 self.make(Some(i));
                 Ok(())
             }
@@ -237,7 +234,7 @@ impl LevelBuilder {
         {
             None => Err(Error::Uncopiable { position: (x, y) }),
             Some((i, c)) => {
-                c.body.push(seed::Location { x, y: y + 1 });
+                c.body.push(seed::Point::new(x, y + 1));
                 self.make(Some(i));
                 Ok(())
             }
@@ -276,10 +273,7 @@ impl LevelBuilder {
                 }
                 if let Some(c) = self.cs.get_mut(l) {
                     c.body.append(v.as_mut());
-                    c.body.push(seed::Location {
-                        x: upper.0,
-                        y: left.1,
-                    });
+                    c.body.push(seed::Point::new(upper.0, left.1));
                 }
 
                 // as usual
@@ -307,7 +301,6 @@ impl LevelBuilder {
     }
 }
 
-#[derive(Default)]
 struct Indexer(Vec<Vec<Option<usize>>>);
 
 impl Indexer {
@@ -347,7 +340,6 @@ impl Indexer {
     }
 }
 
-#[derive(Default)]
 struct CommandBuilder(seed::Command);
 
 impl Into<seed::Command> for CommandBuilder {
@@ -365,7 +357,7 @@ impl CommandBuilder {
         })
     }
 
-    fn put(&mut self, movement: behavior::Movement) {
+    fn put(&mut self, movement: Option<seed::Movement>) {
         match self.0.movements.last_mut() {
             Some(c) if c.0 == movement => c.1 += 1,
             _ => self.0.movements.push((movement, 1)),
@@ -375,10 +367,7 @@ impl CommandBuilder {
     fn add(&mut self, number: i32) {
         match self.0.movements.last_mut() {
             Some(c) => c.1 = c.1 + number as usize - 1,
-            _ => self
-                .0
-                .movements
-                .push((behavior::Movement::Idle, number as usize)),
+            _ => self.0.movements.push((None, number as usize)),
         }
     }
 

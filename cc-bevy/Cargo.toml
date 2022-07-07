@@ -1,25 +1,28 @@
 [package]
+edition = "2021"
 name = "cc-bevy"
 version = "0.1.0"
-edition = "2021"
 
 [dependencies]
-# Bery and some plugins
+# Local workspace
+cc-core = {path = "../cc-core"}
+
+# Bery and its plugins
 bevy = "0.7"
-iyes_loopless = "0.5"
-bevy_prototype_lyon = "0.5"
 bevy-inspector-egui = "0.11"
+bevy_prototype_lyon = "0.5"
+iyes_loopless = "0.5"
 
 # Extra utilities
 num-traits = "0.2.15"
-toml = "0.5"
-serde = { version = "1.0", features = ["derive"] }
+serde = {version = "1.0", features = ["derive"]}
 snafu = "0.7"
+toml = "0.5"
 
 # Exception
-anyhow = "1.0.4"
-# Note: Bevy 0.7 has implicit dependency on anyhow, remove it someday
+# Note: Bevy 0.7 has an implicit dependency on anyhow, remove it someday
 # https://github.com/bevyengine/bevy/issues/3138
+anyhow = "1.0.4"
 
 [profile.dev]
 opt-level = 1

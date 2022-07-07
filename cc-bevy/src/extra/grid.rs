@@ -1,9 +1,9 @@
-use crate::model::common::Location;
 use bevy::prelude::*;
 use bevy::{
     math::{Rect, XY},
     window::WindowResized,
 };
+use cc_core::Point;
 use iyes_loopless::prelude::*;
 use num_traits::AsPrimitive;
 
@@ -152,5 +152,30 @@ impl GridMapper {
         let x = self.target.x + delta + (o.x().as_() - self.source.x) as f32 * self.scale;
         let y = self.target.y - delta - (o.y().as_() - self.source.y) as f32 * self.scale;
         Vec2::new(x, y)
+    }
+}
+
+pub trait Location<T> {
+    fn x(&self) -> T;
+    fn y(&self) -> T;
+}
+
+impl<T: Copy> Location<T> for (T, T) {
+    fn x(&self) -> T {
+        self.0
+    }
+
+    fn y(&self) -> T {
+        self.1
+    }
+}
+
+impl<T: Clone> Location<T> for Point<T> {
+    fn x(&self) -> T {
+        self.x.clone()
+    }
+
+    fn y(&self) -> T {
+        self.y.clone()
     }
 }

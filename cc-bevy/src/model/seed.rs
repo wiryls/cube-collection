@@ -1,13 +1,31 @@
-use super::{behavior, common, cube};
 use bevy::reflect::TypeUuid;
+use cc_core::{seed, Diff, Movement, World};
 
-pub struct Seeds {
-    list: Vec<Seed>,
+#[derive(Clone, TypeUuid)]
+#[uuid = "c99b1333-8ad3-4b26-a54c-7de542f43c51"]
+pub struct CubeWorldSeed(seed::Seed);
+
+impl CubeWorldSeed {
+    pub fn new(seed: seed::Seed) -> Self {
+        Self(seed)
+    }
+
+    pub fn height(&self) -> i32 {
+        self.0.size.height
+    }
+
+    pub fn width(&self) -> i32 {
+        self.0.size.width
+    }
+}
+
+pub struct CubeWorldSeeds {
+    list: Vec<CubeWorldSeed>,
     head: usize,
 }
 
-impl Seeds {
-    pub fn current(&self) -> Option<&Seed> {
+impl CubeWorldSeeds {
+    pub fn current(&self) -> Option<&CubeWorldSeed> {
         self.list.get(self.head)
     }
 
@@ -22,8 +40,8 @@ impl Seeds {
     }
 }
 
-impl From<Vec<Seed>> for Seeds {
-    fn from(seeds: Vec<Seed>) -> Self {
+impl From<Vec<CubeWorldSeed>> for CubeWorldSeeds {
+    fn from(seeds: Vec<CubeWorldSeed>) -> Self {
         Self {
             list: seeds,
             head: 0,
@@ -31,51 +49,22 @@ impl From<Vec<Seed>> for Seeds {
     }
 }
 
-#[derive(Clone, TypeUuid)]
-#[uuid = "c99b1333-8ad3-4b26-a54c-7de542f43c51"]
-pub struct Seed {
-    pub info: Info,
-    pub size: Size,
-    pub cubes: Vec<Cube>,
-    pub destnations: Vec<Location>,
+pub struct CubeWorld(/* TODO */);
+
+pub enum Command {
+    Left,
+    Down,
+    Up,
+    Right,
 }
 
-#[derive(Clone, Default)]
-pub struct Info {
-    pub title: String,
-    pub author: String,
-}
-
-#[derive(Clone)]
-pub struct Size {
-    pub width: i32,
-    pub height: i32,
-}
-
-#[derive(Clone)]
-pub struct Cube {
-    pub kind: cube::Type,
-    pub body: Vec<Location>,
-    pub command: Option<Command>,
-}
-
-#[derive(Clone)]
-pub struct Location {
-    pub x: i32,
-    pub y: i32,
-}
-
-impl common::Location<i32> for Location {
-    fn x(&self) -> i32 {
-        self.x
+impl From<Command> for Movement {
+    fn from(command: Command) -> Self {
+        match command {
+            Command::Left => Movement::Left,
+            Command::Down => Movement::Down,
+            Command::Up => Movement::Up,
+            Command::Right => Movement::Right,
+        }
     }
-    fn y(&self) -> i32 {
-        self.y
-    }
-}
-
-#[derive(Clone, Default)]
-pub struct Command {
-    pub is_loop: bool,
-    pub movements: Vec<(behavior::Movement, usize)>,
 }

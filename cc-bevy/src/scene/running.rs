@@ -3,7 +3,7 @@ use iyes_loopless::prelude::*;
 
 use super::state::State;
 use crate::extra::grid::{GridPlugin, GridUpdated, GridView};
-use crate::model::{port, seed};
+use crate::model::{component, seed, system};
 
 /// - input: ```Res<seed::Seeds>```
 /// - output: none
@@ -26,7 +26,7 @@ impl Plugin for RunningScene {
                     .label("rule")
                     .after("flow")
                     .run_in_state(State::Running)
-                    .with_system(port::movement)
+                    .with_system(system::movement)
                     .into(),
             );
     }
@@ -43,9 +43,9 @@ fn setup_world(mut reset: EventWriter<WorldChanged>) {
 
 fn switch_world(
     mut commands: Commands,
-    entities: Query<Entity, With<port::Earthbound>>,
+    entities: Query<Entity, With<component::Earthbound>>,
     mut view: ResMut<GridView>,
-    mut world_seeds: ResMut<seed::Seeds>,
+    mut world_seeds: ResMut<seed::CubeWorldSeeds>,
     mut world_changed: EventReader<WorldChanged>,
 ) {
     let got = !world_changed.is_empty();
@@ -58,12 +58,12 @@ fn switch_world(
     match got.then(|| world_seeds.current()).flatten() {
         None => return,
         Some(seed) => {
-            // [0] update grid view
+            // [0] update grid
             view.set_source(Rect {
                 left: 0,
-                right: seed.size.width,
+                right: seed.width(),
                 top: 0,
-                bottom: seed.size.height,
+                bottom: seed.height(),
             });
 
             // [1] remove old objects
@@ -71,33 +71,16 @@ fn switch_world(
 
             // [2] create new cubes
             let mapper = view.mapping();
-            for c in &seed.cubes {
-                port::spawn_cube(&c, &mut commands, &mapper);
-            }
 
-            // for o in &seed.destnations {
-            //     commands
-            //         .spawn_bundle(SpriteBundle {
-            //             sprite: Sprite {
-            //                 color: Color::rgb(0.1, 0.1, 0.1),
-            //                 ..default()
-            //             },
-            //             transform: Transform {
-            //                 scale: Vec3::new(scale, scale, 1.),
-            //                 translation: mapper.locate(o.x, o.y, 0.),
-            //                 ..default()
-            //             },
-            //             ..default()
-            //         })
-            //         .insert(cube::GridPoint { x: o.x, y: o.y })
-            //         .insert(cube::Live);
+            // for c in &seed.0.cubes {
+            //     port::spawn_cubes(&c, &mut commands, &mapper);
             // }
         }
     }
 }
 
 fn update_scale(
-    mut cubes: Query<(&port::CubeCore, &mut Transform)>,
+    mut cubes: Query<(&component::Cubic, &mut Transform)>,
     mut grid_updated: EventReader<GridUpdated>,
 ) {
     let event = match grid_updated.iter().last() {
@@ -108,7 +91,7 @@ fn update_scale(
     let grid = &event.mapper;
     let scale = grid.scale(1.0);
     for (cube, mut transform) in cubes.iter_mut() {
-        transform.translation = grid.absolute(&cube.body).extend(0.0);
+        transform.translation = grid.absolute(&cube.position).extend(0.0);
         transform.scale = Vec3::new(scale, scale, 1.0);
     }
 }

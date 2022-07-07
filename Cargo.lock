@@ -964,6 +964,7 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_prototype_lyon",
+ "cc-core",
  "iyes_loopless",
  "num-traits",
  "serde",
