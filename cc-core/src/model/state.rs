@@ -172,6 +172,8 @@ impl State {
     }
 
     fn input(&self, input: Option<Movement>) -> Self {
+        // TODO: lots of problems have been found, thus I need to redesign and fix them.
+
         fn suppose<T: BasicCube>(
             cube: &T,
             restriction: Restriction,
@@ -250,6 +252,7 @@ impl State {
                     }
                 }
             } else {
+                // TODO: fix it.
                 for cube in cubes {
                     suppose(&cube, Restriction::Stop, &mut solved, &mut action);
                 }
