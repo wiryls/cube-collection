@@ -1,3 +1,5 @@
+mod refactor;
+
 mod common;
 mod model;
 pub mod seed;
