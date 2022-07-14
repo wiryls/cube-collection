@@ -1,5 +1,9 @@
+use std::rc::Rc;
+
 use super::{
+    item::Item,
     kind::Kind,
+    lookup::{BitmapCollision, Collision, CollisionExtension, HashSetCollision},
     motion::Motion,
     movement::{Constraint, Movement},
     neighborhood::{Adjacence, Neighborhood},
@@ -13,8 +17,8 @@ use super::{
 #[derive(Clone, Debug)]
 pub struct Collection {
     cubes: Vec<Cube>,
-    cache: Box<[Unit]>,
-    // fixed: ,
+    items: Box<[Unit]>,
+    fixed: Rc<Area>,
 }
 
 #[allow(dead_code)]
@@ -58,6 +62,64 @@ struct Unit {
     index: usize,
     position: Point,
     neighborhood: Neighborhood,
+}
+
+#[derive(Debug)]
+pub struct Area {
+    cubes: Box<[(Point, Neighborhood)]>,
+    impassable: BitmapCollision,
+}
+
+#[allow(dead_code)]
+impl Area {
+    pub fn new<'a, I>(width: usize, height: usize, it: I) -> Self
+    where
+        I: Iterator<Item = &'a [Point]>,
+    {
+        let build = |os: &'a [Point]| {
+            let c = HashSetCollision::new(os.iter());
+            os.iter().map(move |&o| (o, c.neighborhood(o)))
+        };
+
+        let cubes = it.flat_map(build).collect::<Box<_>>();
+        let mut impassable = BitmapCollision::new(width, height);
+        cubes.iter().for_each(|x| impassable.put(x.0));
+
+        Self { cubes, impassable }
+    }
+
+    pub fn blocked(&self, point: Point) -> bool {
+        self.impassable.hit(point)
+    }
+
+    pub fn iter(&self, offset: usize) -> AreaIter {
+        AreaIter {
+            offset,
+            iterator: self.cubes.iter().enumerate(),
+        }
+    }
+}
+
+pub struct AreaIter<'a> {
+    offset: usize,
+    iterator: std::iter::Enumerate<std::slice::Iter<'a, (Point, Neighborhood)>>,
+}
+
+impl Iterator for AreaIter<'_> {
+    type Item = Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iterator
+            .next()
+            .map(|(index, (point, neighborhood))| Item {
+                id: (index + self.offset).into(),
+                kind: Kind::White,
+                position: point.clone(),
+                movement: None,
+                constraint: Constraint::Free,
+                neighborhood: neighborhood.clone(),
+            })
+    }
 }
 
 #[allow(dead_code)]

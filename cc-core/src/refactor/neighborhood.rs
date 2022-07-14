@@ -40,6 +40,12 @@ impl Into<Point> for Adjacence {
     }
 }
 
+impl Into<Point> for &Adjacence {
+    fn into(self) -> Point {
+        self.to_owned().into()
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Neighborhood(u8);
 
