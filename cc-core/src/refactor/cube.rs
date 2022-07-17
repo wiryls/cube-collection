@@ -27,10 +27,10 @@ pub struct Collection {
 impl Collection {
     pub fn absorb(&mut self) -> &mut Self {
         let unstable = (0..self.sets.len())
-            .filter_map(|index| Alive::make(index, self).filter(Alive::unstable))
+            .filter_map(|index| Living::make(index, self).filter(Living::unstable))
             .collect::<Vec<_>>();
 
-        let faction = Faction::new::<Alive, _, _>(self, unstable.iter());
+        let faction = Faction::new::<Living, _, _>(self, unstable.iter());
         let mut connect = Connection::new(self);
 
         let mut visit = vec![false; self.number_of_cubes()];
@@ -70,20 +70,25 @@ impl Collection {
             }
         }
 
-        // do some cleaning
+        // do some cleaning.
         self.retain_alive();
         self
     }
 
     pub fn input(&mut self, input: Option<Movement>) {
         // clear and
-        // update movement with input
+        // update movement with input.
         self.todo.clear();
         for cube in self.sets.iter_mut().filter(|cube| cube.kind == Kind::Green) {
             cube.movement = input;
         }
 
-        
+        // parpare
+        let unstable = (0..self.sets.len())
+            .filter_map(|index| Living::make(index, self).filter(Living::unstable))
+            .collect::<Vec<_>>();
+
+        let moving = (0..self.sets.len()).filter_map(|index| Moving::make(index, self));
 
         todo!()
     }
@@ -358,19 +363,23 @@ impl<'a> Faction<'a> {
         Self(faction, collection)
     }
 
-    fn get(&self, point: Point) -> Option<Alive<'a>> {
+    fn get(&self, point: Point) -> Option<Living<'a>> {
         self.0
             .get(point)
-            .and_then(|index| Alive::make(index, self.1))
+            .and_then(|index| Living::make(index, self.1))
     }
 
-    fn neighbors<T>(&'a self, cube: &T) -> impl Iterator<Item = Alive<'a>> + Clone + '_
+    fn neighbors<T>(&self, cube: &T) -> impl Iterator<Item = Living> + Clone + '_
     where
         T: Cubic<'a>,
     {
         let cube = cube.value();
         let anchor = Outlines::anchor(&cube.units);
         cube.outlines.all(anchor).filter_map(|o| self.get(o))
+    }
+
+    fn neighbors_in_front(&self, cube: &Moving<'a>) -> impl Iterator<Item = Living> + Clone + '_ {
+        cube.frontlines().filter_map(|o| self.get(o))
     }
 }
 
@@ -444,7 +453,7 @@ trait Cubic<'a> {
     fn owner(&self) -> &'a Collection;
 }
 
-impl<'a> Cubic<'a> for Alive<'a> {
+impl<'a> Cubic<'a> for Living<'a> {
     fn index(&self) -> usize {
         self.index
     }
@@ -484,25 +493,62 @@ impl<'a, T: Cubic<'a>> CubicExtension for T {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
-struct Alive<'a> {
+struct Living<'a> {
     index: usize,
     value: &'a Cube,
     owner: &'a Collection,
 }
 
-impl<'a> Alive<'a> {
+impl<'a> Living<'a> {
     fn make(index: usize, owner: &'a Collection) -> Option<Self> {
         owner
             .sets
             .get(index)
             .filter(|cube| cube.alive())
-            .map(|value| Alive {
+            .map(|value| Self {
                 value,
                 index,
                 owner,
             })
+    }
+
+    fn into_moving(self) -> Option<Moving<'a>> {
+        self.value.movement.map(|movement| Moving {
+            index: self.index,
+            value: self.value,
+            owner: self.owner,
+            movement,
+        })
+    }
+}
+
+#[derive(Debug)]
+struct Moving<'a> {
+    index: usize,
+    value: &'a Cube,
+    owner: &'a Collection,
+    movement: Movement,
+}
+
+impl<'a> Moving<'a> {
+    fn make(index: usize, owner: &'a Collection) -> Option<Self> {
+        owner
+            .sets
+            .get(index)
+            .filter(|cube| cube.movement.is_some() && cube.alive())
+            .map(|value| Self {
+                value,
+                index,
+                owner,
+                movement: value.movement.unwrap(),
+            })
+    }
+
+    fn frontlines(&self) -> impl Iterator<Item = Point> + Clone + 'a {
+        let movement = self.movement;
+        let anchor = Outlines::anchor(&self.value.units);
+        self.value.outlines.one(anchor, movement)
     }
 }
 
