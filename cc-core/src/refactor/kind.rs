@@ -1,5 +1,5 @@
 #[allow(dead_code)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum Kind {
     White,
     Red,
@@ -9,7 +9,7 @@ pub enum Kind {
 
 #[allow(dead_code)]
 impl Kind {
-    pub fn absorbable(&self, that: Self) -> bool {
+    pub fn absorbable(self, that: Self) -> bool {
         use Kind::*;
         match self {
             White => false,
@@ -17,5 +17,9 @@ impl Kind {
             Blue => that == Red,
             Green => that == Blue,
         }
+    }
+
+    pub fn linkable(self, that: Self) -> bool {
+        self != Kind::White && self == that
     }
 }

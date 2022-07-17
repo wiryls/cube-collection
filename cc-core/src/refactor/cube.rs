@@ -1,10 +1,11 @@
-use std::rc::Rc;
+use std::{borrow::Borrow, collections::VecDeque, rc::Rc};
 
 use super::{
+    extension::CollisionExtension,
     item::Item,
     kind::Kind,
-    lookup::{BitmapCollision, Collision, CollisionExtension, HashSetCollision},
-    motion::Motion,
+    lookup::{BitmapCollision, Collision, HashSetCollision},
+    motion::{Agreement, Motion},
     movement::{Constraint, Movement},
     neighborhood::{Adjacence, Neighborhood},
     point::Point,
@@ -16,45 +17,173 @@ use super::{
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct Collection {
-    cubes: Vec<Cube>,
-    items: Box<[Unit]>,
-    fixed: Rc<Area>,
+    area: Rc<Area>,
+    sets: Vec<Cube>,
+    todo: Vec<Vec<usize>>,
+    view: Box<[Unit]>,
 }
 
 #[allow(dead_code)]
 impl Collection {
-    pub fn link(&mut self) {
+    pub fn absorb(&mut self) -> &mut Self {
+        let unstable = (0..self.sets.len())
+            .filter_map(|index| Alive::make(index, self).filter(Alive::unstable))
+            .collect::<Vec<_>>();
+
+        let faction = Faction::new::<Alive, _, _>(self, unstable.iter());
+        let mut connect = Connection::new(self);
+
+        let mut visit = vec![false; self.number_of_cubes()];
+        let mut queue = VecDeque::with_capacity(unstable.len());
+
+        // connect all adjacent cubes.
+        for cube in unstable {
+            if !visit[cube.index] {
+                visit[cube.index] = true;
+                queue.push_back(cube);
+            }
+
+            while let Some(cube) = queue.pop_back() {
+                for other in faction.neighbors(&cube) {
+                    if !visit[other.index] {
+                        connect.join(&cube, &other);
+                        visit[other.index] = true;
+                        queue.push_back(other);
+                    }
+                }
+            }
+        }
+
+        // try to absorb each others.
+        for group in connect.groups() {
+            let mut arena = Arena::new(self);
+            for &index in group.iter() {
+                if !arena.input(index) {
+                    break;
+                }
+            }
+            use ArenaResult::*;
+            match arena.output() {
+                Know(kind) => self.merge_into(group, kind),
+                Draw => self.mark_balanced(group),
+                None => {}
+            }
+        }
+
+        // do some cleaning
+        self.retain_alive();
+        self
+    }
+
+    pub fn input(&mut self, input: Option<Movement>) {
+        // clear and
+        // update movement with input
+        self.todo.clear();
+        for cube in self.sets.iter_mut().filter(|cube| cube.kind == Kind::Green) {
+            cube.movement = input;
+        }
+
+        
+
         todo!()
     }
 
     pub fn next(&mut self) {
+        // clean status
+        // move to next status
         todo!()
     }
 
-    pub fn take(&mut self) {
-        todo!()
+    fn retain_alive(&mut self) {
+        self.sets.retain(Cube::alive);
     }
 
-    pub fn r#move(&mut self, input: Option<Movement>) {
-        todo!()
-    }
-}
+    fn merge_into(&mut self, from: Vec<usize>, into: Kind) {
+        let cube = &mut self.sets;
 
-#[allow(dead_code)]
-#[derive(Clone, Debug)]
-pub struct Cube {
-    index: usize,
-    kind: Kind,
-    units: Vec<Unit>,
-    motion: Motion,
-    outlines: Outlines,
-    movement: Option<Movement>,
-    constraint: Constraint,
-    successors: Vec<usize>,
+        let units = {
+            let size = from.iter().map(|&i| cube[i].units.len()).sum::<usize>();
+            let mut units = Vec::with_capacity(size);
+            for &i in from.iter() {
+                units.append(&mut cube[i].units);
+            }
+            units
+        };
+        let motion = {
+            let mut others = Vec::with_capacity(from.len());
+            for &i in from.iter() {
+                if cube[i].kind == into {
+                    others.push(Motion::take(&mut cube[i].motion));
+                }
+            }
+            Motion::from_iter(others.into_iter())
+        };
+        let outlines = Outlines::new(&units).into();
+        let movement = {
+            let mut agreement = Agreement::new();
+            for &i in from.iter() {
+                if cube[i].kind == into {
+                    agreement.submit(cube[i].movement);
+                    if agreement.fail() {
+                        break;
+                    }
+                }
+            }
+            agreement.result().unwrap_or_default()
+        };
+        let constraint = {
+            let mut constraint = Constraint::Free;
+            for &i in from.iter() {
+                if cube[i].kind == into {
+                    constraint = constraint.max(cube[i].constraint);
+                }
+            }
+            constraint
+        };
+
+        let cube = Cube {
+            kind: into,
+            units,
+            motion,
+            outlines,
+            balanced: false,
+            movement,
+            constraint,
+        };
+
+        self.sets.push(cube);
+    }
+
+    fn mark_balanced(&mut self, whom: Vec<usize>) {
+        for index in whom {
+            self.sets[index].balanced = true;
+        }
+    }
+
+    fn number_of_cubes(&self) -> usize {
+        self.sets.len()
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
 // internal
+
+#[derive(Clone, Debug)]
+struct Cube {
+    kind: Kind,
+    units: Vec<Unit>,
+    motion: Motion,
+    outlines: Rc<Outlines>,     // calculated boundary points
+    balanced: bool,             // state of being unabsorbable
+    movement: Option<Movement>, // original movement direction
+    constraint: Constraint,     // state of movement
+}
+
+impl Cube {
+    fn alive(&self) -> bool {
+        !self.units.is_empty()
+    }
+}
 
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
@@ -76,14 +205,19 @@ impl Area {
     where
         I: Iterator<Item = &'a [Point]>,
     {
-        let build = |os: &'a [Point]| {
-            let c = HashSetCollision::new(os.iter());
-            os.iter().map(move |&o| (o, c.neighborhood(o)))
+        let cubes = {
+            let build = |os: &'a [Point]| {
+                let c = HashSetCollision::new(os.iter());
+                os.iter().map(move |&o| (o, c.neighborhood(o)))
+            };
+            it.flat_map(build).collect::<Box<_>>()
         };
 
-        let cubes = it.flat_map(build).collect::<Box<_>>();
-        let mut impassable = BitmapCollision::new(width, height);
-        cubes.iter().for_each(|x| impassable.put(x.0));
+        let impassable = {
+            let mut it = BitmapCollision::new(width, height);
+            cubes.iter().for_each(|x| it.put(x.0));
+            it
+        };
 
         Self { cubes, impassable }
     }
@@ -123,7 +257,7 @@ impl Iterator for AreaIter<'_> {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 struct Outlines {
     count: [usize; 3],
     slice: Box<[Point]>,
@@ -185,10 +319,10 @@ impl Outlines {
     pub fn one(&self, anchor: Point, m: Movement) -> impl Iterator<Item = Point> + Clone + '_ {
         use Movement::*;
         match m {
-            Left /***/ => &self.slice[..self.count[0]],
+            Left /***/ => &self.slice[ /*      **/ ..self.count[0]],
             Down /***/ => &self.slice[self.count[0]..self.count[1]],
-            Up /*****/ => &self.slice[self.count[1]..self.count[2]],
-            Right /**/ => &self.slice[self.count[2]..],
+            Up /*  **/ => &self.slice[self.count[1]..self.count[2]],
+            Right /**/ => &self.slice[self.count[2].. /*      **/ ],
         }
         .iter()
         .map(move |o| anchor - *o)
@@ -200,6 +334,175 @@ impl Outlines {
 
     fn anchor(units: &[Unit]) -> Point {
         units.first().map(|u| u.position).unwrap_or_default()
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// lookups
+
+struct Faction<'a>(super::lookup::Faction, &'a Collection);
+
+impl<'a> Faction<'a> {
+    fn new<C, B, I>(collection: &'a Collection, it: I) -> Self
+    where
+        I: Iterator<Item = B>,
+        B: Borrow<C>,
+        C: Cubic<'a>,
+    {
+        let faction = super::lookup::Faction::new(it.flat_map(|b| {
+            let cubic = b.borrow();
+            let index = cubic.index();
+            let value = cubic.value();
+            value.units.iter().map(move |unit| (unit.position, index))
+        }));
+        Self(faction, collection)
+    }
+
+    fn get(&self, point: Point) -> Option<Alive<'a>> {
+        self.0
+            .get(point)
+            .and_then(|index| Alive::make(index, self.1))
+    }
+
+    fn neighbors<T>(&'a self, cube: &T) -> impl Iterator<Item = Alive<'a>> + Clone + '_
+    where
+        T: Cubic<'a>,
+    {
+        let cube = cube.value();
+        let anchor = Outlines::anchor(&cube.units);
+        cube.outlines.all(anchor).filter_map(|o| self.get(o))
+    }
+}
+
+struct Connection<'a>(super::lookup::DisjointSet, &'a Collection);
+
+impl<'a> Connection<'a> {
+    fn new(collection: &'a Collection) -> Self {
+        let number = collection.number_of_cubes();
+        Self(super::lookup::DisjointSet::new(number), collection)
+    }
+
+    fn join<'b, L: Cubic<'b>, R: Cubic<'b>>(&mut self, this: &'b L, that: &'b R) {
+        self.0.join(this.index(), that.index());
+    }
+
+    fn groups(self) -> super::lookup::DisjointSetGroups {
+        self.0.groups()
+    }
+}
+
+struct Arena<'a>([bool; 3], &'a Collection);
+
+enum ArenaResult {
+    Know(Kind),
+    Draw,
+    None,
+}
+
+impl<'a> Arena<'a> {
+    fn new(collection: &'a Collection) -> Self {
+        Self([false; 3], collection)
+    }
+
+    fn input(&mut self, i: usize) -> bool {
+        if let Some(index) = self.1.sets.get(i).and_then(|x| Self::kind_to_index(x.kind)) {
+            self.0[index] = true;
+        };
+
+        !(self.0[0] && self.0[1] && self.0[2])
+    }
+
+    fn output(&self) -> ArenaResult {
+        use ArenaResult::*;
+        use Kind::*;
+        match (self.0[0], self.0[1], self.0[2]) {
+            (true, true, true) => Draw,
+            (true, true, false) => Know(Blue),
+            (true, false, true) => Know(Red),
+            (false, true, true) => Know(Green),
+            _ => None,
+        }
+    }
+
+    const fn kind_to_index(kind: Kind) -> Option<usize> {
+        use Kind::*;
+        match kind {
+            White => None,
+            Red => Some(0),
+            Blue => Some(1),
+            Green => Some(2),
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Collected
+
+trait Cubic<'a> {
+    fn index(&self) -> usize;
+    fn value(&self) -> &'a Cube;
+    fn owner(&self) -> &'a Collection;
+}
+
+impl<'a> Cubic<'a> for Alive<'a> {
+    fn index(&self) -> usize {
+        self.index
+    }
+
+    fn value(&self) -> &'a Cube {
+        self.value
+    }
+
+    fn owner(&self) -> &'a Collection {
+        self.owner
+    }
+}
+
+trait CubicExtension {
+    fn kind(&self) -> Kind;
+    fn unstable(&self) -> bool;
+    fn linkable<T: CubicExtension>(&self, that: &T) -> bool;
+    fn absorbable<T: CubicExtension>(&self, that: &T) -> bool;
+}
+
+impl<'a, T: Cubic<'a>> CubicExtension for T {
+    fn kind(&self) -> Kind {
+        self.value().kind
+    }
+
+    fn unstable(&self) -> bool {
+        let cube = self.value();
+        !cube.balanced && cube.kind != Kind::White
+    }
+
+    fn linkable<U: CubicExtension>(&self, that: &U) -> bool {
+        self.kind().linkable(that.kind())
+    }
+
+    fn absorbable<U: CubicExtension>(&self, that: &U) -> bool {
+        self.unstable() && that.unstable() && self.kind().absorbable(that.kind())
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Debug)]
+struct Alive<'a> {
+    index: usize,
+    value: &'a Cube,
+    owner: &'a Collection,
+}
+
+impl<'a> Alive<'a> {
+    fn make(index: usize, owner: &'a Collection) -> Option<Self> {
+        owner
+            .sets
+            .get(index)
+            .filter(|cube| cube.alive())
+            .map(|value| Alive {
+                value,
+                index,
+                owner,
+            })
     }
 }
 

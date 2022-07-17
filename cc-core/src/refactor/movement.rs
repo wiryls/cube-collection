@@ -53,9 +53,10 @@ impl Into<Point> for Movement {
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Constraint {
-    Free,
-    Lock,
-    Stop,
+    Free, // free to move
+    Pong, // hit other cubes
+    Lock, // blocked as competing on the same point
+    Stop, // obstacles on the path
 }
 
 impl Default for Constraint {

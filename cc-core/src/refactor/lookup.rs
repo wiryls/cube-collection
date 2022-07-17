@@ -1,6 +1,9 @@
-use std::{borrow::Borrow, collections::HashSet};
+use std::{
+    borrow::Borrow,
+    collections::{HashMap, HashSet},
+};
 
-use super::{neighborhood::Neighborhood, point::Point};
+use super::point::Point;
 
 /////////////////////////////////////////////////////////////////////////////
 // Collision
@@ -72,17 +75,103 @@ impl Collision for BitmapCollision {
     }
 }
 
-pub trait CollisionExtension {
-    fn neighborhood(&self, point: Point) -> Neighborhood;
+/////////////////////////////////////////////////////////////////////////////
+// DisjointSet
+
+#[allow(dead_code)]
+pub struct DisjointSet {
+    parents: Box<[Option<usize>]>,
+    existed: Vec<usize>,
 }
 
-impl<T: Collision> CollisionExtension for T {
-    fn neighborhood(&self, point: Point) -> Neighborhood {
-        Neighborhood::from(
-            Neighborhood::AROUND
-                .into_iter()
-                .filter(|o| self.hit(point + o.into())),
-        )
+pub type DisjointSetGroups = std::collections::hash_map::IntoValues<usize, Vec<usize>>;
+
+#[allow(dead_code)]
+impl DisjointSet {
+    pub fn new(size: usize) -> Self {
+        Self {
+            parents: vec![None; size].into(),
+            existed: Vec::with_capacity(size / 2),
+        }
+    }
+
+    pub fn join<T: Into<usize>, U: Into<usize>>(&mut self, this: T, that: U) {
+        let this = this.into();
+        let that = that.into();
+        if this < self.parents.len() && that < self.parents.len() && this != that {
+            let that = *self.root_mut(that);
+            let this = self.root_mut(this);
+            if *this != that {
+                *this = that;
+            }
+        }
+    }
+
+    pub fn groups(self) -> DisjointSetGroups {
+        let hint = self.existed.len();
+        let mut pair = HashMap::with_capacity(hint);
+        for value in self.existed {
+            pair.entry(Self::root(&self.parents, value))
+                .or_insert_with(|| Vec::with_capacity(hint))
+                .push(value);
+        }
+        pair.into_values()
+    }
+
+    fn root(this: &[Option<usize>], mut index: usize) -> usize {
+        loop {
+            if let Some(upper) = this[index] {
+                if upper != index {
+                    index = upper;
+                    continue;
+                }
+            }
+            break;
+        }
+        index
+    }
+
+    fn root_mut(&mut self, mut index: usize) -> &mut usize {
+        let mut root = index;
+        loop {
+            let upper = self.parent_mut(root);
+            if *upper == root {
+                break;
+            }
+            root = *upper;
+        }
+
+        while index != root {
+            let upper = self.parent_mut(index);
+            index = *upper;
+            *upper = root;
+        }
+
+        // we have to call it again to avoid non-lexical lifetime issue:
+        // https://github.com/rust-lang/rust/issues/21906
+        self.parent_mut(root)
+    }
+
+    fn parent_mut(&mut self, index: usize) -> &mut usize {
+        self.parents[index].get_or_insert_with(|| {
+            self.existed.push(index);
+            index
+        })
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// Faction
+
+pub struct Faction(HashMap<Point, usize>);
+
+impl Faction {
+    pub fn new(it: impl Iterator<Item = (Point, usize)>) -> Self {
+        Self(it.collect())
+    }
+
+    pub fn get(&self, point: Point) -> Option<usize> {
+        self.0.get(&point).cloned()
     }
 }
 
@@ -113,5 +202,40 @@ mod tests {
         case(BitmapCollision::new(5, 3), "5x3 bitmap");
         case(BitmapCollision::new(10, 10), "10x10 bitmap");
         case(HashSetCollision::new::<Point, _>([].into_iter()), "hashset");
+    }
+
+    #[test]
+    fn disjoint_set() {
+        let cases = [
+            (0, vec![], vec![]),
+            (
+                10,
+                vec![(1, 3), (7, 9), (5, 7), (9usize, 3usize)],
+                vec![vec![1, 3, 5, 7, 9usize]],
+            ),
+            (
+                10,
+                vec![(6, 1), (3, 1), (9, 1), (0, 2)],
+                vec![vec![0, 2], vec![1, 3, 6, 9]],
+            ),
+        ];
+
+        for (i, case) in cases.into_iter().enumerate() {
+            let mut lookup = DisjointSet::new(case.0);
+            for link in case.1 {
+                lookup.join(link.0, link.1);
+            }
+
+            let mut out = lookup
+                .groups()
+                .map(|mut x| {
+                    x.sort();
+                    x
+                })
+                .collect::<Vec<_>>();
+            out.sort_by_key(|x| x.iter().copied().min());
+
+            assert_eq!(case.2, out, "case {}", i);
+        }
     }
 }

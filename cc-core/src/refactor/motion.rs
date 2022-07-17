@@ -36,7 +36,7 @@ impl Motion {
         Motion(Any::Team(Team(others)).slim())
     }
 
-    pub fn take(&mut self) -> Self {
+    pub fn r#take(&mut self) -> Self {
         Motion(self.take_inner())
     }
 
@@ -53,6 +53,31 @@ impl Iterator for Motion {
     fn next(&mut self) -> Option<Self::Item> {
         self.0 = self.take_inner().slim();
         self.0.next()
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct Agreement(Option<Option<Option<Movement>>>);
+
+impl Agreement {
+    pub fn new() -> Self {
+        Self(Some(None))
+    }
+
+    pub fn submit(&mut self, choice: Option<Movement>) {
+        match self.0 {
+            Some(Some(movement)) if movement != choice => self.0 = None,
+            Some(None) => self.0 = Some(Some(choice)),
+            _ => {}
+        };
+    }
+
+    pub fn fail(&self) -> bool {
+        self.0 == None
+    }
+
+    pub fn result(&self) -> Option<Option<Movement>> {
+        self.0.flatten()
     }
 }
 
@@ -133,17 +158,11 @@ impl Iterator for Team {
     fn next(&mut self) -> Option<Self::Item> {
         // I need retain_mut
 
-        let mut output = Some(None);
-        let mut submit = |choice: Self::Item| match output {
-            Some(Some(movement)) if movement != choice => output = None,
-            Some(None) => output = Some(Some(choice)),
-            _ => {}
-        };
-
+        let mut agreement = Agreement::new();
         let mut k = 0;
         for i in 0..self.0.len() {
             if let Some(choice) = self.0[i].next() {
-                submit(choice);
+                agreement.submit(choice);
                 if k != i {
                     self.0.swap(i, k);
                 }
@@ -152,7 +171,10 @@ impl Iterator for Team {
         }
         self.0.truncate(k);
 
-        output.unwrap_or(Some(None))
+        match self.0.len() {
+            0 => None,
+            _ => agreement.result().or(Some(None)),
+        }
     }
 }
 

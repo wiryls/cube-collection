@@ -1,4 +1,5 @@
 mod cube;
+mod extension;
 mod item;
 mod kind;
 mod lookup;
