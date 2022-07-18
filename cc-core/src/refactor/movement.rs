@@ -11,6 +11,13 @@ pub enum Movement {
 
 #[allow(dead_code)]
 impl Movement {
+    pub const ALL: [Movement; 4] = [
+        Movement::Left,
+        Movement::Down,
+        Movement::Up,
+        Movement::Right,
+    ];
+
     pub fn opposite(&self) -> Self {
         use Movement::*;
         match self {

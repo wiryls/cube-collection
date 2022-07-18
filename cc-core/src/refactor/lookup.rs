@@ -166,8 +166,12 @@ impl DisjointSet {
 pub struct Faction(HashMap<Point, usize>);
 
 impl Faction {
-    pub fn new(it: impl Iterator<Item = (Point, usize)>) -> Self {
-        Self(it.collect())
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(HashMap::with_capacity(capacity))
+    }
+
+    pub fn put(&mut self, key: Point, value: usize) {
+        self.0.insert(key, value);
     }
 
     pub fn get(&self, point: Point) -> Option<usize> {
