@@ -180,6 +180,36 @@ impl Faction {
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// Successors
+
+pub struct Successors(Box<[Option<HashSet<usize>>]>, HashSet<usize>);
+
+pub type SuccessorIter<'a> = std::collections::hash_set::Iter<'a, usize>;
+
+impl Successors {
+    pub fn new(maximum: usize) -> Self {
+        Self(vec![None; maximum].into_boxed_slice(), HashSet::new())
+    }
+
+    pub fn add<L: Into<usize>, R: Into<usize>>(&mut self, parent: L, child: R) {
+        let parent = parent.into();
+        let child = child.into();
+        if let Some(set) = self.0.get_mut(parent) {
+            set.get_or_insert_with(|| HashSet::with_capacity(8))
+                .insert(child);
+        }
+    }
+
+    pub fn children<T: Into<usize>>(&self, index: T) -> SuccessorIter {
+        match self.0.get(index.into()) {
+            Some(Some(set)) => set,
+            _fallback_empty => &self.1,
+        }
+        .iter()
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // Tests
 
 #[cfg(test)]

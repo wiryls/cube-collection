@@ -8,10 +8,10 @@ use super::{
     extension::CollisionExtension,
     item::Item,
     kind::Kind,
-    lookup::{BitmapCollision, Collision, HashSetCollision},
+    lookup::{self, BitmapCollision, Collision, DisjointSet, HashSetCollision, Successors},
     motion::{Agreement, Motion},
     movement::{Constraint, Movement},
-    neighborhood::{self, Adjacence, Neighborhood},
+    neighborhood::{Adjacence, Neighborhood},
     point::Point,
 };
 
@@ -29,28 +29,43 @@ pub struct Collection {
 
 #[allow(dead_code)]
 impl Collection {
-    pub fn absorb(&mut self) -> &mut Self {
+    pub fn next(&mut self) {
+        // clean status
+        // move to next status
+        todo!()
+    }
+
+    pub fn input(&mut self, input: Option<Movement>) {
+        for cube in self.sets.iter_mut().filter(|cube| cube.kind == Kind::Green) {
+            cube.movement = input;
+        }
+    }
+
+    pub fn retain_alive(&mut self) {
+        self.sets.retain(Cube::alive);
+    }
+
+    pub fn absorb(&mut self) {
         let number_of_cubes = self.number_of_cubes();
         let unstable = (0..number_of_cubes)
             .filter_map(|index| Living::make(index, self).filter(Living::unstable));
 
-        let faction = Faction::new::<Living, _, _>(self, unstable.clone());
-        let mut connect = Connection::new(self);
-
-        let mut visit = vec![false; number_of_cubes];
-        let mut queue = VecDeque::with_capacity(number_of_cubes);
+        let faction = Faction::new(self, unstable.clone());
+        let mut connection = Connection::new(number_of_cubes);
 
         // connect all adjacent cubes.
+        let mut visit = vec![false; number_of_cubes];
+        let mut queue = VecDeque::with_capacity(number_of_cubes);
         for cube in unstable {
             if !visit[cube.index] {
                 visit[cube.index] = true;
                 queue.push_back(cube);
             }
 
-            while let Some(cube) = queue.pop_back() {
+            while let Some(cube) = queue.pop_front() {
                 for other in faction.neighbors(&cube) {
                     if !visit[other.index] {
-                        connect.join(&cube, &other);
+                        connection.join(&cube, &other);
                         visit[other.index] = true;
                         queue.push_back(other);
                     }
@@ -59,7 +74,7 @@ impl Collection {
         }
 
         // try to absorb each others.
-        for group in connect.groups() {
+        for group in connection.groups() {
             let mut arena = Arena::new(self);
             for &index in group.iter() {
                 if !arena.input(index) {
@@ -68,89 +83,109 @@ impl Collection {
             }
             use ArenaResult::*;
             match arena.output() {
-                Have(kind) => self.link_to_first(group, kind),
+                Have(kind) => self.link_into_first(group, kind),
                 Draw => self.mark_balanced(group),
-                None => {}
+                _ => {}
             }
         }
-
-        // do some cleaning.
-        self.retain_alive();
-        self
     }
 
-    pub fn input(&mut self, input: Option<Movement>) {
-        // clear and
-        // update movement with input.
-        self.link.clear();
-        for cube in self.sets.iter_mut().filter(|cube| cube.kind == Kind::Green) {
-            cube.movement = input;
-        }
-
-        // prepare
+    fn perform_stopping(&mut self) -> Successors {
         let number_of_cubes = self.number_of_cubes();
-        let unstable = (0..number_of_cubes).filter_map(|index| Living::make(index, self));
-        let faction = Faction::new::<Living, _, _>(self, unstable);
-        let mut connect = Connection::new(self);
+        let livings = (0..number_of_cubes).filter_map(|index| Living::make(index, self));
+        let faction = Faction::new(self, livings);
+        let mut found = Vec::new();
+        let mut connection = Connection::new(number_of_cubes);
+        let mut successors = Successors::new(number_of_cubes);
 
-        let moving = (0..number_of_cubes)
-            .filter_map(|index| Moving::make(index, self))
-            .collect::<Vec<_>>();
-
-        for cube in moving.iter() {
+        // find explicit blocked cubes.
+        for cube in (0..number_of_cubes).filter_map(|index| Moving::make(index, self)) {
             let mut blocked = cube.frontlines().any(|o| self.area.blocked(o));
 
             if !blocked {
-                let neighbors = faction.neighbors_in_front(cube).collect::<HashSet<_>>();
-                for other in neighbors.iter().map(Living::as_moving) {
-                    blocked = !matches!(other, Some(other) if cube.movement() == other.movement() || cube.linkable(&other));
-                    if blocked {
-                        break;
+                let neighbors = faction.neighbors_in_front(&cube).collect::<HashSet<_>>();
+                blocked = neighbors
+                    .iter()
+                    .any(|other| !cube.same_direction(other) && !cube.linkable(other));
+
+                if !blocked {
+                    for other in neighbors.iter() {
+                        if !cube.same_direction(other) && cube.linkable(other) {
+                            blocked = true;
+                            found.push(other.index());
+                            connection.join(&cube, other);
+                        }
                     }
                 }
 
                 if !blocked {
-                    // for other in neighbors.iter() {
-                    //     if cube.movement() != other.movement() && cube.linkable(&other) {
-                    //         blocked = true;
-                    //         connect.join(cube, &other);
-                    //         // TODO: mark other as Stop.
-                    //         // TODO: add other to seeds.
-                    //     }
-                    // }
-                }
-
-                if !blocked {
-                    for other in neighbors {
-                        if let Some(other) = other.as_moving() {
-                            if cube.movement() == other.movement() {
-                                // TODO: mark cube as a successor of other.
-                            }
+                    for other in neighbors.iter() {
+                        if cube.same_direction(other) {
+                            successors.add(other, &cube);
                         }
                     }
                 }
             }
 
             if blocked {
-                // TODO: mark cube as Stop.
-                // TODO: add cube to seeds.
+                found.push(cube.index());
             }
         }
 
+        // collect them and try to connect.
+        let mut visit = HashSet::with_capacity(number_of_cubes);
+        let mut queue = VecDeque::with_capacity(number_of_cubes);
+        for index in found {
+            if visit.insert(index) {
+                queue.push_back(index);
+            }
+
+            while let Some(owner) = queue.pop_front() {
+                for &child in successors.children(owner) {
+                    if visit.insert(index) {
+                        queue.push_back(child);
+                    }
+
+                    let cube = &self.sets;
+                    if Cube::linkable(&cube[owner], &cube[child]) {
+                        connection.join(owner, child);
+                    }
+                }
+            }
+        }
+
+        // try to absorb each others.
+        for group in connection.groups() {
+            let mut arena = Arena::new(self);
+            for &index in group.iter() {
+                arena.input(index);
+            }
+            if let ArenaResult::Pure(kind) = arena.output() {
+                self.link_into_first(group, kind);
+            }
+        }
+
+        // mark all visited as stopped.
+        for index in visit {
+            self.sets[index].constraint = Constraint::Stop;
+        }
+
+        // reuse it!
+        successors
+    }
+
+    fn perform_locking(&mut self, successors: Successors) {
+        // let number_of_cubes = self.number_of_cubes();
+        // let livings = (0..number_of_cubes).filter_map(|index| Living::make(index, self));
+        // let faction = Faction::new(self, livings);
+        // let mut found = Vec::new();
+        // let mut connection = Connection::new(number_of_cubes);
+        // let mut successors = Successors::new(number_of_cubes);
+
         todo!()
     }
 
-    pub fn next(&mut self) {
-        // clean status
-        // move to next status
-        todo!()
-    }
-
-    fn retain_alive(&mut self) {
-        self.sets.retain(Cube::alive);
-    }
-
-    fn link_to_first(&mut self, from: Vec<usize>, kind: Kind) {
+    fn link_into_first(&mut self, from: Vec<usize>, kind: Kind) {
         let cube = &mut self.sets;
 
         let units = {
@@ -238,6 +273,10 @@ impl Cube {
 
     fn unstable(&self) -> bool {
         !self.balanced && self.kind != Kind::White
+    }
+
+    fn linkable(&self, that: &Self) -> bool {
+        self.kind.absorbable(that.kind)
     }
 }
 
@@ -396,7 +435,7 @@ impl Outlines {
 /////////////////////////////////////////////////////////////////////////////
 // lookups
 
-struct Faction<'a>(super::lookup::Faction, &'a Collection);
+struct Faction<'a>(lookup::Faction, &'a Collection);
 
 impl<'a> Faction<'a> {
     fn new<C, B, I>(collection: &'a Collection, it: I) -> Self
@@ -405,7 +444,7 @@ impl<'a> Faction<'a> {
         B: Borrow<C>,
         C: Cubic<'a>,
     {
-        let mut faction = super::lookup::Faction::with_capacity(
+        let mut faction = lookup::Faction::with_capacity(
             it.clone()
                 .map(|x| x.borrow().value().units.len())
                 .sum::<usize>(),
@@ -438,28 +477,14 @@ impl<'a> Faction<'a> {
     }
 }
 
-struct Connection<'a>(super::lookup::DisjointSet, &'a Collection);
-
-impl<'a> Connection<'a> {
-    fn new(collection: &'a Collection) -> Self {
-        let number = collection.number_of_cubes();
-        Self(super::lookup::DisjointSet::new(number), collection)
-    }
-
-    fn join<'b, L: Cubic<'b>, R: Cubic<'b>>(&mut self, this: &'b L, that: &'b R) {
-        self.0.join(this.index(), that.index());
-    }
-
-    fn groups(self) -> super::lookup::DisjointSetGroups {
-        self.0.groups()
-    }
-}
+type Connection = DisjointSet;
 
 struct Arena<'a>([bool; 3], &'a Collection);
 
 enum ArenaResult {
     Have(Kind),
     Draw,
+    Pure(Kind),
     None,
 }
 
@@ -488,9 +513,12 @@ impl<'a> Arena<'a> {
             | ((self.0[2] as usize) << 0)
         {
             0b111 => Draw,
-            0b110 => Have(Blue),
             0b101 => Have(Red),
+            0b110 => Have(Blue),
             0b011 => Have(Green),
+            0b001 => Pure(Red),
+            0b010 => Pure(Blue),
+            0b100 => Pure(Green),
             _else => None,
         }
     }
@@ -512,7 +540,6 @@ impl<'a> Arena<'a> {
 trait Cubic<'a> {
     fn index(&self) -> usize;
     fn value(&self) -> &'a Cube;
-    fn owner(&self) -> &'a Collection;
 }
 
 impl<'a> Cubic<'a> for Living<'a> {
@@ -522,10 +549,6 @@ impl<'a> Cubic<'a> for Living<'a> {
 
     fn value(&self) -> &'a Cube {
         self.value
-    }
-
-    fn owner(&self) -> &'a Collection {
-        self.owner
     }
 }
 
@@ -537,17 +560,14 @@ impl<'a> Cubic<'a> for Moving<'a> {
     fn value(&self) -> &'a Cube {
         self.value
     }
-
-    fn owner(&self) -> &'a Collection {
-        self.owner
-    }
 }
 
 trait CubicExtension<'a>: Cubic<'a> {
     fn kind(&self) -> Kind;
     fn unstable(&self) -> bool;
-    fn linkable<T: CubicExtension<'a>>(&self, that: &T) -> bool;
-    fn absorbable<T: CubicExtension<'a>>(&self, that: &T) -> bool;
+    fn linkable<U: CubicExtension<'a>>(&self, that: &U) -> bool;
+    fn absorbable<U: CubicExtension<'a>>(&self, that: &U) -> bool;
+    fn same_direction<U: CubicExtension<'a>>(&self, that: &U) -> bool;
 }
 
 impl<'a, T: Cubic<'a>> CubicExtension<'a> for T {
@@ -566,13 +586,16 @@ impl<'a, T: Cubic<'a>> CubicExtension<'a> for T {
     fn absorbable<U: CubicExtension<'a>>(&self, that: &U) -> bool {
         self.unstable() && that.unstable() && self.kind().absorbable(that.kind())
     }
+
+    fn same_direction<U: CubicExtension<'a>>(&self, that: &U) -> bool {
+        self.value().movement == that.value().movement
+    }
 }
 
 #[derive(Debug)]
 struct Living<'a> {
     index: usize,
     value: &'a Cube,
-    owner: &'a Collection,
 }
 
 impl<'a> Living<'a> {
@@ -581,18 +604,13 @@ impl<'a> Living<'a> {
             .sets
             .get(index)
             .filter(|cube| cube.alive())
-            .map(|value| Self {
-                value,
-                index,
-                owner,
-            })
+            .map(|value| Self { value, index })
     }
 
-    fn as_moving(&self) -> Option<Moving<'a>> {
+    fn as_moving(&self) -> Option<Moving> {
         self.value.movement.map(|movement| Moving {
             index: self.index,
             value: self.value,
-            owner: self.owner,
             movement,
         })
     }
@@ -612,11 +630,16 @@ impl PartialEq for Living<'_> {
 
 impl Eq for Living<'_> {}
 
+impl From<&Living<'_>> for usize {
+    fn from(it: &Living) -> Self {
+        it.index
+    }
+}
+
 #[derive(Debug)]
 struct Moving<'a> {
     index: usize,
     value: &'a Cube,
-    owner: &'a Collection,
     movement: Movement,
 }
 
@@ -629,7 +652,6 @@ impl<'a> Moving<'a> {
             .map(|value| Self {
                 value,
                 index,
-                owner,
                 movement: value.movement.unwrap(),
             })
     }
@@ -642,6 +664,12 @@ impl<'a> Moving<'a> {
         let movement = self.movement;
         let anchor = Outlines::anchor(&self.value.units);
         self.value.outlines.one(anchor, movement)
+    }
+}
+
+impl From<&Moving<'_>> for usize {
+    fn from(it: &Moving) -> Self {
+        it.index
     }
 }
 
