@@ -162,7 +162,10 @@ impl Collection {
         }
 
         // try to absorb each others.
-        let successors = successors.take();
+        let successors = {
+            successors.drop(Constraint::Stop);
+            successors.take()
+        };
         for group in connection.groups() {
             let mut arena = Arena::new(self);
             for &index in group.iter() {
@@ -522,7 +525,8 @@ struct Successors<'a>(DirectedGraph, &'a Collection);
 
 impl<'a> Successors<'a> {
     fn new(collection: &'a Collection) -> Self {
-        Self(DirectedGraph::new(collection.number_of_cubes()), collection)
+        let capacity = collection.number_of_cubes();
+        Self(DirectedGraph::with_capacity(capacity), collection)
     }
 
     fn from(successors: DirectedGraph, collection: &'a Collection) -> Self {
@@ -537,6 +541,11 @@ impl<'a> Successors<'a> {
         self.0
             .connected(index)
             .filter_map(|&index| self.1.cube.get(index))
+    }
+
+    fn drop(&mut self, constraint: Constraint) -> &mut Self {
+        self.0.retain(|i| self.1.cube[i].constraint < constraint);
+        self
     }
 
     fn take(self) -> DirectedGraph {

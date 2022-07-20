@@ -182,28 +182,35 @@ impl Faction {
 /////////////////////////////////////////////////////////////////////////////
 // Successors
 
-pub struct DirectedGraph(Box<[Option<HashSet<usize>>]>, HashSet<usize>);
+pub struct DirectedGraph(HashMap<usize, HashSet<usize>>, HashSet<usize>);
 
 pub type DirectedGraphNodeIter<'a> = std::collections::hash_set::Iter<'a, usize>;
 
 impl DirectedGraph {
-    pub fn new(maximum: usize) -> Self {
-        Self(vec![None; maximum].into_boxed_slice(), HashSet::new())
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(HashMap::with_capacity(capacity), HashSet::new())
     }
 
     pub fn add<F: Into<usize>, T: Into<usize>>(&mut self, from: F, to: T) {
-        if let Some(set) = self.0.get_mut(from.into()) {
-            let default = || HashSet::with_capacity(8);
-            set.get_or_insert_with(default).insert(to.into());
-        }
+        self.0
+            .entry(from.into())
+            .or_insert_with(|| HashSet::with_capacity(8))
+            .insert(to.into());
     }
 
     pub fn connected<T: Into<usize>>(&self, index: T) -> DirectedGraphNodeIter {
-        match self.0.get(index.into()) {
-            Some(Some(set)) => set,
-            _fallback_empty => &self.1,
+        match self.0.get(&index.into()) {
+            Some(set) => set,
+            _fallback => &self.1,
         }
         .iter()
+    }
+
+    pub fn retain<F: FnMut(usize) -> bool>(&mut self, mut filter: F) {
+        self.0.retain(|&index, _| filter(index));
+        self.0
+            .iter_mut()
+            .for_each(|(_, set)| set.retain(|&index| filter(index)));
     }
 }
 
