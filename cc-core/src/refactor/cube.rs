@@ -1,6 +1,5 @@
 use std::{
     collections::{HashSet, VecDeque},
-    ops::Deref,
     rc::Rc,
 };
 
@@ -41,7 +40,7 @@ impl Collection {
         }
     }
 
-    pub fn retain_alive(&mut self) {
+    pub fn bury(&mut self) {
         let len = self.cube.len();
         self.cube.retain(Cube::alive);
         if len != self.cube.len() {
@@ -56,10 +55,7 @@ impl Collection {
 
     pub fn absorb(&mut self) {
         let number_of_cubes = self.number_of_cubes();
-        let unstable = self
-            .cube
-            .iter()
-            .filter(|cube| cube.alive() && cube.unstable());
+        let unstable = self.cube.iter().filter(|u| u.alive() && u.unstable());
 
         let faction = Faction::new(self, unstable.clone());
         let mut connection = Connection::new(number_of_cubes);
@@ -107,7 +103,7 @@ impl Collection {
     fn perform_stopping(&mut self) -> DirectedGraph {
         let number_of_cubes = self.number_of_cubes();
         let faction = Faction::new(self, self.cube.iter().filter(|cube| cube.alive()));
-        let mut found = Vec::new();
+        let mut determined = Vec::new();
         let mut connection = Connection::new(number_of_cubes);
         let mut successors = Successors::new(self);
 
@@ -125,7 +121,7 @@ impl Collection {
                     for &other in neighbors.iter() {
                         if !cube.same_movement(other) && cube.linkable(other) {
                             blocked = true;
-                            found.push(other);
+                            determined.push(other);
                             connection.join(&cube, other);
                         }
                     }
@@ -141,14 +137,14 @@ impl Collection {
             }
 
             if blocked {
-                found.push(cube.into());
+                determined.push(cube.into());
             }
         }
 
         // collect them and try to connect.
         let mut visit = HashSet::with_capacity(number_of_cubes);
         let mut queue = VecDeque::with_capacity(number_of_cubes);
-        for cube in found {
+        for cube in determined {
             if visit.insert(cube.index) {
                 queue.push_back(cube);
             }
@@ -158,7 +154,6 @@ impl Collection {
                     if visit.insert(child.index) {
                         queue.push_back(child);
                     }
-
                     if owner.linkable(child) {
                         connection.join(owner, child);
                     }
@@ -188,14 +183,20 @@ impl Collection {
     }
 
     fn perform_locking(&mut self, successors: DirectedGraph) {
-        // let number_of_cubes = self.number_of_cubes();
+        let number_of_cubes = self.number_of_cubes();
         // let livings = (0..number_of_cubes).filter_map(|index| Living::make(index, self));
         // let faction = Faction::new(self, livings);
         // let mut found = Vec::new();
         // let mut connection = Connection::new(number_of_cubes);
-        // let mut successors = Successors::new(number_of_cubes);
+        let successors = Successors::from(successors, self);
 
         todo!()
+    }
+
+    fn mark_balanced(&mut self, whom: Vec<usize>) {
+        for index in whom {
+            self.cube[index].balanced = true;
+        }
     }
 
     fn link_into_first(&mut self, from: Vec<usize>, kind: Kind) {
@@ -255,12 +256,6 @@ impl Collection {
         }
     }
 
-    fn mark_balanced(&mut self, whom: Vec<usize>) {
-        for index in whom {
-            self.cube[index].balanced = true;
-        }
-    }
-
     fn number_of_cubes(&self) -> usize {
         self.cube.len()
     }
@@ -300,10 +295,9 @@ impl Cube {
 
     fn mergeable(&self, that: &Self) -> bool {
         self.kind.linkable(that.kind)
-            || (!self.balanced
-                && !that.balanced
-                && self.kind.absorbable(that.kind)
-                && that.kind.absorbable(self.kind))
+            || ((self.kind.absorbable(that.kind) || that.kind.absorbable(self.kind))
+                && !self.balanced
+                && !that.balanced)
     }
 
     fn same_movement(&self, that: &Self) -> bool {
@@ -529,6 +523,10 @@ struct Successors<'a>(DirectedGraph, &'a Collection);
 impl<'a> Successors<'a> {
     fn new(collection: &'a Collection) -> Self {
         Self(DirectedGraph::new(collection.number_of_cubes()), collection)
+    }
+
+    fn from(successors: DirectedGraph, collection: &'a Collection) -> Self {
+        Self(successors, collection)
     }
 
     fn add<U: Into<usize>, V: Into<usize>>(&mut self, parent: U, child: V) {
