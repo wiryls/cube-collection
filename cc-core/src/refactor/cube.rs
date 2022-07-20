@@ -1,6 +1,6 @@
 use std::{
-    borrow::Borrow,
     collections::{HashSet, VecDeque},
+    ops::Deref,
     rc::Rc,
 };
 
@@ -8,7 +8,7 @@ use super::{
     extension::CollisionExtension,
     item::Item,
     kind::Kind,
-    lookup::{self, BitmapCollision, Collision, DisjointSet, HashSetCollision, Successors},
+    lookup::{self, BitmapCollision, Collision, DirectedGraph, DisjointSet, HashSetCollision},
     motion::{Agreement, Motion},
     movement::{Constraint, Movement},
     neighborhood::{Adjacence, Neighborhood},
@@ -22,7 +22,7 @@ use super::{
 #[derive(Clone, Debug)]
 pub struct Collection {
     area: Rc<Area>,        // background and obstacles
-    sets: Vec<Cube>,       // cubes (sets of units)
+    cube: Vec<Cube>,       // cubes (sets of units)
     link: Vec<Vec<usize>>, // groups to link
     view: Box<[Unit]>,     // a buffer of output
 }
@@ -36,19 +36,30 @@ impl Collection {
     }
 
     pub fn input(&mut self, input: Option<Movement>) {
-        for cube in self.sets.iter_mut().filter(|cube| cube.kind == Kind::Green) {
+        for cube in self.cube.iter_mut().filter(|cube| cube.kind == Kind::Green) {
             cube.movement = input;
         }
     }
 
     pub fn retain_alive(&mut self) {
-        self.sets.retain(Cube::alive);
+        let len = self.cube.len();
+        self.cube.retain(Cube::alive);
+        if len != self.cube.len() {
+            self.cube
+                .iter_mut()
+                .enumerate()
+                .rev()
+                .take_while(|(index, cube)| *index != cube.index)
+                .for_each(|(index, cube)| cube.index = index);
+        }
     }
 
     pub fn absorb(&mut self) {
         let number_of_cubes = self.number_of_cubes();
-        let unstable = (0..number_of_cubes)
-            .filter_map(|index| Living::make(index, self).filter(Living::unstable));
+        let unstable = self
+            .cube
+            .iter()
+            .filter(|cube| cube.alive() && cube.unstable());
 
         let faction = Faction::new(self, unstable.clone());
         let mut connection = Connection::new(number_of_cubes);
@@ -63,11 +74,14 @@ impl Collection {
             }
 
             while let Some(cube) = queue.pop_front() {
-                for other in faction.neighbors(&cube) {
+                for other in faction.neighbors(cube) {
                     if !visit[other.index] {
-                        connection.join(&cube, &other);
                         visit[other.index] = true;
                         queue.push_back(other);
+
+                        if cube.mergeable(other) {
+                            connection.join(cube, other);
+                        }
                     }
                 }
             }
@@ -90,37 +104,36 @@ impl Collection {
         }
     }
 
-    fn perform_stopping(&mut self) -> Successors {
+    fn perform_stopping(&mut self) -> DirectedGraph {
         let number_of_cubes = self.number_of_cubes();
-        let livings = (0..number_of_cubes).filter_map(|index| Living::make(index, self));
-        let faction = Faction::new(self, livings);
+        let faction = Faction::new(self, self.cube.iter().filter(|cube| cube.alive()));
         let mut found = Vec::new();
         let mut connection = Connection::new(number_of_cubes);
-        let mut successors = Successors::new(number_of_cubes);
+        let mut successors = Successors::new(self);
 
         // find explicit blocked cubes.
-        for cube in (0..number_of_cubes).filter_map(|index| Moving::make(index, self)) {
+        for cube in self.cube.iter().filter_map(Moving::new) {
             let mut blocked = cube.frontlines().any(|o| self.area.blocked(o));
 
             if !blocked {
                 let neighbors = faction.neighbors_in_front(&cube).collect::<HashSet<_>>();
                 blocked = neighbors
                     .iter()
-                    .any(|other| !cube.same_direction(other) && !cube.linkable(other));
+                    .any(|&other| !cube.same_movement(other) && !cube.linkable(other));
 
                 if !blocked {
-                    for other in neighbors.iter() {
-                        if !cube.same_direction(other) && cube.linkable(other) {
+                    for &other in neighbors.iter() {
+                        if !cube.same_movement(other) && cube.linkable(other) {
                             blocked = true;
-                            found.push(other.index());
+                            found.push(other);
                             connection.join(&cube, other);
                         }
                     }
                 }
 
                 if !blocked {
-                    for other in neighbors.iter() {
-                        if cube.same_direction(other) {
+                    for &other in neighbors.iter() {
+                        if cube.same_movement(other) {
                             successors.add(other, &cube);
                         }
                     }
@@ -128,26 +141,25 @@ impl Collection {
             }
 
             if blocked {
-                found.push(cube.index());
+                found.push(cube.into());
             }
         }
 
         // collect them and try to connect.
         let mut visit = HashSet::with_capacity(number_of_cubes);
         let mut queue = VecDeque::with_capacity(number_of_cubes);
-        for index in found {
-            if visit.insert(index) {
-                queue.push_back(index);
+        for cube in found {
+            if visit.insert(cube.index) {
+                queue.push_back(cube);
             }
 
             while let Some(owner) = queue.pop_front() {
-                for &child in successors.children(owner) {
-                    if visit.insert(index) {
+                for child in successors.children(owner) {
+                    if visit.insert(child.index) {
                         queue.push_back(child);
                     }
 
-                    let cube = &self.sets;
-                    if Cube::linkable(&cube[owner], &cube[child]) {
+                    if owner.linkable(child) {
                         connection.join(owner, child);
                     }
                 }
@@ -155,6 +167,7 @@ impl Collection {
         }
 
         // try to absorb each others.
+        let successors = successors.take();
         for group in connection.groups() {
             let mut arena = Arena::new(self);
             for &index in group.iter() {
@@ -167,14 +180,14 @@ impl Collection {
 
         // mark all visited as stopped.
         for index in visit {
-            self.sets[index].constraint = Constraint::Stop;
+            self.cube[index].constraint = Constraint::Stop;
         }
 
         // reuse it!
         successors
     }
 
-    fn perform_locking(&mut self, successors: Successors) {
+    fn perform_locking(&mut self, successors: DirectedGraph) {
         // let number_of_cubes = self.number_of_cubes();
         // let livings = (0..number_of_cubes).filter_map(|index| Living::make(index, self));
         // let faction = Faction::new(self, livings);
@@ -186,7 +199,7 @@ impl Collection {
     }
 
     fn link_into_first(&mut self, from: Vec<usize>, kind: Kind) {
-        let cube = &mut self.sets;
+        let cube = &mut self.cube;
 
         let units = {
             let capacity = from.iter().map(|&i| cube[i].units.len()).sum::<usize>();
@@ -230,6 +243,7 @@ impl Collection {
 
         if let Some(&index) = from.first() {
             cube[index] = Cube {
+                index,
                 kind,
                 units,
                 motion,
@@ -243,12 +257,12 @@ impl Collection {
 
     fn mark_balanced(&mut self, whom: Vec<usize>) {
         for index in whom {
-            self.sets[index].balanced = true;
+            self.cube[index].balanced = true;
         }
     }
 
     fn number_of_cubes(&self) -> usize {
-        self.sets.len()
+        self.cube.len()
     }
 }
 
@@ -257,6 +271,7 @@ impl Collection {
 
 #[derive(Clone, Debug)]
 struct Cube {
+    index: usize,
     kind: Kind,
     units: Vec<Unit>,
     motion: Motion,
@@ -276,7 +291,43 @@ impl Cube {
     }
 
     fn linkable(&self, that: &Self) -> bool {
-        self.kind.absorbable(that.kind)
+        self.kind.linkable(that.kind)
+    }
+
+    fn absorbable(&self, that: &Self) -> bool {
+        !self.balanced && !that.balanced && self.kind.absorbable(that.kind)
+    }
+
+    fn mergeable(&self, that: &Self) -> bool {
+        self.kind.linkable(that.kind)
+            || (!self.balanced
+                && !that.balanced
+                && self.kind.absorbable(that.kind)
+                && that.kind.absorbable(self.kind))
+    }
+
+    fn same_movement(&self, that: &Self) -> bool {
+        self.movement == that.movement
+    }
+}
+
+impl std::hash::Hash for Cube {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.index.hash(state);
+    }
+}
+
+impl PartialEq for Cube {
+    fn eq(&self, other: &Self) -> bool {
+        self.index == other.index
+    }
+}
+
+impl Eq for Cube {}
+
+impl From<&Cube> for usize {
+    fn from(it: &Cube) -> Self {
+        it.index
     }
 }
 
@@ -438,46 +489,62 @@ impl Outlines {
 struct Faction<'a>(lookup::Faction, &'a Collection);
 
 impl<'a> Faction<'a> {
-    fn new<C, B, I>(collection: &'a Collection, it: I) -> Self
+    fn new<C, I>(collection: &'a Collection, it: I) -> Self
     where
-        I: Iterator<Item = B> + Clone,
-        B: Borrow<C>,
-        C: Cubic<'a>,
+        I: Iterator<Item = C> + Clone,
+        C: Into<&'a Cube>,
     {
-        let mut faction = lookup::Faction::with_capacity(
-            it.clone()
-                .map(|x| x.borrow().value().units.len())
-                .sum::<usize>(),
-        );
-        for cube in it {
-            let cubic = cube.borrow();
-            let index = cubic.index();
-            let value = cubic.value();
-            for unit in value.units.iter() {
+        let capacity = it.clone().map(|x| x.into().units.len()).sum::<usize>();
+        let mut faction = lookup::Faction::with_capacity(capacity);
+
+        for source in it {
+            let cube = source.into();
+            let index = cube.index;
+            for unit in cube.units.iter() {
                 faction.put(unit.position, index);
             }
         }
         Self(faction, collection)
     }
 
-    fn get(&self, point: Point) -> Option<Living<'a>> {
-        self.0
-            .get(point)
-            .and_then(|index| Living::make(index, self.1))
+    fn get(&self, point: Point) -> Option<&Cube> {
+        self.0.get(point).and_then(|index| self.1.cube.get(index))
     }
 
-    fn neighbors(&self, cube: &impl Cubic<'a>) -> impl Iterator<Item = Living> + Clone + '_ {
-        let cube = cube.value();
+    fn neighbors<T: Into<&'a Cube>>(&self, cube: T) -> impl Iterator<Item = &Cube> + Clone + '_ {
+        let cube = cube.into();
         let anchor = Outlines::anchor(&cube.units);
         cube.outlines.all(anchor).filter_map(|o| self.get(o))
     }
 
-    fn neighbors_in_front(&self, cube: &Moving<'a>) -> impl Iterator<Item = Living> + Clone + '_ {
+    fn neighbors_in_front(&self, cube: &Moving<'a>) -> impl Iterator<Item = &Cube> + Clone + '_ {
         cube.frontlines().filter_map(|o| self.get(o))
     }
 }
 
 type Connection = DisjointSet;
+
+struct Successors<'a>(DirectedGraph, &'a Collection);
+
+impl<'a> Successors<'a> {
+    fn new(collection: &'a Collection) -> Self {
+        Self(DirectedGraph::new(collection.number_of_cubes()), collection)
+    }
+
+    fn add<U: Into<usize>, V: Into<usize>>(&mut self, parent: U, child: V) {
+        self.0.add(parent, child);
+    }
+
+    fn children<T: Into<usize>>(&self, index: T) -> impl Iterator<Item = &Cube> + Clone + '_ {
+        self.0
+            .connected(index)
+            .filter_map(|&index| self.1.cube.get(index))
+    }
+
+    fn take(self) -> DirectedGraph {
+        self.0
+    }
+}
 
 struct Arena<'a>([bool; 3], &'a Collection);
 
@@ -494,11 +561,8 @@ impl<'a> Arena<'a> {
     }
 
     fn input(&mut self, i: usize) -> bool {
-        // try expression is experimental :-(
-        // ```
-        // try { Self::kind_to_index(self.1.sets.get(i)?.kind)? }
-        // ```
-        if let Some(index) = self.1.sets.get(i).and_then(|x| Self::kind_to_index(x.kind)) {
+        // "try" expression is experimental :-(
+        if let Some(index) = self.1.cube.get(i).and_then(|x| Self::kind_to_index(x.kind)) {
             self.0[index] = true;
         };
 
@@ -535,141 +599,55 @@ impl<'a> Arena<'a> {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Cubic
-
-trait Cubic<'a> {
-    fn index(&self) -> usize;
-    fn value(&self) -> &'a Cube;
-}
-
-impl<'a> Cubic<'a> for Living<'a> {
-    fn index(&self) -> usize {
-        self.index
-    }
-
-    fn value(&self) -> &'a Cube {
-        self.value
-    }
-}
-
-impl<'a> Cubic<'a> for Moving<'a> {
-    fn index(&self) -> usize {
-        self.index
-    }
-
-    fn value(&self) -> &'a Cube {
-        self.value
-    }
-}
-
-trait CubicExtension<'a>: Cubic<'a> {
-    fn kind(&self) -> Kind;
-    fn unstable(&self) -> bool;
-    fn linkable<U: CubicExtension<'a>>(&self, that: &U) -> bool;
-    fn absorbable<U: CubicExtension<'a>>(&self, that: &U) -> bool;
-    fn same_direction<U: CubicExtension<'a>>(&self, that: &U) -> bool;
-}
-
-impl<'a, T: Cubic<'a>> CubicExtension<'a> for T {
-    fn kind(&self) -> Kind {
-        self.value().kind
-    }
-
-    fn unstable(&self) -> bool {
-        self.value().unstable()
-    }
-
-    fn linkable<U: CubicExtension<'a>>(&self, that: &U) -> bool {
-        self.kind().linkable(that.kind())
-    }
-
-    fn absorbable<U: CubicExtension<'a>>(&self, that: &U) -> bool {
-        self.unstable() && that.unstable() && self.kind().absorbable(that.kind())
-    }
-
-    fn same_direction<U: CubicExtension<'a>>(&self, that: &U) -> bool {
-        self.value().movement == that.value().movement
-    }
-}
-
-#[derive(Debug)]
-struct Living<'a> {
-    index: usize,
-    value: &'a Cube,
-}
-
-impl<'a> Living<'a> {
-    fn make(index: usize, owner: &'a Collection) -> Option<Self> {
-        owner
-            .sets
-            .get(index)
-            .filter(|cube| cube.alive())
-            .map(|value| Self { value, index })
-    }
-
-    fn as_moving(&self) -> Option<Moving> {
-        self.value.movement.map(|movement| Moving {
-            index: self.index,
-            value: self.value,
-            movement,
-        })
-    }
-}
-
-impl std::hash::Hash for Living<'_> {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.index.hash(state);
-    }
-}
-
-impl PartialEq for Living<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.index == other.index
-    }
-}
-
-impl Eq for Living<'_> {}
-
-impl From<&Living<'_>> for usize {
-    fn from(it: &Living) -> Self {
-        it.index
-    }
-}
+// Moving
 
 #[derive(Debug)]
 struct Moving<'a> {
-    index: usize,
-    value: &'a Cube,
+    cube: &'a Cube,
     movement: Movement,
 }
 
 impl<'a> Moving<'a> {
-    fn make(index: usize, owner: &'a Collection) -> Option<Self> {
-        owner
-            .sets
-            .get(index)
-            .filter(|cube| cube.movement.is_some() && cube.alive())
-            .map(|value| Self {
-                value,
-                index,
-                movement: value.movement.unwrap(),
-            })
-    }
-
-    fn movement(&self) -> Movement {
-        self.movement
+    fn new(cube: &'a Cube) -> Option<Self> {
+        if !cube.alive() {
+            None
+        } else if let Some(movement) = cube.movement {
+            Some(Self { cube, movement })
+        } else {
+            None
+        }
     }
 
     fn frontlines(&self) -> impl Iterator<Item = Point> + Clone + 'a {
         let movement = self.movement;
-        let anchor = Outlines::anchor(&self.value.units);
-        self.value.outlines.one(anchor, movement)
+        let anchor = Outlines::anchor(&self.cube.units);
+        self.cube.outlines.one(anchor, movement)
     }
 }
 
 impl From<&Moving<'_>> for usize {
     fn from(it: &Moving) -> Self {
-        it.index
+        it.cube.index
+    }
+}
+
+impl<'a> From<&Moving<'a>> for &'a Cube {
+    fn from(it: &Moving<'a>) -> Self {
+        it.cube
+    }
+}
+
+impl<'a> From<Moving<'a>> for &'a Cube {
+    fn from(it: Moving<'a>) -> Self {
+        it.cube
+    }
+}
+
+impl<'a> std::ops::Deref for Moving<'a> {
+    type Target = Cube;
+
+    fn deref(&self) -> &'a Self::Target {
+        self.cube
     }
 }
 
