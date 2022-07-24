@@ -1,5 +1,5 @@
 use std::{
-    collections::{HashSet, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     rc::Rc,
 };
 
@@ -162,10 +162,7 @@ impl Collection {
         }
 
         // try to absorb each others.
-        let successors = {
-            successors.drop(Constraint::Stop);
-            successors.take()
-        };
+        let successors = successors.take();
         for group in connection.groups() {
             let mut arena = Arena::new(self);
             for &index in group.iter() {
@@ -185,12 +182,23 @@ impl Collection {
         successors
     }
 
-    fn perform_locking(&mut self, successors: DirectedGraph) {
+    fn perform_locking(&mut self, successors: DirectedGraph) -> HashSet<Race> {
         let number_of_cubes = self.number_of_cubes();
-        // let livings = (0..number_of_cubes).filter_map(|index| Living::make(index, self));
-        // let faction = Faction::new(self, livings);
-        // let mut found = Vec::new();
-        // let mut connection = Connection::new(number_of_cubes);
+        /* number_of_cubes is inaccurate but enough */
+        let mut conflict = Conflict::with_capacity(number_of_cubes);
+
+        self.cube
+            .iter()
+            .filter_map(Moving::new)
+            .filter(|cube| cube.constraint < Constraint::Stop)
+            .for_each(|cube| conflict.put(&cube, cube.movement, cube.frontlines()));
+
+        let mut races = conflict.overlaps();
+        races.retain(|race| race.apply(&mut self.cube));
+        races
+    }
+
+    fn perform_hitting(&mut self, successors: DirectedGraph, conflict: HashSet<Race>) {
         let successors = Successors::from(successors, self);
 
         todo!()
@@ -543,13 +551,80 @@ impl<'a> Successors<'a> {
             .filter_map(|&index| self.1.cube.get(index))
     }
 
-    fn drop(&mut self, constraint: Constraint) -> &mut Self {
-        self.0.retain(|i| self.1.cube[i].constraint < constraint);
-        self
-    }
-
     fn take(self) -> DirectedGraph {
         self.0
+    }
+}
+
+#[derive(Default)]
+struct Conflict(HashMap<Point, Race>);
+
+impl Conflict {
+    fn with_capacity(capacity: usize) -> Self {
+        Self(HashMap::with_capacity(capacity))
+    }
+
+    fn put<T, I>(&mut self, index: T, movement: Movement, outlines: I)
+    where
+        T: Into<usize>,
+        I: Iterator<Item = Point>,
+    {
+        let index = index.into();
+        outlines.for_each(|point| self.0.entry(point).or_default().put(movement, index));
+    }
+
+    fn overlaps(self) -> HashSet<Race> {
+        self.0.into_values().filter(Race::conflict).collect()
+    }
+}
+
+#[derive(Default, PartialEq, Eq, Hash)]
+struct Race {
+    mark: u8,
+    data: [usize; 4],
+}
+
+impl Race {
+    fn put(&mut self, movement: Movement, index: usize) {
+        let i = Self::movement_to_index(movement);
+        self.mark |= Self::index_to_mask(i);
+        self.data[i] = index;
+    }
+
+    fn conflict(&self) -> bool {
+        self.mark & self.mark - 1 != 0
+    }
+
+    fn apply(&self, cube: &mut [Cube]) -> bool {
+        for this in 0..4 {
+            let prev = (this + 3) % 4;
+            let next = (this + 1) % 4;
+
+            todo!()
+        }
+
+        todo!()
+    }
+
+    const fn index_to_mask(index: usize) -> u8 {
+        const MASK: [u8; 4] = [0b0001, 0b0010, 0b0100, 0b1000];
+        MASK[index]
+    }
+
+    const fn index_to_movement(index: usize) -> Movement {
+        use Movement::*;
+        const MOVE: [Movement; 4] = [Left, Down, Right, Up];
+        MOVE[index]
+    }
+
+    const fn movement_to_index(movement: Movement) -> usize {
+        use Movement::*;
+        match movement {
+            Left => 0,
+            Down => 1,
+            Up => 3,
+            Right => 2,
+        }
     }
 }
 

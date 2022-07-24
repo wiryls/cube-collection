@@ -205,13 +205,6 @@ impl DirectedGraph {
         }
         .iter()
     }
-
-    pub fn retain<F: FnMut(usize) -> bool>(&mut self, mut filter: F) {
-        self.0.retain(|&index, _| filter(index));
-        self.0
-            .iter_mut()
-            .for_each(|(_, set)| set.retain(|&index| filter(index)));
-    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
