@@ -1,5 +1,6 @@
 use std::{
     collections::{HashMap, HashSet, VecDeque},
+    convert::identity,
     rc::Rc,
 };
 
@@ -194,7 +195,7 @@ impl Collection {
             .for_each(|cube| conflict.put(&cube, cube.movement, cube.frontlines()));
 
         let mut races = conflict.overlaps();
-        races.retain(|race| race.apply(&mut self.cube));
+        races.retain(|race| !race.apply(&mut self.cube));
         races
     }
 
@@ -596,14 +597,30 @@ impl Race {
     }
 
     fn apply(&self, cube: &mut [Cube]) -> bool {
-        for this in 0..4 {
-            let prev = (this + 3) % 4;
-            let next = (this + 1) % 4;
+        const N: usize = 4;
+        for (index, this) in (0..N).filter_map(|index| self.get(index).map(|this| (index, this))) {
+            for that in [N - 1, 1]
+                .into_iter()
+                .filter_map(|delta| self.get((index + delta) % N))
+            {
+                if !cube[this].absorbable(&cube[that]) && cube[that].constraint < Constraint::Stop {
+                    cube[this].constraint = Constraint::Lock;
+                    break;
+                }
+            }
 
             todo!()
         }
 
         todo!()
+    }
+
+    const fn get(&self, index: usize) -> Option<usize> {
+        if Self::index_to_mask(index) & self.mark != 0 {
+            Some(self.data[index])
+        } else {
+            None
+        }
     }
 
     const fn index_to_mask(index: usize) -> u8 {
