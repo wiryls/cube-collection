@@ -1,6 +1,7 @@
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     convert::identity,
+    path::Iter,
     rc::Rc,
 };
 
@@ -580,52 +581,52 @@ impl Conflict {
 }
 
 #[derive(Default, PartialEq, Eq, Hash)]
-struct Race {
-    mark: u8,
-    data: [usize; 4],
-}
+struct Race([Option<usize>; 4]);
 
 impl Race {
     fn put(&mut self, movement: Movement, index: usize) {
-        let i = Self::movement_to_index(movement);
-        self.mark |= Self::index_to_mask(i);
-        self.data[i] = index;
+        self.0[Self::movement_to_index(movement)] = Some(index);
     }
 
     fn conflict(&self) -> bool {
-        self.mark & self.mark - 1 != 0
+        match self.0.map(|index| index.is_some()) {
+            [false, false, false, false] => false,
+            [true, false, false, false] => false,
+            [false, true, false, false] => false,
+            [false, false, true, false] => false,
+            [false, false, false, true] => false,
+            _ => true,
+        }
     }
 
     fn apply(&self, cube: &mut [Cube]) -> bool {
-        const N: usize = 4;
-        for (index, this) in (0..N).filter_map(|index| self.get(index).map(|this| (index, this))) {
-            for that in [N - 1, 1]
+        let pairs = self.0.map(|index| {
+            index.and_then(|index| {
+                cube.get(index).and_then(|cube| {
+                    if cube.constraint >= Constraint::Stop {
+                        None
+                    } else if cube.balanced {
+                        Some((index, Kind::White))
+                    } else {
+                        Some((index, cube.kind))
+                    }
+                })
+            })
+        });
+
+        for (index, this) in pairs.iter().cloned().filter_map(identity) {
+            if [pairs.len() - 1, 1]
                 .into_iter()
-                .filter_map(|delta| self.get((index + delta) % N))
+                .filter_map(|delta| pairs[(index + delta) % pairs.len()])
+                .any(|(_, that)| !this.absorbable(that))
             {
-                if !cube[this].absorbable(&cube[that]) && cube[that].constraint < Constraint::Stop {
-                    cube[this].constraint = Constraint::Lock;
-                    break;
-                }
+                cube[index].constraint = Constraint::Lock;
             }
 
             todo!()
         }
 
         todo!()
-    }
-
-    const fn get(&self, index: usize) -> Option<usize> {
-        if Self::index_to_mask(index) & self.mark != 0 {
-            Some(self.data[index])
-        } else {
-            None
-        }
-    }
-
-    const fn index_to_mask(index: usize) -> u8 {
-        const MASK: [u8; 4] = [0b0001, 0b0010, 0b0100, 0b1000];
-        MASK[index]
     }
 
     const fn index_to_movement(index: usize) -> Movement {
