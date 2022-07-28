@@ -7,19 +7,24 @@ pub enum Kind {
     Green,
 }
 
-#[allow(dead_code)]
 impl Kind {
-    pub fn absorbable(self, that: Self) -> bool {
+    pub const fn absorbable(self, that: Self) -> bool {
         use Kind::*;
         match self {
             White => false,
-            Red => that == Green,
-            Blue => that == Red,
-            Green => that == Blue,
+            Red => matches!(that, Green),
+            Blue => matches!(that, Red),
+            Green => matches!(that, Blue),
         }
     }
 
-    pub fn linkable(self, that: Self) -> bool {
-        self != Kind::White && self == that
+    pub const fn linkable(self, that: Self) -> bool {
+        use Kind::*;
+        match self {
+            White => false,
+            Red => matches!(that, Red),
+            Blue => matches!(that, Blue),
+            Green => matches!(that, Green),
+        }
     }
 }

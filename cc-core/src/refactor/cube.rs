@@ -184,7 +184,7 @@ impl Collection {
         successors
     }
 
-    fn perform_locking(&mut self, successors: DirectedGraph) -> HashSet<Race> {
+    fn perform_locking(&mut self) -> HashSet<Race> {
         let number_of_cubes = self.number_of_cubes();
         /* number_of_cubes is inaccurate but enough */
         let mut conflict = Conflict::with_capacity(number_of_cubes);
@@ -196,7 +196,7 @@ impl Collection {
             .for_each(|cube| conflict.put(&cube, cube.movement, cube.frontlines()));
 
         let mut races = conflict.overlaps();
-        races.retain(|race| !race.apply(&mut self.cube));
+        races.retain(|race| !race.solve_locking(&mut self.cube));
         races
     }
 
@@ -294,19 +294,19 @@ impl Cube {
         !self.units.is_empty()
     }
 
-    fn unstable(&self) -> bool {
-        !self.balanced && self.kind != Kind::White
+    const fn unstable(&self) -> bool {
+        !self.balanced && !matches!(self.kind, Kind::White)
     }
 
-    fn linkable(&self, that: &Self) -> bool {
+    const fn linkable(&self, that: &Self) -> bool {
         self.kind.linkable(that.kind)
     }
 
-    fn absorbable(&self, that: &Self) -> bool {
+    const fn absorbable(&self, that: &Self) -> bool {
         !self.balanced && !that.balanced && self.kind.absorbable(that.kind)
     }
 
-    fn mergeable(&self, that: &Self) -> bool {
+    const fn mergeable(&self, that: &Self) -> bool {
         self.kind.linkable(that.kind)
             || ((self.kind.absorbable(that.kind) || that.kind.absorbable(self.kind))
                 && !self.balanced
@@ -589,50 +589,40 @@ impl Race {
     }
 
     fn conflict(&self) -> bool {
-        match self.0.map(|index| index.is_some()) {
-            [false, false, false, false] => false,
-            [true, false, false, false] => false,
-            [false, true, false, false] => false,
-            [false, false, true, false] => false,
-            [false, false, false, true] => false,
-            _ => true,
-        }
+        self.0.into_iter().filter(Option::is_some).take(2).count() == 2
     }
 
-    fn apply(&self, cube: &mut [Cube]) -> bool {
-        let pairs = self.0.map(|index| {
-            index.and_then(|index| {
-                cube.get(index).and_then(|cube| {
-                    if cube.constraint >= Constraint::Stop {
-                        None
-                    } else if cube.balanced {
-                        Some((index, Kind::White))
-                    } else {
-                        Some((index, cube.kind))
-                    }
-                })
-            })
-        });
+    fn solve_locking(&self, cube: &mut [Cube]) -> bool {
+        let mut last = self.0.clone();
+        let mut next = self.0.clone();
+        last.rotate_right(1);
+        next.rotate_left(1);
 
-        for (index, this) in pairs.iter().cloned().filter_map(identity) {
-            if [pairs.len() - 1, 1]
-                .into_iter()
-                .filter_map(|delta| pairs[(index + delta) % pairs.len()])
-                .any(|(_, that)| !this.absorbable(that))
-            {
-                cube[index].constraint = Constraint::Lock;
+        for i in 0..self.0.len() {
+            let it = match self.0[i] {
+                Some(index) if cube[index].constraint < Constraint::Lock => index,
+                ________________________________________________________ => continue,
+            };
+
+            if Self::is_locked(cube, it, last[i]) || Self::is_locked(cube, it, next[i]) {
+                cube[it].constraint = Constraint::Lock;
             }
-
-            todo!()
         }
 
-        todo!()
+        2 > self
+            .0
+            .into_iter()
+            .filter_map(|index| index.map(|index| &cube[index]))
+            .filter(|cube| cube.constraint < Constraint::Lock)
+            .take(2)
+            .count()
     }
 
-    const fn index_to_movement(index: usize) -> Movement {
-        use Movement::*;
-        const MOVE: [Movement; 4] = [Left, Down, Right, Up];
-        MOVE[index]
+    const fn is_locked(cube: &[Cube], this: usize, that: Option<usize>) -> bool {
+        match that {
+            Some(that) => ! cube[this].absorbable(&cube[that]),
+            None /*_*/ => false,
+        }
     }
 
     const fn movement_to_index(movement: Movement) -> usize {
