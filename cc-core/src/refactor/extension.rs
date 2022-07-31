@@ -7,7 +7,7 @@ pub trait CollisionExtension {
 impl<T: Collision> CollisionExtension for T {
     fn neighborhood(&self, point: Point) -> Neighborhood {
         Neighborhood::from(
-            Neighborhood::AROUND
+            Neighborhood::AROUNDS
                 .into_iter()
                 .filter(|o| self.hit(point + o.into())),
         )

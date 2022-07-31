@@ -161,32 +161,13 @@ impl DisjointSet {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// Faction
-
-pub struct Faction(HashMap<Point, usize>);
-
-impl Faction {
-    pub fn with_capacity(capacity: usize) -> Self {
-        Self(HashMap::with_capacity(capacity))
-    }
-
-    pub fn put(&mut self, key: Point, value: usize) {
-        self.0.insert(key, value);
-    }
-
-    pub fn get(&self, point: Point) -> Option<usize> {
-        self.0.get(&point).cloned()
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////////
 // Successors
 
-pub struct DirectedGraph(HashMap<usize, HashSet<usize>>, HashSet<usize>);
+pub struct Digraph(HashMap<usize, HashSet<usize>>, HashSet<usize>);
 
-pub type DirectedGraphNodeIter<'a> = std::collections::hash_set::Iter<'a, usize>;
+pub type DigraphNodeIter<'a> = std::collections::hash_set::Iter<'a, usize>;
 
-impl DirectedGraph {
+impl Digraph {
     pub fn with_capacity(capacity: usize) -> Self {
         Self(HashMap::with_capacity(capacity), HashSet::new())
     }
@@ -198,7 +179,7 @@ impl DirectedGraph {
             .insert(to.into());
     }
 
-    pub fn connected<T: Into<usize>>(&self, index: T) -> DirectedGraphNodeIter {
+    pub fn children<T: Into<usize>>(&self, index: T) -> DigraphNodeIter {
         match self.0.get(&index.into()) {
             Some(set) => set,
             _fallback => &self.1,

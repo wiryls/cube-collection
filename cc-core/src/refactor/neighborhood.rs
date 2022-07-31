@@ -46,12 +46,12 @@ impl Into<Point> for &Adjacence {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Neighborhood(u8);
 
 #[allow(dead_code)]
 impl Neighborhood {
-    pub const AROUND: [Adjacence; 8] = [
+    pub const AROUNDS: [Adjacence; 8] = [
         Adjacence::LEFT,
         Adjacence::LEFT_TOP,
         Adjacence::TOP,
@@ -62,14 +62,30 @@ impl Neighborhood {
         Adjacence::LEFT_BOTTOM,
     ];
 
-    pub fn new() -> Self {
-        Self::default()
+    pub const CROSS: Neighborhood = Neighborhood(
+        Adjacence::LEFT.0 | Adjacence::TOP.0 | Adjacence::RIGHT.0 | Adjacence::BOTTOM.0,
+    );
+
+    pub const fn new() -> Self {
+        Neighborhood(0)
     }
 
     pub fn from(it: impl Iterator<Item = Adjacence>) -> Self {
-        let mut n = Self::new();
-        it.for_each(|a| n.set(a));
-        n
+        let mut mask = Self::new();
+        it.for_each(|a| mask.set(a));
+        mask
+    }
+
+    pub const fn has(&self, mask: Adjacence) -> bool {
+        self.0 & mask.0 != 0
+    }
+
+    pub const fn contains(&self, other: &Self) -> bool {
+        self.0 & other.0 == other.0
+    }
+
+    pub fn states(&self) -> [bool; 8] {
+        Neighborhood::AROUNDS.map(|mask| (self.0 & mask.0) != 0)
     }
 
     pub fn set(&mut self, mask: Adjacence) {
@@ -78,13 +94,5 @@ impl Neighborhood {
 
     pub fn unset(&mut self, mask: Adjacence) {
         self.0 &= !mask.0;
-    }
-
-    pub fn has(&self, mask: Adjacence) -> bool {
-        self.0 & mask.0 != 0
-    }
-
-    pub fn states(&self) -> [bool; 8] {
-        Neighborhood::AROUND.map(|mask| (self.0 & mask.0) != 0)
     }
 }

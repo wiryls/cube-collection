@@ -1,7 +1,5 @@
 use std::{
     collections::{HashMap, HashSet, VecDeque},
-    convert::identity,
-    path::Iter,
     rc::Rc,
 };
 
@@ -9,7 +7,7 @@ use super::{
     extension::CollisionExtension,
     item::Item,
     kind::Kind,
-    lookup::{self, BitmapCollision, Collision, DirectedGraph, DisjointSet, HashSetCollision},
+    lookup::{self, BitmapCollision, Collision, Digraph, HashSetCollision},
     motion::{Agreement, Motion},
     movement::{Constraint, Movement},
     neighborhood::{Adjacence, Neighborhood},
@@ -22,10 +20,8 @@ use super::{
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct Collection {
-    area: Rc<Area>,        // background and obstacles
-    cube: Vec<Cube>,       // cubes (sets of units)
-    link: Vec<Vec<usize>>, // groups to link
-    view: Box<[Unit]>,     // a buffer of output
+    area: Rc<ImmutableArea>, // background and obstacles
+    cube: Vec<Cube>,         // cubes (sets of units)
 }
 
 #[allow(dead_code)]
@@ -59,7 +55,7 @@ impl Collection {
         let number_of_cubes = self.number_of_cubes();
         let unstable = self.cube.iter().filter(|u| u.alive() && u.unstable());
 
-        let faction = Faction::new(self, unstable.clone());
+        let territory = Territory::new(unstable.clone());
         let mut connection = Connection::new(number_of_cubes);
 
         // connect all adjacent cubes.
@@ -72,7 +68,7 @@ impl Collection {
             }
 
             while let Some(cube) = queue.pop_front() {
-                for other in faction.neighbors(cube) {
+                for other in territory.neighbors(cube) {
                     if !visit[other.index] {
                         visit[other.index] = true;
                         queue.push_back(other);
@@ -102,12 +98,12 @@ impl Collection {
         }
     }
 
-    fn perform_stopping(&mut self) -> DirectedGraph {
+    fn perform_stopping(&mut self) -> Digraph {
         let number_of_cubes = self.number_of_cubes();
-        let faction = Faction::new(self, self.cube.iter().filter(|cube| cube.alive()));
+        let faction = Territory::new(self.cube.iter().filter(|cube| cube.alive()));
         let mut determined = Vec::new();
         let mut connection = Connection::new(number_of_cubes);
-        let mut successors = Successors::new(self);
+        let mut successors = Digraph::with_capacity(number_of_cubes);
 
         // find explicit blocked cubes.
         for cube in self.cube.iter().filter_map(Moving::new) {
@@ -152,7 +148,7 @@ impl Collection {
             }
 
             while let Some(owner) = queue.pop_front() {
-                for child in successors.children(owner) {
+                for child in successors.children(owner).map(|&index| &self.cube[index]) {
                     if visit.insert(child.index) {
                         queue.push_back(child);
                     }
@@ -164,7 +160,6 @@ impl Collection {
         }
 
         // try to absorb each others.
-        let successors = successors.take();
         for group in connection.groups() {
             let mut arena = Arena::new(self);
             for &index in group.iter() {
@@ -184,7 +179,7 @@ impl Collection {
         successors
     }
 
-    fn perform_locking(&mut self) -> HashSet<Race> {
+    fn perform_locking(&mut self, successors: Digraph) {
         let number_of_cubes = self.number_of_cubes();
         /* number_of_cubes is inaccurate but enough */
         let mut conflict = Conflict::with_capacity(number_of_cubes);
@@ -195,15 +190,14 @@ impl Collection {
             .filter(|cube| cube.constraint < Constraint::Stop)
             .for_each(|cube| conflict.put(&cube, cube.movement, cube.frontlines()));
 
-        let mut races = conflict.overlaps();
-        races.retain(|race| !race.solve_locking(&mut self.cube));
-        races
-    }
-
-    fn perform_hitting(&mut self, successors: DirectedGraph, conflict: HashSet<Race>) {
-        let successors = Successors::from(successors, self);
-
-        todo!()
+        let races = conflict.overlaps();
+        for race in races.iter() {
+            race.solve(&mut self.cube);
+        }
+        let undetermined = races
+            .into_iter()
+            .filter_map(|race| race.free(&self.cube))
+            .collect::<Vec<_>>();
     }
 
     fn mark_balanced(&mut self, whom: Vec<usize>) {
@@ -232,7 +226,7 @@ impl Collection {
             }
             Motion::from_iter(others.into_iter())
         };
-        let outlines = Outlines::new(&units).into();
+        let contours = Contours::new(&units).into();
         let movement = {
             let mut agreement = Agreement::new();
             for &i in from.iter() {
@@ -261,7 +255,7 @@ impl Collection {
                 kind,
                 units,
                 motion,
-                outlines,
+                contours,
                 balanced: false,
                 movement,
                 constraint,
@@ -283,7 +277,7 @@ struct Cube {
     kind: Kind,
     units: Vec<Unit>,
     motion: Motion,
-    outlines: Rc<Outlines>,     // calculated boundary points
+    contours: Rc<Contours>,     // calculated boundary points
     balanced: bool,             // state of being unabsorbable
     movement: Option<Movement>, // original movement direction
     constraint: Constraint,     // state of movement
@@ -347,13 +341,13 @@ struct Unit {
 }
 
 #[derive(Debug)]
-pub struct Area {
-    cubes: Box<[(Point, Neighborhood)]>,
-    impassable: BitmapCollision,
+pub struct ImmutableArea {
+    unchanged: Box<[(Point, Neighborhood)]>,
+    collision: BitmapCollision,
 }
 
 #[allow(dead_code)]
-impl Area {
+impl ImmutableArea {
     pub fn new<'a, I>(width: usize, height: usize, it: I) -> Self
     where
         I: Iterator<Item = &'a [Point]>,
@@ -366,23 +360,26 @@ impl Area {
             it.flat_map(build).collect::<Box<_>>()
         };
 
-        let impassable = {
+        let collision = {
             let mut it = BitmapCollision::new(width, height);
             cubes.iter().for_each(|x| it.put(x.0));
             it
         };
 
-        Self { cubes, impassable }
+        Self {
+            unchanged: cubes,
+            collision,
+        }
     }
 
     pub fn blocked(&self, point: Point) -> bool {
-        self.impassable.hit(point)
+        self.collision.hit(point)
     }
 
     pub fn iter(&self, offset: usize) -> AreaIter {
         AreaIter {
             offset,
-            iterator: self.cubes.iter().enumerate(),
+            iterator: self.unchanged.iter().enumerate(),
         }
     }
 }
@@ -411,14 +408,14 @@ impl Iterator for AreaIter<'_> {
 
 #[allow(dead_code)]
 #[derive(Debug)]
-struct Outlines {
+struct Contours {
     count: [usize; 3],
     slice: Box<[Point]>,
 }
 
 #[allow(dead_code)]
-impl Outlines {
-    pub fn new(units: &[Unit]) -> Self {
+impl Contours {
+    fn new(units: &[Unit]) -> Self {
         const LBTR: [Adjacence; 4] = [
             Adjacence::LEFT,
             Adjacence::BOTTOM,
@@ -469,7 +466,7 @@ impl Outlines {
         }
     }
 
-    pub fn one(&self, anchor: Point, m: Movement) -> impl Iterator<Item = Point> + Clone + '_ {
+    fn one(&self, anchor: Point, m: Movement) -> impl Iterator<Item = Point> + Clone + '_ {
         use Movement::*;
         match m {
             Left /***/ => &self.slice[ /*      **/ ..self.count[0]],
@@ -481,7 +478,7 @@ impl Outlines {
         .map(move |o| anchor - *o)
     }
 
-    pub fn all(&self, anchor: Point) -> impl Iterator<Item = Point> + Clone + '_ {
+    fn all(&self, anchor: Point) -> impl Iterator<Item = Point> + Clone + '_ {
         (&self.slice[..]).iter().map(move |o| anchor - *o)
     }
 
@@ -491,70 +488,42 @@ impl Outlines {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// lookups
+// additional lookups
 
-struct Faction<'a>(lookup::Faction, &'a Collection);
+type Connection = lookup::DisjointSet;
 
-impl<'a> Faction<'a> {
-    fn new<C, I>(collection: &'a Collection, it: I) -> Self
+struct Territory<'a>(HashMap<Point, &'a Cube>);
+
+impl<'a> Territory<'a> {
+    fn new<I, C>(it: I) -> Self
     where
         I: Iterator<Item = C> + Clone,
         C: Into<&'a Cube>,
     {
-        let capacity = it.clone().map(|x| x.into().units.len()).sum::<usize>();
-        let mut faction = lookup::Faction::with_capacity(capacity);
-
-        for source in it {
-            let cube = source.into();
-            let index = cube.index;
+        let size = it.clone().map(|c| c.into().units.len()).sum::<usize>();
+        let mut map = HashMap::with_capacity(size);
+        for cube in it.map(Into::into) {
             for unit in cube.units.iter() {
-                faction.put(unit.position, index);
+                if !unit.neighborhood.contains(&Neighborhood::CROSS) {
+                    map.insert(unit.position, cube);
+                }
             }
         }
-        Self(faction, collection)
+        Self(map)
     }
 
     fn get(&self, point: Point) -> Option<&Cube> {
-        self.0.get(point).and_then(|index| self.1.cube.get(index))
+        self.0.get(&point).cloned()
     }
 
-    fn neighbors<T: Into<&'a Cube>>(&self, cube: T) -> impl Iterator<Item = &Cube> + Clone + '_ {
-        let cube = cube.into();
-        let anchor = Outlines::anchor(&cube.units);
-        cube.outlines.all(anchor).filter_map(|o| self.get(o))
+    fn neighbors(&self, cube: impl Into<&'a Cube>) -> impl Iterator<Item = &Cube> + Clone + '_ {
+        let cube: &'a Cube = cube.into();
+        let anchor = Contours::anchor(&cube.units);
+        cube.contours.all(anchor).filter_map(|o| self.get(o))
     }
 
     fn neighbors_in_front(&self, cube: &Moving<'a>) -> impl Iterator<Item = &Cube> + Clone + '_ {
         cube.frontlines().filter_map(|o| self.get(o))
-    }
-}
-
-type Connection = DisjointSet;
-
-struct Successors<'a>(DirectedGraph, &'a Collection);
-
-impl<'a> Successors<'a> {
-    fn new(collection: &'a Collection) -> Self {
-        let capacity = collection.number_of_cubes();
-        Self(DirectedGraph::with_capacity(capacity), collection)
-    }
-
-    fn from(successors: DirectedGraph, collection: &'a Collection) -> Self {
-        Self(successors, collection)
-    }
-
-    fn add<U: Into<usize>, V: Into<usize>>(&mut self, parent: U, child: V) {
-        self.0.add(parent, child);
-    }
-
-    fn children<T: Into<usize>>(&self, index: T) -> impl Iterator<Item = &Cube> + Clone + '_ {
-        self.0
-            .connected(index)
-            .filter_map(|&index| self.1.cube.get(index))
-    }
-
-    fn take(self) -> DirectedGraph {
-        self.0
     }
 }
 
@@ -566,13 +535,13 @@ impl Conflict {
         Self(HashMap::with_capacity(capacity))
     }
 
-    fn put<T, I>(&mut self, index: T, movement: Movement, outlines: I)
+    fn put<T, I>(&mut self, index: T, movement: Movement, contours: I)
     where
         T: Into<usize>,
         I: Iterator<Item = Point>,
     {
         let index = index.into();
-        outlines.for_each(|point| self.0.entry(point).or_default().put(movement, index));
+        contours.for_each(|point| self.0.entry(point).or_default().put(movement, index));
     }
 
     fn overlaps(self) -> HashSet<Race> {
@@ -592,35 +561,43 @@ impl Race {
         self.0.into_iter().filter(Option::is_some).take(2).count() == 2
     }
 
-    fn solve_locking(&self, cube: &mut [Cube]) -> bool {
-        let mut last = self.0.clone();
-        let mut next = self.0.clone();
-        last.rotate_right(1);
-        next.rotate_left(1);
-
+    fn solve(&self, cube: &mut [Cube]) {
+        let size = self.0.len();
+        let half = size >> 1;
         for i in 0..self.0.len() {
             let it = match self.0[i] {
                 Some(index) if cube[index].constraint < Constraint::Lock => index,
                 ________________________________________________________ => continue,
             };
 
-            if Self::is_locked(cube, it, last[i]) || Self::is_locked(cube, it, next[i]) {
+            let last = self.0[(i + size - 1) % size];
+            let next = self.0[(i + 0000 + 1) % size];
+            if Self::is_locked(cube, it, last) || Self::is_locked(cube, it, next) {
                 cube[it].constraint = Constraint::Lock;
+                continue;
+            }
+
+            let oppo = self.0[(i + half) % size];
+            if Self::is_locked(cube, it, oppo) {
+                cube[it].constraint = Constraint::Pong;
             }
         }
+    }
 
-        2 > self
-            .0
-            .into_iter()
-            .filter_map(|index| index.map(|index| &cube[index]))
-            .filter(|cube| cube.constraint < Constraint::Lock)
-            .take(2)
-            .count()
+    fn free(&self, cube: &[Cube]) -> Option<usize> {
+        for index in self.0 {
+            if let Some(index) = index {
+                if cube[index].constraint == Constraint::Free {
+                    return Some(index);
+                }
+            }
+        }
+        None
     }
 
     const fn is_locked(cube: &[Cube], this: usize, that: Option<usize>) -> bool {
         match that {
-            Some(that) => ! cube[this].absorbable(&cube[that]),
+            Some(that) => !cube[this].absorbable(&cube[that]),
             None /*_*/ => false,
         }
     }
@@ -710,8 +687,8 @@ impl<'a> Moving<'a> {
 
     fn frontlines(&self) -> impl Iterator<Item = Point> + Clone + 'a {
         let movement = self.movement;
-        let anchor = Outlines::anchor(&self.cube.units);
-        self.cube.outlines.one(anchor, movement)
+        let anchor = Contours::anchor(&self.cube.units);
+        self.cube.contours.one(anchor, movement)
     }
 }
 
@@ -749,12 +726,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn outlines() {
-        let outlines = Outlines::new(&[]);
-        let actual = Vec::from_iter(outlines.all(Point::new(0, 0)));
+    fn contours() {
+        let contours = Contours::new(&[]);
+        let actual = Vec::from_iter(contours.all(Point::new(0, 0)));
         assert_eq!(actual, Vec::new());
         for movement in Movement::ALL {
-            let actual = Vec::from_iter(outlines.one(Point::new(0, 0), movement));
+            let actual = Vec::from_iter(contours.one(Point::new(0, 0), movement));
             assert_eq!(actual, Vec::new());
         }
 
@@ -770,22 +747,22 @@ mod tests {
                 neighborhood: Neighborhood::from([Adjacence::TOP].into_iter()),
             },
         ];
-        let outlines = Outlines::new(&units);
+        let contours = Contours::new(&units);
 
         let expected = vec![Point::new(0, 1), Point::new(0, 2)];
-        let actual = Vec::from_iter(outlines.one(Point::new(1, 1), Movement::Left));
+        let actual = Vec::from_iter(contours.one(Point::new(1, 1), Movement::Left));
         assert_eq!(actual, expected);
 
         let expected = vec![Point::new(2, 1), Point::new(2, 2)];
-        let actual = Vec::from_iter(outlines.one(Point::new(1, 1), Movement::Right));
+        let actual = Vec::from_iter(contours.one(Point::new(1, 1), Movement::Right));
         assert_eq!(actual, expected);
 
         let expected = vec![Point::new(1, 0)];
-        let actual = Vec::from_iter(outlines.one(Point::new(1, 1), Movement::Up));
+        let actual = Vec::from_iter(contours.one(Point::new(1, 1), Movement::Up));
         assert_eq!(actual, expected);
 
         let expected = vec![Point::new(1, 3)];
-        let actual = Vec::from_iter(outlines.one(Point::new(1, 1), Movement::Down));
+        let actual = Vec::from_iter(contours.one(Point::new(1, 1), Movement::Down));
         assert_eq!(actual, expected);
     }
 }
