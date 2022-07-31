@@ -7,7 +7,7 @@ use super::{
     extension::CollisionExtension,
     item::Item,
     kind::Kind,
-    lookup::{self, BitmapCollision, Collision, Digraph, HashSetCollision},
+    lookup::{BitmapCollision, Collision, Digraph, DisjointSet, HashSetCollision},
     motion::{Agreement, Motion},
     movement::{Constraint, Movement},
     neighborhood::{Adjacence, Neighborhood},
@@ -56,7 +56,7 @@ impl Collection {
         let unstable = self.cube.iter().filter(|u| u.alive() && u.unstable());
 
         let territory = Territory::new(unstable.clone());
-        let mut connection = Connection::new(number_of_cubes);
+        let mut connection = DisjointSet::new(number_of_cubes);
 
         // connect all adjacent cubes.
         let mut visit = vec![false; number_of_cubes];
@@ -100,9 +100,9 @@ impl Collection {
 
     fn perform_stopping(&mut self) -> Digraph {
         let number_of_cubes = self.number_of_cubes();
-        let faction = Territory::new(self.cube.iter().filter(|cube| cube.alive()));
+        let territory = Territory::new(self.cube.iter().filter(|cube| cube.alive()));
         let mut determined = Vec::new();
-        let mut connection = Connection::new(number_of_cubes);
+        let mut connection = DisjointSet::new(number_of_cubes);
         let mut successors = Digraph::with_capacity(number_of_cubes);
 
         // find explicit blocked cubes.
@@ -110,7 +110,7 @@ impl Collection {
             let mut blocked = cube.frontlines().any(|o| self.area.blocked(o));
 
             if !blocked {
-                let neighbors = faction.neighbors_in_front(&cube).collect::<HashSet<_>>();
+                let neighbors = territory.neighbors_in_front(&cube).collect::<HashSet<_>>();
                 blocked = neighbors
                     .iter()
                     .any(|&other| !cube.same_movement(other) && !cube.linkable(other));
@@ -340,6 +340,12 @@ struct Unit {
     neighborhood: Neighborhood,
 }
 
+impl Unit {
+    fn is_border(&self) -> bool {
+        !self.neighborhood.contains(&Neighborhood::CROSS)
+    }
+}
+
 #[derive(Debug)]
 pub struct ImmutableArea {
     unchanged: Box<[(Point, Neighborhood)]>,
@@ -490,8 +496,6 @@ impl Contours {
 /////////////////////////////////////////////////////////////////////////////
 // additional lookups
 
-type Connection = lookup::DisjointSet;
-
 struct Territory<'a>(HashMap<Point, &'a Cube>);
 
 impl<'a> Territory<'a> {
@@ -500,15 +504,20 @@ impl<'a> Territory<'a> {
         I: Iterator<Item = C> + Clone,
         C: Into<&'a Cube>,
     {
-        let size = it.clone().map(|c| c.into().units.len()).sum::<usize>();
-        let mut map = HashMap::with_capacity(size);
-        for cube in it.map(Into::into) {
-            for unit in cube.units.iter() {
-                if !unit.neighborhood.contains(&Neighborhood::CROSS) {
-                    map.insert(unit.position, cube);
-                }
+        let mut capacity = 0;
+        for cube in it.clone().map(Into::into) {
+            for _ in cube.units.iter().cloned().filter(Unit::is_border) {
+                capacity += 1;
             }
         }
+
+        let mut map = HashMap::with_capacity(capacity);
+        for cube in it.map(Into::into) {
+            for unit in cube.units.iter().cloned().filter(Unit::is_border) {
+                map.insert(unit.position, cube);
+            }
+        }
+
         Self(map)
     }
 
