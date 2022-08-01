@@ -80,7 +80,7 @@ impl Collision for BitmapCollision {
 
 #[allow(dead_code)]
 pub struct DisjointSet {
-    parents: Box<[Option<usize>]>,
+    parents: Vec<Option<usize>>,
     existed: Vec<usize>,
 }
 
@@ -107,14 +107,16 @@ impl DisjointSet {
         }
     }
 
-    pub fn groups(self) -> DisjointSetGroups {
+    pub fn groups(&mut self) -> DisjointSetGroups {
         let hint = self.existed.len();
         let mut pair = HashMap::with_capacity(hint);
-        for value in self.existed {
+        for &value in self.existed.iter() {
             pair.entry(Self::root(&self.parents, value))
                 .or_insert_with(|| Vec::with_capacity(hint))
                 .push(value);
         }
+        self.parents.clear();
+        self.existed.clear();
         pair.into_values()
     }
 

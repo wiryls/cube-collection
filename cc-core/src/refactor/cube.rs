@@ -32,27 +32,8 @@ impl Collection {
         todo!()
     }
 
-    pub fn input(&mut self, input: Option<Movement>) {
-        for cube in self.cube.iter_mut().filter(|cube| cube.kind == Kind::Green) {
-            cube.movement = input;
-        }
-    }
-
-    pub fn bury(&mut self) {
-        let len = self.cube.len();
-        self.cube.retain(Cube::alive);
-        if len != self.cube.len() {
-            self.cube
-                .iter_mut()
-                .enumerate()
-                .rev()
-                .take_while(|(index, cube)| *index != cube.index)
-                .for_each(|(index, cube)| cube.index = index);
-        }
-    }
-
     pub fn absorb(&mut self) {
-        let number_of_cubes = self.number_of_cubes();
+        let number_of_cubes = self.cube.len();
         let unstable = self.cube.iter().filter(|u| u.alive() && u.unstable());
 
         let territory = Territory::new(unstable.clone());
@@ -91,21 +72,29 @@ impl Collection {
             }
             use ArenaResult::*;
             match arena.output() {
-                Have(kind) => self.link_into_first(group, kind),
-                Draw => self.mark_balanced(group),
+                Have(kind) => self.merge(group, kind),
+                Draw => group.into_iter().for_each(|i| self.cube[i].balanced = true),
                 _ => {}
-            }
+            };
         }
     }
 
-    fn perform_stopping(&mut self) -> Digraph {
-        let number_of_cubes = self.number_of_cubes();
-        let territory = Territory::new(self.cube.iter().filter(|cube| cube.alive()));
+    fn input(&mut self, movement: Option<Movement>) {
+        // update movements if not None.
+        if let Some(movement) = movement {
+            for cube in self.cube.iter_mut().filter(|cube| cube.kind == Kind::Green) {
+                cube.movement = Some(movement);
+            }
+        }
+
+        // shared tables.
+        let number_of_cubes = self.cube.len();
         let mut determined = Vec::new();
         let mut connection = DisjointSet::new(number_of_cubes);
         let mut successors = Digraph::with_capacity(number_of_cubes);
 
-        // find explicit blocked cubes.
+        // find blocked.
+        let territory = Territory::new(self.cube.iter().filter(|cube| cube.alive()));
         for cube in self.cube.iter().filter_map(Moving::new) {
             let mut blocked = cube.frontlines().any(|o| self.area.blocked(o));
 
@@ -139,51 +128,14 @@ impl Collection {
             }
         }
 
-        // collect them and try to connect.
-        let mut visit = HashSet::with_capacity(number_of_cubes);
-        let mut queue = VecDeque::with_capacity(number_of_cubes);
-        for cube in determined {
-            if visit.insert(cube.index) {
-                queue.push_back(cube);
-            }
+        // solve Constraint::Stop.
+        self.connect(&mut connection, Constraint::Stop, determined, &successors)
+            .into_iter()
+            .for_each(|index| self.cube[index].constraint = Constraint::Stop);
+        self.link(&mut connection);
 
-            while let Some(owner) = queue.pop_front() {
-                for child in successors.children(owner).map(|&index| &self.cube[index]) {
-                    if visit.insert(child.index) {
-                        queue.push_back(child);
-                    }
-                    if owner.linkable(child) {
-                        connection.join(owner, child);
-                    }
-                }
-            }
-        }
-
-        // try to absorb each others.
-        for group in connection.groups() {
-            let mut arena = Arena::new(self);
-            for &index in group.iter() {
-                arena.input(index);
-            }
-            if let ArenaResult::Pure(kind) = arena.output() {
-                self.link_into_first(group, kind);
-            }
-        }
-
-        // mark all visited as stopped.
-        for index in visit {
-            self.cube[index].constraint = Constraint::Stop;
-        }
-
-        // reuse it!
-        successors
-    }
-
-    fn perform_locking(&mut self, successors: Digraph) {
-        let number_of_cubes = self.number_of_cubes();
-        /* number_of_cubes is inaccurate but enough */
+        // find conflicts.
         let mut conflict = Conflict::with_capacity(number_of_cubes);
-
         self.cube
             .iter()
             .filter_map(Moving::new)
@@ -198,15 +150,60 @@ impl Collection {
             .into_iter()
             .filter_map(|race| race.free(&self.cube))
             .collect::<Vec<_>>();
+
+        todo!()
     }
 
-    fn mark_balanced(&mut self, whom: Vec<usize>) {
-        for index in whom {
-            self.cube[index].balanced = true;
+    fn connect(
+        &self,
+        connection: &mut DisjointSet,
+        constraint: Constraint,
+        determined: Vec<&Cube>,
+        successors: &Digraph,
+    ) -> HashSet<usize> {
+        let number_of_cubes = self.cube.len();
+        let mut visit = HashSet::with_capacity(number_of_cubes);
+        let mut queue = VecDeque::with_capacity(number_of_cubes);
+        for &cube in determined
+            .iter()
+            .filter(|cube| cube.constraint == constraint)
+        {
+            if visit.insert(cube.index) {
+                queue.push_back(cube);
+            }
+
+            while let Some(precursor) = queue.pop_front() {
+                for successor in successors
+                    .children(precursor)
+                    .map(|&index| &self.cube[index])
+                    .filter(|cube| cube.constraint <= constraint)
+                {
+                    if visit.insert(successor.index) {
+                        queue.push_back(successor);
+                    }
+                    if precursor.linkable(successor) {
+                        connection.join(precursor, successor);
+                    }
+                }
+            }
+        }
+
+        visit
+    }
+
+    fn link(&mut self, connection: &mut DisjointSet) {
+        for group in connection.groups() {
+            let mut arena = Arena::new(self);
+            for &index in group.iter() {
+                arena.input(index);
+            }
+            if let ArenaResult::Pure(kind) = arena.output() {
+                self.merge(group, kind);
+            }
         }
     }
 
-    fn link_into_first(&mut self, from: Vec<usize>, kind: Kind) {
+    fn merge(&mut self, from: Vec<usize>, kind: Kind) {
         let cube = &mut self.cube;
 
         let units = {
@@ -263,8 +260,17 @@ impl Collection {
         }
     }
 
-    fn number_of_cubes(&self) -> usize {
-        self.cube.len()
+    fn bury(&mut self) {
+        let len = self.cube.len();
+        self.cube.retain(Cube::alive);
+        if len != self.cube.len() {
+            self.cube
+                .iter_mut()
+                .enumerate()
+                .rev()
+                .take_while(|(index, cube)| *index != cube.index)
+                .for_each(|(index, cube)| cube.index = index);
+        }
     }
 }
 
@@ -292,23 +298,23 @@ impl Cube {
         !self.balanced && !matches!(self.kind, Kind::White)
     }
 
-    const fn linkable(&self, that: &Self) -> bool {
-        self.kind.linkable(that.kind)
+    const fn linkable(&self, other: &Self) -> bool {
+        self.kind.linkable(other.kind)
     }
 
-    const fn absorbable(&self, that: &Self) -> bool {
-        !self.balanced && !that.balanced && self.kind.absorbable(that.kind)
+    const fn absorbable(&self, other: &Self) -> bool {
+        !self.balanced && !other.balanced && self.kind.absorbable(other.kind)
     }
 
-    const fn mergeable(&self, that: &Self) -> bool {
-        self.kind.linkable(that.kind)
-            || ((self.kind.absorbable(that.kind) || that.kind.absorbable(self.kind))
+    const fn mergeable(&self, other: &Self) -> bool {
+        self.kind.linkable(other.kind)
+            || ((self.kind.absorbable(other.kind) || other.kind.absorbable(self.kind))
                 && !self.balanced
-                && !that.balanced)
+                && !other.balanced)
     }
 
-    fn same_movement(&self, that: &Self) -> bool {
-        self.movement == that.movement
+    fn same_movement(&self, other: &Self) -> bool {
+        self.movement == other.movement
     }
 }
 
@@ -604,9 +610,9 @@ impl Race {
         None
     }
 
-    const fn is_locked(cube: &[Cube], this: usize, that: Option<usize>) -> bool {
-        match that {
-            Some(that) => !cube[this].absorbable(&cube[that]),
+    const fn is_locked(cube: &[Cube], this: usize, other: Option<usize>) -> bool {
+        match other {
+            Some(other) => !cube[this].absorbable(&cube[other]),
             None /*_*/ => false,
         }
     }

@@ -1,4 +1,3 @@
-#[allow(dead_code)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum Kind {
     White,
