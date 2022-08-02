@@ -89,12 +89,12 @@ impl Collection {
 
         // shared tables.
         let number_of_cubes = self.cube.len();
-        let mut determined = Vec::new();
         let mut connection = DisjointSet::new(number_of_cubes);
         let mut successors = Digraph::with_capacity(number_of_cubes);
 
-        // find blocked.
+        // find blocked and marks them with Constraint::Stop.
         let territory = Territory::new(self.cube.iter().filter(|cube| cube.alive()));
+        let mut stopped = Vec::new();
         for cube in self.cube.iter().filter_map(Moving::new) {
             let mut blocked = cube.frontlines().any(|o| self.area.blocked(o));
 
@@ -108,7 +108,7 @@ impl Collection {
                     for &other in neighbors.iter() {
                         if !cube.same_movement(other) && cube.linkable(other) {
                             blocked = true;
-                            determined.push(other);
+                            stopped.push(other.index);
                             connection.join(&cube, other);
                         }
                     }
@@ -124,51 +124,68 @@ impl Collection {
             }
 
             if blocked {
-                determined.push(cube.into());
+                stopped.push(cube.index);
             }
         }
 
-        // solve Constraint::Stop.
-        self.connect(&mut connection, Constraint::Stop, determined, &successors)
+        self.connect(stopped, &successors, Constraint::Stop, &mut connection)
             .into_iter()
             .for_each(|index| self.cube[index].constraint = Constraint::Stop);
         self.link(&mut connection);
 
-        // find conflicts.
+        // find conflicts and marks them with Constraint::Lock.
         let mut conflict = Conflict::with_capacity(number_of_cubes);
         self.cube
             .iter()
             .filter_map(Moving::new)
-            .filter(|cube| cube.constraint < Constraint::Stop)
+            .filter(|cube| cube.constraint <= Constraint::Lock)
             .for_each(|cube| conflict.put(&cube, cube.movement, cube.frontlines()));
 
-        let races = conflict.overlaps();
-        for race in races.iter() {
-            race.solve(&mut self.cube);
+        let mut locked = HashSet::new();
+        for race in conflict.overlaps() {
+            let cube = &self.cube;
+            let size = race.len();
+            for i in 0..race.len() {
+                let it = match race[i] {
+                    Some(index) => index,
+                    ___________ => continue,
+                };
+
+                if cube[it].constraint > Constraint::Lock || locked.contains(&it) {
+                    continue;
+                }
+
+                let prev = race[(i + size - 1) % size];
+                let next = race[(i + 0000 + 1) % size];
+                if Conflict::locked(cube, it, prev) || Conflict::locked(cube, it, next) {
+                    locked.insert(it);
+                }
+            }
         }
-        let undetermined = races
+        self.connect(locked, &successors, Constraint::Lock, &mut connection)
             .into_iter()
-            .filter_map(|race| race.free(&self.cube))
-            .collect::<Vec<_>>();
+            .for_each(|index| self.cube[index].constraint = Constraint::Lock);
+        self.link(&mut connection);
+
+        // find impact position and marks them with Constraint::Slap.
+        // let mut impact = HashSet::new();
 
         todo!()
     }
 
-    fn connect(
+    fn connect<'a>(
         &self,
-        connection: &mut DisjointSet,
-        constraint: Constraint,
-        determined: Vec<&Cube>,
+        determined: impl IntoIterator<Item = usize>,
         successors: &Digraph,
+        constraint: Constraint,
+        connection: &mut DisjointSet,
     ) -> HashSet<usize> {
         let number_of_cubes = self.cube.len();
         let mut visit = HashSet::with_capacity(number_of_cubes);
         let mut queue = VecDeque::with_capacity(number_of_cubes);
-        for &cube in determined
-            .iter()
-            .filter(|cube| cube.constraint == constraint)
-        {
-            if visit.insert(cube.index) {
+        for index in determined.into_iter() {
+            let cube = &self.cube[index];
+            if cube.constraint == constraint && visit.insert(index) {
                 queue.push_back(cube);
             }
 
@@ -542,8 +559,38 @@ impl<'a> Territory<'a> {
     }
 }
 
+enum IntermediateTerritoryCell<'a> {
+    Empty,
+    One(&'a Cube),
+    Left(&'a Cube),
+    Right(&'a Cube),
+    Top(&'a Cube),
+    Bottom(&'a Cube),
+    LeftAndRight(&'a Cube, &'a Cube),
+    TopAndBottom(&'a Cube, &'a Cube),
+}
+
+struct IntermediateTerritory<'a>(HashMap<Point, IntermediateTerritoryCell<'a>>);
+
+impl<'a> IntermediateTerritory<'a> {
+    fn new<I, C>(it: I) -> Self
+    where
+        I: Iterator<Item = C> + Clone,
+        C: Into<&'a Cube>,
+    {
+        let mut capacity = 0;
+        for cube in it.clone().map(Into::into) {
+            for _ in cube.units.iter().cloned().filter(Unit::is_border) {
+                capacity += 2;
+            }
+        }
+
+        todo!()
+    }
+}
+
 #[derive(Default)]
-struct Conflict(HashMap<Point, Race>);
+struct Conflict(HashMap<Point, [Option<usize>; 4]>);
 
 impl Conflict {
     fn with_capacity(capacity: usize) -> Self {
@@ -555,75 +602,28 @@ impl Conflict {
         T: Into<usize>,
         I: Iterator<Item = Point>,
     {
-        let index = index.into();
-        contours.for_each(|point| self.0.entry(point).or_default().put(movement, index));
-    }
-
-    fn overlaps(self) -> HashSet<Race> {
-        self.0.into_values().filter(Race::conflict).collect()
-    }
-}
-
-#[derive(Default, PartialEq, Eq, Hash)]
-struct Race([Option<usize>; 4]);
-
-impl Race {
-    fn put(&mut self, movement: Movement, index: usize) {
-        self.0[Self::movement_to_index(movement)] = Some(index);
-    }
-
-    fn conflict(&self) -> bool {
-        self.0.into_iter().filter(Option::is_some).take(2).count() == 2
-    }
-
-    fn solve(&self, cube: &mut [Cube]) {
-        let size = self.0.len();
-        let half = size >> 1;
-        for i in 0..self.0.len() {
-            let it = match self.0[i] {
-                Some(index) if cube[index].constraint < Constraint::Lock => index,
-                ________________________________________________________ => continue,
-            };
-
-            let last = self.0[(i + size - 1) % size];
-            let next = self.0[(i + 0000 + 1) % size];
-            if Self::is_locked(cube, it, last) || Self::is_locked(cube, it, next) {
-                cube[it].constraint = Constraint::Lock;
-                continue;
-            }
-
-            let oppo = self.0[(i + half) % size];
-            if Self::is_locked(cube, it, oppo) {
-                cube[it].constraint = Constraint::Pong;
-            }
-        }
-    }
-
-    fn free(&self, cube: &[Cube]) -> Option<usize> {
-        for index in self.0 {
-            if let Some(index) = index {
-                if cube[index].constraint == Constraint::Free {
-                    return Some(index);
-                }
-            }
-        }
-        None
-    }
-
-    const fn is_locked(cube: &[Cube], this: usize, other: Option<usize>) -> bool {
-        match other {
-            Some(other) => !cube[this].absorbable(&cube[other]),
-            None /*_*/ => false,
-        }
-    }
-
-    const fn movement_to_index(movement: Movement) -> usize {
+        let value = index.into();
         use Movement::*;
-        match movement {
+        let index = match movement {
             Left => 0,
             Down => 1,
             Up => 3,
             Right => 2,
+        };
+        contours.for_each(|point| self.0.entry(point).or_default()[index] = Some(value));
+    }
+
+    fn overlaps(self) -> HashSet<[Option<usize>; 4]> {
+        self.0
+            .into_values()
+            .filter(|race| race.iter().cloned().filter(Option::is_some).take(2).count() == 2)
+            .collect()
+    }
+
+    const fn locked(cube: &[Cube], this: usize, other: Option<usize>) -> bool {
+        match other {
+            Some(other) => !cube[this].absorbable(&cube[other]),
+            None /*__*/ => false,
         }
     }
 }
