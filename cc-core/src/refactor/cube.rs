@@ -529,14 +529,14 @@ impl<'a> Territory<'a> {
     {
         let mut capacity = 0;
         for cube in it.clone().map(Into::into) {
-            for _ in cube.units.iter().cloned().filter(Unit::is_border) {
+            for _ in cube.units.iter().filter(|unit| unit.is_border()) {
                 capacity += 1;
             }
         }
 
         let mut map = HashMap::with_capacity(capacity);
         for cube in it.map(Into::into) {
-            for unit in cube.units.iter().cloned().filter(Unit::is_border) {
+            for unit in cube.units.iter().filter(|unit| unit.is_border()) {
                 map.insert(unit.position, cube);
             }
         }
@@ -559,6 +559,7 @@ impl<'a> Territory<'a> {
     }
 }
 
+#[derive(Debug, Clone)]
 enum IntermediateTerritoryCell<'a> {
     Empty,
     One(&'a Cube),
@@ -568,6 +569,19 @@ enum IntermediateTerritoryCell<'a> {
     Bottom(&'a Cube),
     LeftAndRight(&'a Cube, &'a Cube),
     TopAndBottom(&'a Cube, &'a Cube),
+}
+
+impl<'a> IntermediateTerritoryCell<'a> {
+    fn update(&mut self, that: Self) {
+        use IntermediateTerritoryCell::*;
+        *self = match (self.clone(), that) {
+            (Left(left), Right(right)) => LeftAndRight(left, right),
+            (Right(right), Left(left)) => LeftAndRight(left, right),
+            (Top(top), Bottom(bottom)) => TopAndBottom(top, bottom),
+            (Bottom(bottom), Top(top)) => TopAndBottom(top, bottom),
+            (_, that) => that,
+        };
+    }
 }
 
 struct IntermediateTerritory<'a>(HashMap<Point, IntermediateTerritoryCell<'a>>);
@@ -580,13 +594,61 @@ impl<'a> IntermediateTerritory<'a> {
     {
         let mut capacity = 0;
         for cube in it.clone().map(Into::into) {
-            for _ in cube.units.iter().cloned().filter(Unit::is_border) {
+            for _ in cube.units.iter().filter(|unit| unit.is_border()) {
                 capacity += 2;
             }
         }
 
-        todo!()
+        let mut map = HashMap::with_capacity(capacity);
+        for cube in it.clone().map(Into::into) {
+            let cube: &Cube = cube;
+            let iter = cube
+                .units
+                .iter()
+                .filter(|unit| unit.is_border())
+                .map(|unit| unit.position);
+
+            use IntermediateTerritoryCell::*;
+            match cube.movement {
+                Some(movement) if cube.constraint <= Constraint::Slap => {
+                    for this in iter {
+                        let that = this + movement.into();
+                        match movement {
+                            Movement::Left => {
+                                map.entry(this).or_insert(Empty).update(Left(cube));
+                                map.entry(that).or_insert(Empty).update(Right(cube));
+                            }
+                            Movement::Down => {
+                                map.entry(this).or_insert(Empty).update(Bottom(cube));
+                                map.entry(that).or_insert(Empty).update(Top(cube));
+                            }
+                            Movement::Up => {
+                                map.entry(this).or_insert(Empty).update(Top(cube));
+                                map.entry(that).or_insert(Empty).update(Bottom(cube));
+                            }
+                            Movement::Right => {
+                                map.entry(this).or_insert(Empty).update(Right(cube));
+                                map.entry(that).or_insert(Empty).update(Left(cube));
+                            }
+                        }
+                    }
+                }
+                _ => iter.for_each(|point| drop(map.insert(point, One(cube)))),
+            }
+        }
+
+        Self(map)
     }
+
+    // fn neighbors(&self, cube: impl Into<&'a Cube>) -> impl Iterator<Item = &Cube> + Clone + '_ {
+    //     let cube: &'a Cube = cube.into();
+    //     let anchor = Contours::anchor(&cube.units);
+    //     cube.contours.all(anchor).filter_map(|o| self.get(o))
+    // }
+
+    // fn neighbors_in_front(&self, cube: &Moving<'a>) -> impl Iterator<Item = &Cube> + Clone + '_ {
+    //     cube.frontlines().filter_map(|o| self.get(o))
+    // }
 }
 
 #[derive(Default)]
