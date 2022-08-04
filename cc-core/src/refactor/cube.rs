@@ -559,34 +559,9 @@ impl<'a> Territory<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
-enum IntermediateTerritoryCell<'a> {
-    Empty,
-    One(&'a Cube),
-    Left(&'a Cube),
-    Right(&'a Cube),
-    Top(&'a Cube),
-    Bottom(&'a Cube),
-    LeftAndRight(&'a Cube, &'a Cube),
-    TopAndBottom(&'a Cube, &'a Cube),
-}
+struct QuarterTerritory<'a>(HashMap<Point, &'a Cube>);
 
-impl<'a> IntermediateTerritoryCell<'a> {
-    fn update(&mut self, that: Self) {
-        use IntermediateTerritoryCell::*;
-        *self = match (self.clone(), that) {
-            (Left(left), Right(right)) => LeftAndRight(left, right),
-            (Right(right), Left(left)) => LeftAndRight(left, right),
-            (Top(top), Bottom(bottom)) => TopAndBottom(top, bottom),
-            (Bottom(bottom), Top(top)) => TopAndBottom(top, bottom),
-            (_, that) => that,
-        };
-    }
-}
-
-struct IntermediateTerritory<'a>(HashMap<Point, IntermediateTerritoryCell<'a>>);
-
-impl<'a> IntermediateTerritory<'a> {
+impl<'a> QuarterTerritory<'a> {
     fn new<I, C>(it: I) -> Self
     where
         I: Iterator<Item = C> + Clone,
@@ -595,60 +570,46 @@ impl<'a> IntermediateTerritory<'a> {
         let mut capacity = 0;
         for cube in it.clone().map(Into::into) {
             for _ in cube.units.iter().filter(|unit| unit.is_border()) {
-                capacity += 2;
+                capacity += 4;
             }
         }
 
         let mut map = HashMap::with_capacity(capacity);
         for cube in it.clone().map(Into::into) {
             let cube: &Cube = cube;
-            let iter = cube
-                .units
-                .iter()
-                .filter(|unit| unit.is_border())
-                .map(|unit| unit.position);
-
-            use IntermediateTerritoryCell::*;
-            match cube.movement {
-                Some(movement) if cube.constraint <= Constraint::Slap => {
-                    for this in iter {
-                        let that = this + movement.into();
-                        match movement {
-                            Movement::Left => {
-                                map.entry(this).or_insert(Empty).update(Left(cube));
-                                map.entry(that).or_insert(Empty).update(Right(cube));
-                            }
-                            Movement::Down => {
-                                map.entry(this).or_insert(Empty).update(Bottom(cube));
-                                map.entry(that).or_insert(Empty).update(Top(cube));
-                            }
-                            Movement::Up => {
-                                map.entry(this).or_insert(Empty).update(Top(cube));
-                                map.entry(that).or_insert(Empty).update(Bottom(cube));
-                            }
-                            Movement::Right => {
-                                map.entry(this).or_insert(Empty).update(Right(cube));
-                                map.entry(that).or_insert(Empty).update(Left(cube));
-                            }
-                        }
-                    }
-                }
-                _ => iter.for_each(|point| drop(map.insert(point, One(cube)))),
+            let delta = Self::delta(cube);
+            for unit in cube.units.iter().filter(|unit| unit.is_border()) {
+                let point = unit.position * 2 + delta;
+                map.insert(point + Point::new(0, 0), cube);
+                map.insert(point + Point::new(0, 1), cube);
+                map.insert(point + Point::new(1, 0), cube);
+                map.insert(point + Point::new(1, 1), cube);
             }
         }
 
         Self(map)
     }
 
-    // fn neighbors(&self, cube: impl Into<&'a Cube>) -> impl Iterator<Item = &Cube> + Clone + '_ {
-    //     let cube: &'a Cube = cube.into();
-    //     let anchor = Contours::anchor(&cube.units);
-    //     cube.contours.all(anchor).filter_map(|o| self.get(o))
-    // }
+    fn neighbors(&self, cube: impl Into<&'a Cube>) /*-> impl Iterator<Item = &Cube> + Clone + '_*/
+    {
+        let cube: &'a Cube = cube.into();
+        let delta = Self::delta(cube);
+        let anchor = Contours::anchor(&cube.units);
 
-    // fn neighbors_in_front(&self, cube: &Moving<'a>) -> impl Iterator<Item = &Cube> + Clone + '_ {
-    //     cube.frontlines().filter_map(|o| self.get(o))
-    // }
+        for movement in Movement::ALL {
+            cube.contours.one(anchor, movement);
+            todo!()
+        }
+
+        todo!()
+    }
+
+    fn delta(cube: &'a Cube) -> Point {
+        match cube.movement {
+            Some(movement) if cube.constraint <= Constraint::Slap => movement.into(),
+            _ => Point::new(0, 0),
+        }
+    }
 }
 
 #[derive(Default)]

@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Sub, SubAssign};
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Hash)]
 pub struct Point<T = i32> {
@@ -75,5 +75,53 @@ where
     fn sub_assign(&mut self, rhs: Self) {
         self.x -= rhs.x;
         self.y -= rhs.y;
+    }
+}
+
+impl<T> Mul<T> for Point<T>
+where
+    T: Mul<Output = T> + Clone,
+{
+    type Output = Point<T>;
+
+    fn mul(self, rhs: T) -> Self::Output {
+        Self {
+            x: self.x * rhs.clone(),
+            y: self.y * rhs,
+        }
+    }
+}
+
+impl<T> MulAssign<T> for Point<T>
+where
+    T: MulAssign + Clone,
+{
+    fn mul_assign(&mut self, rhs: T) {
+        self.x *= rhs.clone();
+        self.y *= rhs;
+    }
+}
+
+impl<T> Div<T> for Point<T>
+where
+    T: Div<Output = T> + Clone,
+{
+    type Output = Point<T>;
+
+    fn div(self, rhs: T) -> Self::Output {
+        Self {
+            x: self.x / rhs.clone(),
+            y: self.y / rhs,
+        }
+    }
+}
+
+impl<T> DivAssign<T> for Point<T>
+where
+    T: DivAssign + Clone,
+{
+    fn div_assign(&mut self, rhs: T) {
+        self.x /= rhs.clone();
+        self.y /= rhs;
     }
 }
