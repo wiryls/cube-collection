@@ -6,7 +6,6 @@ use super::movement::Movement;
 #[derive(Clone, Debug)]
 pub struct Motion(Any);
 
-#[allow(dead_code)]
 impl Motion {
     pub fn new() -> Self {
         Motion(Any::Stop)

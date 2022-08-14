@@ -5,6 +5,7 @@ use std::{
 
 use super::{
     extension::CollisionExtension,
+    item::Diff,
     item::Item,
     kind::Kind,
     lookup::{BitmapCollision, Collision, Digraph, DisjointSet, HashSetCollision},
@@ -17,19 +18,138 @@ use super::{
 /////////////////////////////////////////////////////////////////////////////
 // export
 
-#[allow(dead_code)]
+#[derive(Clone, Debug)]
+pub struct View(Vec<Item>, usize);
+
+impl View {
+    pub fn iter(&self) -> core::slice::Iter<Item> {
+        self.0.iter()
+    }
+
+    pub fn differ<'a>(&'a self, that: &'a Self) -> impl Iterator<Item = Diff> + 'a {
+        let maximum = if self.0.len() == that.0.len() && self.1 == that.1 {
+            self.0.len()
+        } else {
+            0
+        };
+
+        std::iter::zip(self.iter(), that.iter())
+            .take(maximum)
+            .filter(|(l, r)| {
+                l.kind != r.kind
+                    || l.position != r.position
+                    || l.movement != r.movement
+                    || l.constraint != r.constraint
+                    || l.neighborhood != r.neighborhood
+            })
+            .map(|(l, r)| Diff {
+                id: r.id,
+                kind: (l.kind != r.kind).then(|| r.kind),
+                position: (l.position != r.position).then(|| r.position),
+                movement: (l.movement != r.movement).then(|| r.movement),
+                constraint: (l.constraint != r.constraint).then(|| r.constraint),
+                neighborhood: (l.neighborhood != r.neighborhood).then(|| r.neighborhood),
+            })
+    }
+
+    pub fn contains(&self, position: Point) -> bool {
+        self.0.iter().any(|unit| unit.position == position)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Collection {
     area: Rc<ImmutableArea>, // background and obstacles
     cube: Vec<Cube>,         // cubes (sets of units)
 }
 
-#[allow(dead_code)]
 impl Collection {
-    pub fn next(&mut self) {
-        // clean status
-        // move to next status
-        todo!()
+    pub fn new<'a, I>(width: usize, height: usize, it: I) -> Self
+    where
+        I: Iterator<Item = (Kind, &'a [Point], Motion)> + 'a,
+    {
+        let mut count = 0;
+        let mut cubes = Vec::new();
+        let mut other = Vec::new();
+        for (index, (kind, points, mut motion)) in it.enumerate() {
+            let movement = match motion.next() {
+                None if kind == Kind::White => {
+                    other.push(points);
+                    continue;
+                }
+                Some(movement) => movement,
+                _ => None,
+            };
+
+            let collision = HashSetCollision::new(points.iter().cloned());
+            let units = points
+                .iter()
+                .enumerate()
+                .map(|(index, &point)| Unit {
+                    index: index + count,
+                    position: point,
+                    neighborhood: collision.neighborhood(point),
+                })
+                .collect::<Vec<_>>();
+            let contours = Rc::new(Contours::new(&units));
+
+            let cube = Cube {
+                index,
+                kind,
+                units,
+                motion,
+                contours,
+                balanced: false,
+                movement,
+                constraint: Constraint::Free,
+            };
+
+            cubes.push(cube);
+            count += points.len();
+        }
+
+        Self {
+            area: Rc::new(ImmutableArea::new(width, height, other.into_iter())),
+            cube: cubes,
+        }
+    }
+
+    pub fn view(&self) -> View {
+        let capacity = self.cube.len() + self.area.unchanged.len();
+        let default = Item {
+            id: 0,
+            kind: Kind::White,
+            position: Point::new(0, 0),
+            movement: None,
+            constraint: Constraint::Free,
+            neighborhood: Neighborhood::new(),
+        };
+        let mut output = vec![default; capacity];
+        for cube in self.cube.iter() {
+            for unit in cube.units.iter() {
+                output[unit.index] = Item {
+                    id: unit.index,
+                    kind: cube.kind,
+                    position: unit.position,
+                    movement: cube.movement,
+                    constraint: cube.constraint,
+                    neighborhood: unit.neighborhood,
+                };
+            }
+        }
+        let offset = self.cube.len();
+        for (index, unit) in self.area.unchanged.iter().enumerate() {
+            output[index + offset] = Item {
+                id: index + offset,
+                kind: Kind::White,
+                position: unit.0,
+                movement: None,
+                constraint: Constraint::Free,
+                neighborhood: unit.1,
+            };
+        }
+
+        View(output, offset)
     }
 
     pub fn absorb(&mut self) {
@@ -77,9 +197,11 @@ impl Collection {
                 _ => {}
             };
         }
+
+        self.bury();
     }
 
-    fn input(&mut self, movement: Option<Movement>) {
+    pub fn input(&mut self, movement: Option<Movement>) {
         // update movements if not None.
         if let Some(movement) = movement {
             for cube in self.cube.iter_mut().filter(|cube| cube.kind == Kind::Green) {
@@ -141,10 +263,13 @@ impl Collection {
             .filter(|cube| cube.constraint <= Constraint::Lock)
             .for_each(|cube| conflict.put(&cube, cube.movement, cube.frontlines()));
 
-        let mut locked = HashSet::new();
+        let mut locked = HashSet::with_capacity(number_of_cubes);
+        let mut impact = HashSet::with_capacity(number_of_cubes);
+        let mut undetermined = HashSet::with_capacity(number_of_cubes);
         for race in conflict.overlaps() {
             let cube = &self.cube;
             let size = race.len();
+            let half = size >> 1;
             for i in 0..race.len() {
                 let it = match race[i] {
                     Some(index) => index,
@@ -156,24 +281,76 @@ impl Collection {
                 }
 
                 let prev = race[(i + size - 1) % size];
-                let next = race[(i + 0000 + 1) % size];
+                let next = race[(i + /* **/ 1) % size];
                 if Conflict::locked(cube, it, prev) || Conflict::locked(cube, it, next) {
                     locked.insert(it);
+                    continue;
                 }
+
+                match race[(i + half) % size] {
+                    None => (),
+                    Some(that) if cube[it].absorbable(&cube[that]) => drop(undetermined.insert(it)),
+                    Some(____) => drop(impact.insert(it)),
+                };
             }
         }
+
         self.connect(locked, &successors, Constraint::Lock, &mut connection)
             .into_iter()
             .for_each(|index| self.cube[index].constraint = Constraint::Lock);
         self.link(&mut connection);
 
         // find impact position and marks them with Constraint::Slap.
-        // let mut impact = HashSet::new();
+        self.cube.iter_mut().for_each(|cube| cube.balanced = false);
+        let territory = QuarterTerritory::new(self.cube.iter().filter(|u| u.alive()));
 
-        todo!()
+        let mut visit = vec![false; number_of_cubes];
+        let mut queue = VecDeque::with_capacity(number_of_cubes);
+        for index in undetermined.iter().cloned() {
+            if !visit[index] {
+                visit[index] = true;
+                queue.push_back(index);
+            }
+
+            while let Some(index) = queue.pop_front() {
+                let cube = &self.cube[index];
+                for other in territory.neighbors(cube) {
+                    if !visit[other.index] {
+                        visit[other.index] = true;
+                        queue.push_back(other.index);
+
+                        if cube.mergeable(other) {
+                            connection.join(cube, other);
+                        }
+                    }
+                }
+            }
+        }
+
+        for group in connection.groups() {
+            let mut arena = Arena::new(self);
+            for &index in group.iter() {
+                if !arena.input(index) {
+                    break;
+                }
+            }
+            if matches!(arena.output(), ArenaResult::Draw) {
+                group.into_iter().for_each(|i| self.cube[i].balanced = true);
+            }
+        }
+
+        for index in undetermined {
+            if self.cube[index].balanced {
+                impact.insert(index);
+            }
+        }
+
+        self.connect(impact, &successors, Constraint::Slap, &mut connection)
+            .into_iter()
+            .for_each(|index| self.cube[index].constraint = Constraint::Slap);
     }
 
-    fn connect<'a>(
+    fn connect(
         &self,
         determined: impl IntoIterator<Item = usize>,
         successors: &Digraph,
@@ -185,7 +362,7 @@ impl Collection {
         let mut queue = VecDeque::with_capacity(number_of_cubes);
         for index in determined.into_iter() {
             let cube = &self.cube[index];
-            if cube.constraint == constraint && visit.insert(index) {
+            if cube.constraint <= constraint && visit.insert(index) {
                 queue.push_back(cube);
             }
 
@@ -228,6 +405,10 @@ impl Collection {
             let mut units = Vec::with_capacity(capacity);
             for &i in from.iter() {
                 units.append(&mut cube[i].units);
+            }
+            let collision = HashSetCollision::new(units.iter().map(|unit| unit.position));
+            for unit in units.iter_mut() {
+                unit.neighborhood = collision.neighborhood(unit.position);
             }
             units
         };
@@ -355,7 +536,6 @@ impl From<&Cube> for usize {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Clone, Debug)]
 struct Unit {
     index: usize,
@@ -375,7 +555,6 @@ pub struct ImmutableArea {
     collision: BitmapCollision,
 }
 
-#[allow(dead_code)]
 impl ImmutableArea {
     pub fn new<'a, I>(width: usize, height: usize, it: I) -> Self
     where
@@ -435,14 +614,12 @@ impl Iterator for AreaIter<'_> {
     }
 }
 
-#[allow(dead_code)]
 #[derive(Debug)]
 struct Contours {
     count: [usize; 3],
     slice: Box<[Point]>,
 }
 
-#[allow(dead_code)]
 impl Contours {
     fn new(units: &[Unit]) -> Self {
         const LBTR: [Adjacence; 4] = [
@@ -590,18 +767,28 @@ impl<'a> QuarterTerritory<'a> {
         Self(map)
     }
 
-    fn neighbors(&self, cube: impl Into<&'a Cube>) /*-> impl Iterator<Item = &Cube> + Clone + '_*/
-    {
+    fn neighbors(&self, cube: impl Into<&'a Cube>) -> impl Iterator<Item = &Cube> + Clone + '_ {
         let cube: &'a Cube = cube.into();
         let delta = Self::delta(cube);
         let anchor = Contours::anchor(&cube.units);
-
-        for movement in Movement::ALL {
-            cube.contours.one(anchor, movement);
-            todo!()
-        }
-
-        todo!()
+        Movement::ALL.into_iter().flat_map(move |movement| {
+            cube.contours
+                .one(anchor, movement)
+                .flat_map(move |mut point| {
+                    point *= 2;
+                    point += delta;
+                    match movement {
+                    Movement::Left /* **/ => [Point::new(1, 0), Point::new(1, 1)],
+                    Movement::Down /* **/ => [Point::new(0, 0), Point::new(1, 0)],
+                    Movement::Up /*   **/ => [Point::new(0, 1), Point::new(1, 1)],
+                    Movement::Right /***/ => [Point::new(0, 0), Point::new(0, 1)],
+                }
+                    .map(|x| point + x)
+                    .into_iter()
+                    .filter_map(|point| self.0.get(&point))
+                    .cloned()
+                })
+        })
     }
 
     fn delta(cube: &'a Cube) -> Point {
