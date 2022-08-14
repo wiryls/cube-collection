@@ -49,7 +49,6 @@ impl Into<Point> for &Adjacence {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Neighborhood(u8);
 
-#[allow(dead_code)]
 impl Neighborhood {
     pub const AROUNDS: [Adjacence; 8] = [
         Adjacence::LEFT,

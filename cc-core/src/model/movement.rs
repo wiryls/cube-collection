@@ -1,4 +1,4 @@
-use crate::common::Point;
+use super::point::Point;
 
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum Movement {
@@ -9,10 +9,12 @@ pub enum Movement {
 }
 
 impl Movement {
-    const LEFT: Point = Point::new(-1, 0);
-    const DOWN: Point = Point::new(0, 1);
-    const UP: Point = Point::new(0, -1);
-    const RIGHT: Point = Point::new(1, 0);
+    pub const ALL: [Movement; 4] = [
+        Movement::Left,
+        Movement::Down,
+        Movement::Up,
+        Movement::Right,
+    ];
 
     pub fn opposite(&self) -> Self {
         use Movement::*;
@@ -24,11 +26,11 @@ impl Movement {
         }
     }
 
-    pub fn is_opposite(&self, other: Self) -> bool {
+    pub fn opposite_to(&self, other: Self) -> bool {
         self.opposite() == other
     }
 
-    pub fn is_orthogonal(&self, other: Self) -> bool {
+    pub fn orthogonal_to(&self, other: Self) -> bool {
         use Movement::*;
         match self {
             Left | Right => matches!(other, Up | Down),
@@ -39,39 +41,34 @@ impl Movement {
 
 impl Into<Point> for Movement {
     fn into(self) -> Point {
+        const LEFT: Point = Point::new(-1, 0);
+        const DOWN: Point = Point::new(0, 1);
+        const UP: Point = Point::new(0, -1);
+        const RIGHT: Point = Point::new(1, 0);
+        use Movement::*;
         match self {
-            Movement::Left => Movement::LEFT,
-            Movement::Down => Movement::DOWN,
-            Movement::Up => Movement::UP,
-            Movement::Right => Movement::RIGHT,
+            Left => LEFT,
+            Down => DOWN,
+            Up => UP,
+            Right => RIGHT,
         }
     }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Restriction {
+pub enum Constraint {
+    /// free to move
     Free,
+    /// knocking on other cubes
+    Slap,
+    /// blocked as competing on the same point
     Lock,
+    /// obstacles on the path
     Stop,
 }
 
-impl Default for Restriction {
+impl Default for Constraint {
     fn default() -> Self {
         Self::Free
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Action {
-    pub movement: Movement,
-    pub restriction: Restriction,
-}
-
-impl Action {
-    pub fn new(movement: Movement, restriction: Restriction) -> Self {
-        Self {
-            movement,
-            restriction,
-        }
     }
 }

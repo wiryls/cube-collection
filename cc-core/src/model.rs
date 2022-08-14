@@ -1,20 +1,20 @@
-mod background;
-mod collection;
-mod handle;
+mod cube;
+mod extension;
 mod item;
+mod kind;
 mod lookup;
 mod motion;
 mod movement;
-mod state;
-mod types;
+mod neighborhood;
+mod point;
 
-use self::background::*;
-use self::collection::*;
-use self::handle::*;
-use self::lookup::*;
-use self::motion::*;
+pub(crate) use cube::{Collection, View};
+pub(crate) use motion::Motion;
+#[allow(unused_imports)]
+pub(crate) use neighborhood::Adjacence;
 
-pub use self::item::{Diff, Item};
-pub use self::movement::{Action, Movement, Restriction};
-pub use self::state::World;
-pub use self::types::Kind;
+pub use item::{Diff, Item};
+pub use kind::Kind;
+pub use movement::{Constraint, Movement};
+pub use neighborhood::Neighborhood;
+pub use point::Point;

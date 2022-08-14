@@ -1,23 +1,20 @@
-mod refactor;
-
-mod common;
 mod model;
 pub mod seed;
-pub use self::{
-    common::{Adjacence, Neighborhood, Point},
-    model::*,
-};
+pub mod state;
+
+pub use self::state::*;
 
 #[cfg(test)]
 mod tests {
+    use crate::model::{Adjacence, Constraint, Neighborhood};
     use crate::seed::*;
     use crate::*;
 
     #[test]
     fn it_works() {
         /*****
-         *BW *
-         *G  *
+         *GW *
+         *B  *
          *x  *
          *****/
 
@@ -33,12 +30,12 @@ mod tests {
             },
             cubes: vec![
                 Cube {
-                    kind: Kind::Blue,
+                    kind: Kind::Green,
                     body: vec![Point::new(0, 0)],
                     command: None,
                 },
                 Cube {
-                    kind: Kind::Green,
+                    kind: Kind::Blue,
                     body: vec![Point::new(0, 1)],
                     command: None,
                 },
@@ -50,101 +47,125 @@ mod tests {
             ],
             destnations: vec![Point::new(1, 0), Point::new(0, 2)],
         };
-        let mut game = World::new(&seed);
+        let mut game = State::new(&seed);
         let stat = [
             Item {
                 id: 0,
-                kind: Kind::Blue,
-                action: None,
+                kind: Kind::Green,
                 position: Point::new(0, 0),
+                movement: None,
+                constraint: Constraint::Free,
                 neighborhood: Neighborhood::from([Adjacence::BOTTOM].into_iter()),
             },
             Item {
                 id: 1,
-                kind: Kind::Blue,
-                action: None,
+                kind: Kind::Green,
                 position: Point::new(0, 1),
+                movement: None,
+                constraint: Constraint::Free,
                 neighborhood: Neighborhood::from([Adjacence::TOP].into_iter()),
             },
             Item {
                 id: 2,
                 kind: Kind::White,
-                action: None,
                 position: Point::new(1, 0),
+                movement: None,
+                constraint: Constraint::Free,
                 neighborhood: Neighborhood::new(),
             },
         ];
-        assert!(game.iter().eq(stat.into_iter()));
+        assert_eq!(game.iter().collect::<Vec<_>>(), stat);
         assert_eq!(game.progress(), (1, 2));
 
         // STEP 01
-        let todo = Some(Some(Action {
-            movement: Movement::Right,
-            restriction: Restriction::Stop,
-        }));
         let diff = [
             Diff {
                 id: 0,
-                action: todo.clone(),
+                movement: Some(Some(Movement::Right)),
+                constraint: Some(Constraint::Stop),
                 ..Default::default()
             },
             Diff {
                 id: 1,
-                action: todo.clone(),
+                movement: Some(Some(Movement::Right)),
+                constraint: Some(Constraint::Stop),
                 ..Default::default()
             },
         ];
-        assert!(game.input(Some(Movement::Right)).eq(diff.into_iter()));
-        assert_eq!(game.progress(), (1, 2));
-        assert_eq!(game.commit().count(), 0);
-        assert_eq!(game.progress(), (1, 2));
-
-        // STEP 02
-        let todo = Some(Some(Action {
-            movement: Movement::Down,
-            restriction: Restriction::Free,
-        }));
+        assert_eq!(game.input(Some(Movement::Right)).collect::<Vec<_>>(), diff);
         let diff = [
             Diff {
                 id: 0,
-                action: todo.clone(),
+                movement: Some(None),
+                constraint: Some(Constraint::Free),
+                ..Default::default()
+            },
+            Diff {
+                id: 1,
+                movement: Some(None),
+                constraint: Some(Constraint::Free),
+                ..Default::default()
+            },
+        ];
+        assert_eq!(game.commit().collect::<Vec<_>>(), diff);
+        assert_eq!(game.progress(), (1, 2));
+
+        // STEP 02
+        let diff = [
+            Diff {
+                id: 0,
+                movement: Some(Some(Movement::Down)),
+                ..Default::default()
+            },
+            Diff {
+                id: 1,
+                movement: Some(Some(Movement::Down)),
+                ..Default::default()
+            },
+        ];
+        assert_eq!(game.input(Some(Movement::Down)).collect::<Vec<_>>(), diff);
+        let diff = [
+            Diff {
+                id: 0,
+                movement: Some(None),
                 position: Some(Point::new(0, 1)),
                 ..Default::default()
             },
             Diff {
                 id: 1,
-                action: todo.clone(),
+                movement: Some(None),
                 position: Some(Point::new(0, 2)),
                 ..Default::default()
             },
         ];
-        assert!(game.input(Some(Movement::Down)).eq(diff.into_iter()));
+        assert_eq!(game.commit().collect::<Vec<_>>(), diff);
         let stat = [
             Item {
                 id: 0,
-                kind: Kind::Blue,
-                action: todo.clone().unwrap(),
+                kind: Kind::Green,
                 position: Point::new(0, 1),
+                movement: None,
+                constraint: Constraint::Free,
                 neighborhood: Neighborhood::from([Adjacence::BOTTOM].into_iter()),
             },
             Item {
                 id: 1,
-                kind: Kind::Blue,
-                action: todo.clone().unwrap(),
+                kind: Kind::Green,
                 position: Point::new(0, 2),
+                movement: None,
+                constraint: Constraint::Free,
                 neighborhood: Neighborhood::from([Adjacence::TOP].into_iter()),
             },
             Item {
                 id: 2,
                 kind: Kind::White,
-                action: None,
                 position: Point::new(1, 0),
+                movement: None,
+                constraint: Constraint::Free,
                 neighborhood: Neighborhood::new(),
             },
         ];
-        assert!(game.iter().eq(stat.into_iter()));
-        assert_eq!(game.progress(), (2, 2));
-        assert_eq!(game.commit().count(), 0);
+        assert_eq!(game.iter().collect::<Vec<_>>(), stat);
         assert_eq!(game.progress(), (2, 2));
     }
 }

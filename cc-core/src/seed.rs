@@ -1,7 +1,4 @@
-pub use super::{
-    common::Point,
-    model::{Kind, Movement},
-};
+pub use super::model::{Kind, Movement, Point};
 
 #[derive(Clone)]
 pub struct Seed {

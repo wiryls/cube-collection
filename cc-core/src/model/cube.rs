@@ -22,18 +22,14 @@ use super::{
 pub struct View(Vec<Item>, usize);
 
 impl View {
-    pub fn iter(&self) -> core::slice::Iter<Item> {
-        self.0.iter()
-    }
-
-    pub fn differ<'a>(&'a self, that: &'a Self) -> impl Iterator<Item = Diff> + 'a {
+    pub fn diff(self, that: Self) -> impl Iterator<Item = Diff> {
         let maximum = if self.0.len() == that.0.len() && self.1 == that.1 {
             self.0.len()
         } else {
             0
         };
 
-        std::iter::zip(self.iter(), that.iter())
+        std::iter::zip(self.into_iter(), that.into_iter())
             .take(maximum)
             .filter(|(l, r)| {
                 l.kind != r.kind
@@ -54,6 +50,15 @@ impl View {
 
     pub fn contains(&self, position: Point) -> bool {
         self.0.iter().any(|unit| unit.position == position)
+    }
+}
+
+impl IntoIterator for View {
+    type Item = Item;
+    type IntoIter = std::vec::IntoIter<Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
     }
 }
 
@@ -115,7 +120,6 @@ impl Collection {
     }
 
     pub fn view(&self) -> View {
-        let capacity = self.cube.len() + self.area.unchanged.len();
         let default = Item {
             id: 0,
             kind: Kind::White,
@@ -124,7 +128,9 @@ impl Collection {
             constraint: Constraint::Free,
             neighborhood: Neighborhood::new(),
         };
-        let mut output = vec![default; capacity];
+        let size = self.area.unchanged.len()
+            + self.cube.iter().map(|cube| cube.units.len()).sum::<usize>();
+        let mut output = vec![default; size];
         for cube in self.cube.iter() {
             for unit in cube.units.iter() {
                 output[unit.index] = Item {
@@ -137,7 +143,7 @@ impl Collection {
                 };
             }
         }
-        let offset = self.cube.len();
+        let offset = size - self.area.unchanged.len();
         for (index, unit) in self.area.unchanged.iter().enumerate() {
             output[index + offset] = Item {
                 id: index + offset,
@@ -152,7 +158,7 @@ impl Collection {
         View(output, offset)
     }
 
-    pub fn absorb(&mut self) {
+    pub fn preprocess(&mut self) {
         let number_of_cubes = self.cube.len();
         let unstable = self.cube.iter().filter(|u| u.alive() && u.unstable());
 
@@ -196,6 +202,22 @@ impl Collection {
                 Draw => group.into_iter().for_each(|i| self.cube[i].balanced = true),
                 _ => {}
             };
+        }
+    }
+
+    pub fn postprocess(&mut self) {
+        for cube in self.cube.iter_mut() {
+            if cube.constraint == Constraint::Free {
+                if let Some(movement) = cube.movement {
+                    let direction = movement.into();
+                    for unit in cube.units.iter_mut() {
+                        unit.position += direction;
+                    }
+                }
+            }
+            cube.balanced = false;
+            cube.movement = cube.motion.next().unwrap_or_default();
+            cube.constraint = Constraint::Free;
         }
 
         self.bury();
@@ -582,35 +604,6 @@ impl ImmutableArea {
 
     pub fn blocked(&self, point: Point) -> bool {
         self.collision.hit(point)
-    }
-
-    pub fn iter(&self, offset: usize) -> AreaIter {
-        AreaIter {
-            offset,
-            iterator: self.unchanged.iter().enumerate(),
-        }
-    }
-}
-
-pub struct AreaIter<'a> {
-    offset: usize,
-    iterator: std::iter::Enumerate<std::slice::Iter<'a, (Point, Neighborhood)>>,
-}
-
-impl Iterator for AreaIter<'_> {
-    type Item = Item;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.iterator
-            .next()
-            .map(|(index, (point, neighborhood))| Item {
-                id: (index + self.offset).into(),
-                kind: Kind::White,
-                position: point.clone(),
-                movement: None,
-                constraint: Constraint::Free,
-                neighborhood: neighborhood.clone(),
-            })
     }
 }
 

@@ -1,124 +1,89 @@
 use std::{
     borrow::Borrow,
-    collections::{hash_set, HashMap, HashSet},
+    collections::{HashMap, HashSet},
 };
 
-use super::{HeadID, Movement};
-use crate::common::{Neighborhood, Point};
+use super::point::Point;
 
-#[derive(Eq, Hash, PartialEq)]
-struct Key(u64);
+/////////////////////////////////////////////////////////////////////////////
+// Collision
 
-impl From<&Point> for Key {
-    fn from(o: &Point) -> Self {
-        Key(((o.x as u64) << 32) | (o.y as u64))
+pub trait Collision {
+    fn hit(&self, point: Point) -> bool;
+    fn put(&mut self, point: Point);
+}
+
+pub struct HashSetCollision(HashSet<Point>);
+
+impl HashSetCollision {
+    pub fn new<T: Borrow<Point>, I: Iterator<Item = T>>(it: I) -> Self {
+        Self(it.map(|x| x.borrow().clone()).collect())
     }
 }
 
-impl From<Point> for Key {
-    fn from(o: Point) -> Self {
-        Key(((o.x as u64) << 32) | (o.y as u64))
+impl Collision for HashSetCollision {
+    fn hit(&self, point: Point) -> bool {
+        self.0.contains(&point)
+    }
+
+    fn put(&mut self, point: Point) {
+        self.0.insert(point);
     }
 }
 
-pub struct Collision(HashSet<Key>);
+#[derive(Debug)]
+pub struct BitmapCollision {
+    width: i32,
+    height: i32,
+    bits: Box<[u64]>,
+}
 
-impl Collision {
-    pub fn new(it: impl Iterator<Item = Point>) -> Self {
-        Self(it.map(Into::into).collect())
+impl BitmapCollision {
+    const UNIT: usize = 64;
+
+    pub fn new(width: usize, height: usize) -> Self {
+        let size = (width.max(1) * height.max(1) + Self::UNIT - 1) / Self::UNIT;
+        Self {
+            width: width as i32,
+            height: height as i32,
+            bits: vec![0; size].into(),
+        }
     }
 
-    pub fn hit(&self, point: Point) -> bool {
-        self.0.contains(&point.into())
-    }
-
-    pub fn neighborhood(&self, point: Point) -> Neighborhood {
-        Neighborhood::from(
-            Neighborhood::AROUND
-                .into_iter()
-                .filter(|&o| self.hit(point + o.into())),
-        )
+    fn collapse(&self, point: Point) -> Option<(usize, usize)> {
+        if 0 <= point.x && point.x < self.width && 0 <= point.y && point.y < self.height {
+            let index = (point.x + point.y * self.width) as usize;
+            Some((index / Self::UNIT, index % Self::UNIT))
+        } else {
+            None
+        }
     }
 }
 
-pub struct Faction(HashMap<Key, HeadID>);
-
-impl Faction {
-    pub fn new(it: impl Iterator<Item = (Point, HeadID)>) -> Self {
-        Self(it.map(|(key, value)| (key.into(), value)).collect())
+impl Collision for BitmapCollision {
+    fn hit(&self, point: Point) -> bool {
+        match self.collapse(point) {
+            Some((index, delta)) => self.bits[index] & (1 << delta) != 0,
+            None => false,
+        }
     }
 
-    pub fn get(&self, point: Point) -> Option<HeadID> {
-        self.0.get(&point.into()).cloned()
-    }
-}
-
-#[derive(Default)]
-pub struct Conflict(HashMap<Key, Race>);
-
-impl Conflict {
-    pub fn with_capacity(capacity: usize) -> Self {
-        Self(HashMap::with_capacity(capacity))
-    }
-
-    pub fn put(&mut self, id: HeadID, movement: Movement, points: impl Iterator<Item = Point>) {
-        points.for_each(|point| {
-            self.0
-                .entry(point.into())
-                .or_default()
-                .set(movement, id.clone())
-        });
-    }
-
-    pub fn overlaps(
-        &self,
-    ) -> impl Iterator<Item = impl Iterator<Item = (HeadID, Movement)> + Clone + '_> + '_ {
-        self.0.values().filter(Race::conflict).map(Race::whom)
+    fn put(&mut self, point: Point) {
+        if let Some((index, delta)) = self.collapse(point) {
+            self.bits[index] |= 1 << delta;
+        }
     }
 }
 
-#[derive(Default)]
-struct Race {
-    mark: u8,
-    data: [usize; 4],
-}
-
-impl Race {
-    const MASK: [u8; 4] = [0b0001, 0b0010, 0b0100, 0b1000];
-    const MOVE: [Movement; 4] = [
-        Movement::Left,
-        Movement::Down,
-        Movement::Up,
-        Movement::Right,
-    ];
-
-    fn set<T: Into<usize>>(&mut self, movement: Movement, index: T) {
-        let i = match movement {
-            Movement::Left => 0,
-            Movement::Down => 1,
-            Movement::Up => 2,
-            Movement::Right => 3,
-        };
-        self.mark |= Race::MASK[i];
-        self.data[i] = index.into();
-    }
-
-    fn conflict(self: &&Self) -> bool {
-        self.mark & self.mark - 1 != 0
-    }
-
-    fn whom<T: From<usize>>(&self) -> impl Iterator<Item = (T, Movement)> + Clone + '_ {
-        (0..4)
-            .into_iter()
-            .filter(|i| self.mark & Race::MASK[*i] != 0)
-            .map(|i| (self.data[i].into(), Race::MOVE[i]))
-    }
-}
+/////////////////////////////////////////////////////////////////////////////
+// DisjointSet
 
 pub struct DisjointSet {
-    parents: Box<[Option<usize>]>,
+    parents: Vec<Option<usize>>,
     existed: Vec<usize>,
 }
+
+pub type DisjointSetGroups = std::collections::hash_map::IntoValues<usize, Vec<usize>>;
 
 impl DisjointSet {
     pub fn new(size: usize) -> Self {
@@ -140,14 +105,17 @@ impl DisjointSet {
         }
     }
 
-    pub fn groups(self) -> Groups {
-        let mut pairs = self
-            .existed
-            .iter()
-            .map(|&i| (i, Self::root(&self.parents, i)))
-            .collect::<Box<_>>();
-        pairs.sort_by_key(|pair| pair.1);
-        Groups(pairs)
+    pub fn groups(&mut self) -> DisjointSetGroups {
+        let hint = self.existed.len();
+        let mut pair = HashMap::with_capacity(hint);
+        for &value in self.existed.iter() {
+            pair.entry(Self::root(&self.parents, value))
+                .or_insert_with(|| Vec::with_capacity(hint))
+                .push(value);
+        }
+        self.parents.clear();
+        self.existed.clear();
+        pair.into_values()
     }
 
     fn root(this: &[Option<usize>], mut index: usize) -> usize {
@@ -192,134 +160,67 @@ impl DisjointSet {
     }
 }
 
-pub struct Groups(Box<[(/* self */ usize, /* root */ usize)]>);
+/////////////////////////////////////////////////////////////////////////////
+// Successors
 
-impl Groups {
-    pub fn iter<'a>(&'a self) -> GroupsIterator<'a> {
-        GroupsIterator {
-            group: &self.0,
-            index: 0,
-        }
-    }
-}
+pub struct Digraph(HashMap<usize, HashSet<usize>>, HashSet<usize>);
 
-pub struct GroupsIterator<'a> {
-    group: &'a [(usize, usize)],
-    index: usize,
-}
+pub type DigraphNodeIter<'a> = std::collections::hash_set::Iter<'a, usize>;
 
-impl<'a> Iterator for GroupsIterator<'a> {
-    type Item = std::iter::Map<std::slice::Iter<'a, (usize, usize)>, fn(&(usize, usize)) -> usize>;
-    fn next(&mut self) -> Option<Self::Item> {
-        let lower = self.index;
-        let limit = self.group.len();
-        if limit <= lower {
-            return None;
-        }
-
-        let mut upper = self.index + 1;
-        let value = self.group[lower];
-        while upper < limit && self.group[upper].1 == value.1 {
-            upper += 1;
-        }
-
-        self.index = upper;
-        Some(self.group[lower..upper].into_iter().map(|x| x.0))
-    }
-}
-
-pub struct Successors(Box<[Option<HashSet<HeadID>>]>, HashSet<HeadID>);
-
-impl Successors {
-    pub fn new(maximum: usize) -> Self {
-        Self(vec![None; maximum].into_boxed_slice(), HashSet::new())
+impl Digraph {
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self(HashMap::with_capacity(capacity), HashSet::new())
     }
 
-    pub fn insert<T, U>(&mut self, index: T, value: U)
-    where
-        T: Borrow<HeadID>,
-        U: Borrow<HeadID>,
-    {
-        let index = usize::from(index.borrow());
-        let limit = self.0.len();
-        if let Some(set) = self.0.get_mut(index) {
-            let build = || HashSet::with_capacity(4.max(limit / 4));
-            set.get_or_insert_with(build).insert(value.borrow().clone());
-        }
+    pub fn add<F: Into<usize>, T: Into<usize>>(&mut self, from: F, to: T) {
+        self.0
+            .entry(from.into())
+            .or_insert_with(|| HashSet::with_capacity(8))
+            .insert(to.into());
     }
 
-    pub fn walk<T: Borrow<HeadID>>(&mut self, index: T) -> hash_set::Iter<'_, HeadID> {
-        let index = usize::from(index.borrow());
-        match self.0.get(index) {
-            Some(Some(set)) => set,
-            _ => &self.1,
+    pub fn children<T: Into<usize>>(&self, index: T) -> DigraphNodeIter {
+        match self.0.get(&index.into()) {
+            Some(set) => set,
+            _fallback => &self.1,
         }
         .iter()
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// Tests
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn empty_conflict() {
-        let lookup = Conflict::with_capacity(0);
-        assert_eq!(lookup.overlaps().count(), 0);
-    }
+    fn collisions() {
+        fn case<C: Collision>(mut it: C, tag: &'static str) {
+            let put = [(1, 1), (1, 2), (4, 2)].map(Point::from);
+            let not = [(-1, -1), (0, 0), (1, 0), (0, 1), (1, 4)].map(Point::from);
 
-    #[test]
-    fn basic_conflict() {
-        let cases = [(
-            vec![
-                (HeadID::from(1), Movement::Right, vec![(1, 0), (1, 1)]),
-                (HeadID::from(2), Movement::Up, vec![(1, 0)]),
-                (HeadID::from(3), Movement::Left, vec![(1, 0)]),
-                (HeadID::from(4), Movement::Left, vec![(1, 1)]),
-            ],
-            vec![
-                vec![
-                    (HeadID::from(1), Movement::Right),
-                    (HeadID::from(4), Movement::Left),
-                ],
-                vec![
-                    (HeadID::from(1), Movement::Right),
-                    (HeadID::from(2), Movement::Up),
-                    (HeadID::from(3), Movement::Left),
-                ],
-            ],
-        )];
-
-        for (i, (input, output)) in cases.into_iter().enumerate() {
-            let mut lookup = Conflict::with_capacity(input.len());
-            for (id, movement, points) in input {
-                lookup.put(id, movement, points.into_iter().map(Into::into));
+            for o in put {
+                it.put(o);
             }
-
-            let expect = HashSet::from_iter(output.iter().cloned());
-            let actual = lookup
-                .overlaps()
-                .map(|x| {
-                    let mut v = x.collect::<Vec<_>>();
-                    v.sort_by_key(|x| usize::from(&x.0));
-                    v
-                })
-                .collect::<HashSet<_>>();
-
-            assert_eq!(expect, actual, "case {}", i);
+            for o in put {
+                assert!(it.hit(o), "{} {:?}", tag, o);
+            }
+            for o in not {
+                assert!(!it.hit(o), "{} {:?}", tag, o);
+            }
         }
+
+        case(BitmapCollision::new(5, 3), "5x3 bitmap");
+        case(BitmapCollision::new(10, 10), "10x10 bitmap");
+        case(HashSetCollision::new::<Point, _>([].into_iter()), "hashset");
     }
 
     #[test]
-    fn empty_disjoint_set() {
-        let lookup = DisjointSet::new(0);
-        let groups = lookup.groups();
-        assert!(groups.iter().next().is_none());
-    }
-
-    #[test]
-    fn basic_disjoint_set() {
+    fn disjoint_set() {
         let cases = [
+            (0, vec![], vec![]),
             (
                 10,
                 vec![(1, 3), (7, 9), (5, 7), (9usize, 3usize)],
@@ -340,11 +241,9 @@ mod tests {
 
             let mut out = lookup
                 .groups()
-                .iter()
-                .map(|x| {
-                    let mut v = x.collect::<Vec<_>>();
-                    v.sort();
-                    v
+                .map(|mut x| {
+                    x.sort();
+                    x
                 })
                 .collect::<Vec<_>>();
             out.sort_by_key(|x| x.iter().copied().min());
