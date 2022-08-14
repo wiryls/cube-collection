@@ -1,5 +1,5 @@
 use bevy::reflect::TypeUuid;
-use cc_core::{seed, Diff, Movement, World};
+use cc_core::{model::Movement, seed};
 
 #[derive(Clone, TypeUuid)]
 #[uuid = "c99b1333-8ad3-4b26-a54c-7de542f43c51"]

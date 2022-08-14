@@ -3,7 +3,7 @@ use bevy::{
     math::{Rect, XY},
     window::WindowResized,
 };
-use cc_core::Point;
+use cc_core::model::Point;
 use iyes_loopless::prelude::*;
 use num_traits::AsPrimitive;
 

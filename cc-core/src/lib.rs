@@ -1,4 +1,4 @@
-mod model;
+pub mod model;
 pub mod seed;
 pub mod state;
 
@@ -6,7 +6,7 @@ pub use self::state::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::model::{Adjacence, Constraint, Neighborhood};
+    use crate::model::*;
     use crate::seed::*;
     use crate::*;
 

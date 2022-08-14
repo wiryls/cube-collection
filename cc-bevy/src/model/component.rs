@@ -2,7 +2,7 @@ use crate::extra::grid::GridMapper;
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
-use cc_core::{Action, Item, Kind, Neighborhood, Point};
+use cc_core::model::{Constraint, Item, Kind, Movement, Neighborhood, Point};
 
 #[derive(Component, Default)]
 pub struct Earthbound;
@@ -11,8 +11,9 @@ pub struct Earthbound;
 pub struct Cubic {
     pub id: usize,
     pub kind: Kind,
-    pub action: Option<Action>,
     pub position: Point,
+    pub movement: Option<Movement>,
+    pub constraint: Constraint,
     pub neighborhood: Neighborhood,
 }
 
@@ -21,8 +22,9 @@ impl From<Item> for Cubic {
         Self {
             id: item.id,
             kind: item.kind,
-            action: item.action,
             position: item.position,
+            movement: None,
+            constraint: Constraint::Free,
             neighborhood: item.neighborhood,
         }
     }

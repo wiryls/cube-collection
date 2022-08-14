@@ -1,7 +1,6 @@
-pub use super::model::{Diff, Item};
 use super::{
-    model::{Collection, Motion, Movement, Point, View},
-    seed::{Cube, Kind, Seed},
+    model::{Collection, Diff, Item, Kind, Motion, Movement, Point, View},
+    seed::{Cube, Seed},
 };
 
 pub struct State {
