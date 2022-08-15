@@ -59,7 +59,7 @@ fn switch_world(
         None => return,
         Some(seed) => {
             // [0] update grid
-            view.set_source(Rect {
+            view.set_source(UiRect {
                 left: 0,
                 right: seed.width(),
                 top: 0,

@@ -8,10 +8,10 @@ version = "0.1.0"
 cc-core = {path = "../cc-core"}
 
 # Bery and its plugins
-bevy = "0.7"
-bevy-inspector-egui = "0.11"
-bevy_prototype_lyon = "0.5"
-iyes_loopless = "0.5"
+bevy = "0.8"
+bevy-inspector-egui = "0.12"
+bevy_prototype_lyon = "0.6"
+iyes_loopless = "0.7"
 
 # Extra utilities
 num-traits = "0.2.15"

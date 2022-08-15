@@ -1,8 +1,5 @@
 use bevy::prelude::*;
-use bevy::{
-    math::{Rect, XY},
-    window::WindowResized,
-};
+use bevy::window::WindowResized;
 use cc_core::model::Point;
 use iyes_loopless::prelude::*;
 use num_traits::AsPrimitive;
@@ -19,7 +16,7 @@ impl Plugin for GridPlugin {
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+    commands.spawn_bundle(Camera2dBundle::default());
 }
 
 fn window_resized(
@@ -36,7 +33,7 @@ fn window_resized(
             // rect is defined by camera's ScalingMode::WindowSize
             let w = event.width / 2.;
             let h = event.height / 2.;
-            let r = Rect {
+            let r = UiRect {
                 left: -w,
                 right: w,
                 top: h,
@@ -58,14 +55,14 @@ pub struct GridUpdated {
 #[derive(Default)]
 pub struct GridView {
     // input
-    source: Option<Rect<i32>>,
-    target: Option<Rect<f32>>,
+    source: Option<UiRect<i32>>,
+    target: Option<UiRect<f32>>,
     // output
     mapper: GridMapper,
 }
 
 impl GridView {
-    pub fn set_source(&mut self, source: Rect<i32>) -> bool {
+    pub fn set_source(&mut self, source: UiRect<i32>) -> bool {
         let update = match self.source {
             None => true,
             Some(rect) => rect != source,
@@ -77,7 +74,7 @@ impl GridView {
         update
     }
 
-    pub fn set_target(&mut self, target: Rect<f32>) -> bool {
+    pub fn set_target(&mut self, target: UiRect<f32>) -> bool {
         let update = match self.target {
             None => true,
             Some(rect) => rect != target,
@@ -106,11 +103,11 @@ impl GridView {
             let scale = f32::min(tw / sw, th / sh);
 
             self.mapper = GridMapper {
-                source: XY {
+                source: IVec2 {
                     x: source.left,
                     y: source.top,
                 },
-                target: XY {
+                target: Vec2 {
                     x: target.left + (tw - sw * scale) / 2.,
                     y: target.top - (th - sh * scale) / 2.,
                 },
@@ -122,8 +119,8 @@ impl GridView {
 
 #[derive(Default, Clone, Copy)]
 pub struct GridMapper {
-    source: XY<i32>,
-    target: XY<f32>,
+    source: IVec2,
+    target: Vec2,
     scale: f32,
 }
 
