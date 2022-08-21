@@ -1,4 +1,4 @@
-use super::component::Cubic;
+use super::{component::Cubic, seed::CubeWorld};
 use crate::extra::grid::GridView;
 use bevy::prelude::*;
 
@@ -10,6 +10,7 @@ pub fn movement(
     cubes: Query<&mut Cubic>,
     view: ResMut<GridView>,
     time: Res<Time>,
+    mut world: ResMut<CubeWorld>,
     mut turn: Local<detail::Turn>,
 ) {
     if turn.tick(time.delta()).finished() {

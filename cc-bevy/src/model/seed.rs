@@ -3,7 +3,7 @@ use cc_core::{model::Movement, seed};
 
 #[derive(Clone, TypeUuid)]
 #[uuid = "c99b1333-8ad3-4b26-a54c-7de542f43c51"]
-pub struct CubeWorldSeed(seed::Seed);
+pub struct CubeWorldSeed(pub seed::Seed);
 
 impl CubeWorldSeed {
     pub fn new(seed: seed::Seed) -> Self {
@@ -49,7 +49,7 @@ impl From<Vec<CubeWorldSeed>> for CubeWorldSeeds {
     }
 }
 
-pub struct CubeWorld(/* TODO */);
+pub type CubeWorld = cc_core::State;
 
 pub enum Command {
     Left,

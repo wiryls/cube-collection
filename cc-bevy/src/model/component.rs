@@ -1,3 +1,4 @@
+use super::seed::CubeWorld;
 use crate::extra::grid::GridMapper;
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
@@ -38,37 +39,36 @@ struct CubeBundle {
     shape: ShapeBundle,
 }
 
-// TODO: fix it.
-// pub fn spawn_cubes(state: &State, commands: &mut Commands, mapper: &GridMapper) {
-//     let scale = mapper.scale(1.0f32);
-//     for item in state.current() {
-//         let color = match item.kind {
-//             Kind::White => Color::rgb(1., 1., 1.),
-//             Kind::Red => Color::rgb(1., 0., 0.),
-//             Kind::Blue => Color::rgb(0., 0., 1.),
-//             Kind::Green => Color::rgb(0., 1., 0.),
-//         };
-//         let points = cube_boundaries(item.neighborhood, 1.0, 0.95);
-//         let translation = mapper.flip(&item.position).extend(0.);
+pub fn spawn_cubes(state: &CubeWorld, commands: &mut Commands, mapper: &GridMapper) {
+    let scale = mapper.scale(1.0f32);
+    for item in state.iter() {
+        let color = match item.kind {
+            Kind::White => Color::rgb(1., 1., 1.),
+            Kind::Red => Color::rgb(1., 0., 0.),
+            Kind::Blue => Color::rgb(0., 0., 1.),
+            Kind::Green => Color::rgb(0., 1., 0.),
+        };
+        let points = cube_boundaries(item.neighborhood, 1., 0.95);
+        let translation = mapper.absolute(&item.position).extend(0.);
 
-//         commands.spawn_bundle(CubeBundle {
-//             cubic: item.into(),
-//             bound: Earthbound::default(),
-//             shape: GeometryBuilder::build_as(
-//                 &shapes::Polygon {
-//                     points,
-//                     closed: true,
-//                 },
-//                 DrawMode::Fill(FillMode::color(color)),
-//                 Transform {
-//                     translation,
-//                     scale: Vec3::new(scale, scale, 1.0),
-//                     ..default()
-//                 },
-//             ),
-//         });
-//     }
-// }
+        commands.spawn_bundle(CubeBundle {
+            cubic: item.into(),
+            bound: Earthbound::default(),
+            shape: GeometryBuilder::build_as(
+                &shapes::Polygon {
+                    points,
+                    closed: true,
+                },
+                DrawMode::Fill(FillMode::color(color)),
+                Transform {
+                    translation,
+                    scale: Vec3::new(scale, scale, 1.),
+                    ..default()
+                },
+            ),
+        });
+    }
+}
 
 fn cube_boundaries(pattern: Neighborhood, scale: f32, ratio: f32) -> Vec<Vec2> {
     let mut points = Vec::with_capacity(12);

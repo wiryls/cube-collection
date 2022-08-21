@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, HashSet, VecDeque},
-    rc::Rc,
+    sync::Arc,
 };
 
 use super::{
@@ -64,8 +64,8 @@ impl IntoIterator for View {
 
 #[derive(Clone, Debug)]
 pub struct Collection {
-    area: Rc<ImmutableArea>, // background and obstacles
-    cube: Vec<Cube>,         // cubes (sets of units)
+    area: Arc<ImmutableArea>, // background and obstacles
+    cube: Vec<Cube>,          // cubes (sets of units)
 }
 
 impl Collection {
@@ -73,10 +73,11 @@ impl Collection {
     where
         I: Iterator<Item = (Kind, &'a [Point], Motion)> + 'a,
     {
+        let mut index = 0;
         let mut count = 0;
         let mut cubes = Vec::new();
         let mut other = Vec::new();
-        for (index, (kind, points, mut motion)) in it.enumerate() {
+        for (kind, points, mut motion) in it {
             let movement = match motion.next() {
                 None if kind == Kind::White => {
                     other.push(points);
@@ -90,13 +91,13 @@ impl Collection {
             let units = points
                 .iter()
                 .enumerate()
-                .map(|(index, &point)| Unit {
-                    index: index + count,
+                .map(|(offset, &point)| Unit {
+                    index: count + offset,
                     position: point,
                     neighborhood: collision.neighborhood(point),
                 })
                 .collect::<Vec<_>>();
-            let contours = Rc::new(Contours::new(&units));
+            let contours = Arc::new(Contours::new(&units));
 
             let cube = Cube {
                 index,
@@ -111,10 +112,11 @@ impl Collection {
 
             cubes.push(cube);
             count += points.len();
+            index += 1;
         }
 
         Self {
-            area: Rc::new(ImmutableArea::new(width, height, other.into_iter())),
+            area: Arc::new(ImmutableArea::new(width, height, other.into_iter())),
             cube: cubes,
         }
     }
@@ -503,7 +505,7 @@ struct Cube {
     kind: Kind,
     units: Vec<Unit>,
     motion: Motion,
-    contours: Rc<Contours>,     // calculated boundary points
+    contours: Arc<Contours>,    // calculated boundary points
     balanced: bool,             // state of being unabsorbable
     movement: Option<Movement>, // original movement direction
     constraint: Constraint,     // state of movement

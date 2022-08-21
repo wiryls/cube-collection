@@ -26,12 +26,13 @@ impl Plugin for RunningScene {
                     .label("rule")
                     .after("flow")
                     .run_in_state(State::Running)
-                    .with_system(system::movement)
+                    .with_system(system::movement.run_if_resource_exists::<seed::CubeWorld>())
                     .into(),
             );
     }
 }
 
+#[allow(unused)]
 pub enum WorldChanged {
     Reset,
     Next,
@@ -71,10 +72,9 @@ fn switch_world(
 
             // [2] create new cubes
             let mapper = view.mapping();
-
-            // for c in &seed.0.cubes {
-            //     port::spawn_cubes(&c, &mut commands, &mapper);
-            // }
+            let world = seed::CubeWorld::new(&seed.0);
+            component::spawn_cubes(&world, &mut commands, &mapper);
+            commands.insert_resource(world);
         }
     }
 }
@@ -91,7 +91,7 @@ fn update_scale(
     let grid = &event.mapper;
     let scale = grid.scale(1.0);
     for (cube, mut transform) in cubes.iter_mut() {
-        transform.translation = grid.absolute(&cube.position).extend(0.0);
+        transform.translation = grid.absolute(&cube.position).extend(0.);
         transform.scale = Vec3::new(scale, scale, 1.0);
     }
 }

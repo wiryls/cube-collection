@@ -132,6 +132,7 @@ impl GridMapper {
         self.scale * o.as_()
     }
 
+    #[allow(unused)]
     pub fn flip<T, U>(&self, o: &T) -> Vec2
     where
         T: Location<U>,
