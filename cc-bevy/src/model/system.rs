@@ -7,42 +7,16 @@ pub struct Test;
 
 pub fn movement(
     mut commands: Commands,
-    cubes: Query<&mut Cubic>,
+    mut cubes: Query<&mut Cubic>,
+    mut world: ResMut<CubeWorld>,
     view: ResMut<GridView>,
     time: Res<Time>,
-    mut world: ResMut<CubeWorld>,
-    mut turn: Local<detail::Turn>,
 ) {
-    if turn.tick(time.delta()).finished() {
+    if world.tick(time.delta()) {
         let mapper = view.mapping();
-    }
-}
 
-mod detail {
-    use bevy::prelude::*;
-    use std::{
-        ops::{Deref, DerefMut},
-        time::Duration,
-    };
-
-    pub struct Turn(Timer);
-
-    impl Default for Turn {
-        fn default() -> Self {
-            Self(Timer::new(Duration::from_millis(200), true))
-        }
-    }
-
-    impl Deref for Turn {
-        type Target = Timer;
-        fn deref(&self) -> &Self::Target {
-            &self.0
-        }
-    }
-
-    impl DerefMut for Turn {
-        fn deref_mut(&mut self) -> &mut Self::Target {
-            &mut self.0
+        for mut cube in cubes.iter_mut() {
+            // TODO: update cube by Diff
         }
     }
 }

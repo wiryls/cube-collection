@@ -1,4 +1,6 @@
-use bevy::reflect::TypeUuid;
+use std::time::Duration;
+
+use bevy::{reflect::TypeUuid, time::Timer};
 use cc_core::{model::Movement, seed};
 
 #[derive(Clone, TypeUuid)]
@@ -49,7 +51,27 @@ impl From<Vec<CubeWorldSeed>> for CubeWorldSeeds {
     }
 }
 
-pub type CubeWorld = cc_core::State;
+pub struct CubeWorld {
+    state: cc_core::State,
+    timer: Timer,
+}
+
+impl CubeWorld {
+    pub fn new(seed: &CubeWorldSeed) -> Self {
+        Self {
+            state: cc_core::State::new(&seed.0),
+            timer: Timer::new(Duration::from_millis(200), true),
+        }
+    }
+
+    pub fn tick(&mut self, delta: Duration) -> bool {
+        self.timer.tick(delta).finished()
+    }
+
+    pub fn cubes(&self) -> impl Iterator<Item = cc_core::model::Item> {
+        self.state.iter()
+    }
+}
 
 pub enum Command {
     Left,

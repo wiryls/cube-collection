@@ -41,7 +41,7 @@ struct CubeBundle {
 
 pub fn spawn_cubes(state: &CubeWorld, commands: &mut Commands, mapper: &GridMapper) {
     let scale = mapper.scale(1.0f32);
-    for item in state.iter() {
+    for item in state.cubes() {
         let color = match item.kind {
             Kind::White => Color::rgb(1., 1., 1.),
             Kind::Red => Color::rgb(1., 0., 0.),

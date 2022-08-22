@@ -72,7 +72,7 @@ fn switch_world(
 
             // [2] create new cubes
             let mapper = view.mapping();
-            let world = seed::CubeWorld::new(&seed.0);
+            let world = seed::CubeWorld::new(&seed);
             component::spawn_cubes(&world, &mut commands, &mapper);
             commands.insert_resource(world);
         }
