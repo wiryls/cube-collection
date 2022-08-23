@@ -62,11 +62,19 @@ impl State {
     }
 
     pub fn commit(&mut self) -> impl Iterator<Item = Diff> {
-        if let Some(base) = self.next.take() {
-            self.base = base;
-        }
+        let last = match self.next.take() {
+            Some(base) => {
+                self.base = base;
+                self.last = None;
+                self.base.view()
+            }
+            None => {
+                let view = self.base.view();
+                self.base.input(None);
+                view
+            }
+        };
 
-        let last = self.last.insert(self.base.clone()).view();
         self.base.postprocess();
         self.base.preprocess();
         let next = self.base.view();

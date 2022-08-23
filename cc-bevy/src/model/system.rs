@@ -12,11 +12,12 @@ pub fn movement(
     view: ResMut<GridView>,
     time: Res<Time>,
 ) {
-    if world.tick(time.delta()) {
+    let diffs = world.next(time.delta());
+    if !diffs.is_empty() {
         let mapper = view.mapping();
-
         for mut cube in cubes.iter_mut() {
             // TODO: update cube by Diff
+            todo!()
         }
     }
 }
