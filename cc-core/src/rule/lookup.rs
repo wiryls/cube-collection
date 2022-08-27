@@ -3,7 +3,7 @@ use std::{
     collections::{HashMap, HashSet},
 };
 
-use crate::model::Point;
+use crate::cube::Point;
 
 /////////////////////////////////////////////////////////////////////////////
 // Collision

@@ -1,4 +1,4 @@
-use super::model::{Kind, Movement, Point};
+use super::cube::{Kind, Movement, Point};
 
 #[derive(Clone)]
 pub struct Seed {

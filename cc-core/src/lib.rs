@@ -1,13 +1,14 @@
-pub mod model;
+pub mod cube;
 mod rule;
 pub mod seed;
 pub mod state;
 
+pub use self::rule::{Diff, Item};
 pub use self::state::*;
 
 #[cfg(test)]
 mod tests {
-    use crate::model::*;
+    use crate::cube::*;
     use crate::seed::*;
     use crate::*;
 
@@ -93,22 +94,7 @@ mod tests {
                 ..Default::default()
             },
         ];
-        assert_eq!(game.input(Some(Movement::Right)).collect::<Vec<_>>(), diff);
-        let diff = [
-            Diff {
-                id: 0,
-                movement: Some(None),
-                constraint: Some(Constraint::Free),
-                ..Default::default()
-            },
-            Diff {
-                id: 1,
-                movement: Some(None),
-                constraint: Some(Constraint::Free),
-                ..Default::default()
-            },
-        ];
-        assert_eq!(game.commit().collect::<Vec<_>>(), diff);
+        assert_eq!(game.commit(Some(Movement::Right)).collect::<Vec<_>>(), diff);
         assert_eq!(game.progress(), (1, 2));
 
         // STEP 02
@@ -116,30 +102,17 @@ mod tests {
             Diff {
                 id: 0,
                 movement: Some(Some(Movement::Down)),
-                ..Default::default()
-            },
-            Diff {
-                id: 1,
-                movement: Some(Some(Movement::Down)),
-                ..Default::default()
-            },
-        ];
-        assert_eq!(game.input(Some(Movement::Down)).collect::<Vec<_>>(), diff);
-        let diff = [
-            Diff {
-                id: 0,
-                movement: Some(None),
                 position: Some(Point::new(0, 1)),
                 ..Default::default()
             },
             Diff {
                 id: 1,
-                movement: Some(None),
+                movement: Some(Some(Movement::Down)),
                 position: Some(Point::new(0, 2)),
                 ..Default::default()
             },
         ];
-        assert_eq!(game.commit().collect::<Vec<_>>(), diff);
+        assert_eq!(game.commit(Some(Movement::Down)).collect::<Vec<_>>(), diff);
         let stat = [
             Item {
                 id: 0,

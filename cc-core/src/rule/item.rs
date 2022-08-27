@@ -1,4 +1,4 @@
-use super::{Constraint, Kind, Movement, Neighborhood, Point};
+use crate::cube::{Constraint, Kind, Movement, Neighborhood, Point};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Item {

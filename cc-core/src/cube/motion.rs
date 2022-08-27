@@ -38,21 +38,18 @@ impl Motion {
         Motion(Any::Stop)
     }
 
-    pub fn from_sequence<I>(is_loop: bool, movements: I) -> Self
-    where
-        I: Iterator<Item = (Option<Movement>, usize)>,
-    {
+    pub fn from_sequence(
+        looping: bool,
+        actions: impl Iterator<Item = (Option<Movement>, usize)>,
+    ) -> Self {
         Motion(Any::Move(Move {
-            source: Arc::new(Sequence::new(is_loop, movements)),
+            source: Arc::new(Sequence::new(looping, actions)),
             primary: 0,
             secondary: 0,
         }))
     }
 
-    pub fn from_iter<I>(others: I) -> Self
-    where
-        I: Iterator<Item = Self>,
-    {
+    pub fn from_iter(others: impl Iterator<Item = Self>) -> Self {
         let others = others
             .map(|x| x.0)
             .filter(|x| !matches!(x, Any::Stop))

@@ -1,15 +1,14 @@
 use super::{
-    model::{Diff, Item, Kind, Motion, Movement, Point},
-    rule::{Collection, View},
+    cube::{Kind, Motion, Movement, Point},
+    rule::{Collection, Diff, Item, Snapshot},
     seed::{Cube, Seed},
 };
 
 pub struct State {
     mark: (usize, usize),
     dest: Vec<Point>,
-    base: Collection,
-    last: Option<Collection>,
-    next: Option<Collection>,
+    last: Option<(Collection, Snapshot)>,
+    base: (Collection, Snapshot),
 }
 
 impl State {
@@ -28,68 +27,67 @@ impl State {
         }
 
         let dest = seed.destnations.clone();
-        let mut base = Collection::new(
+        let mut collection = Collection::new(
             seed.size.width.max(1) as usize,
             seed.size.height.max(1) as usize,
             seed.cubes.iter().map(convert),
         );
-        base.preprocess();
+        collection.preprocess();
+        let snapshot = collection.snapshot();
 
         Self {
-            mark: Self::calculate(&dest, &base.view()),
+            mark: Self::calculate(&dest, &snapshot),
             dest,
-            base,
             last: None,
-            next: None,
+            base: (collection, snapshot),
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = Item> {
-        self.latest().view().into_iter()
+    pub fn iter(&self) -> impl Iterator<Item = Item> + '_ {
+        self.base.1.iter()
     }
 
     pub fn progress(&self) -> (usize, usize) {
         self.mark
     }
 
-    pub fn input(&mut self, movement: Option<Movement>) -> impl Iterator<Item = Diff> {
-        let mut next = self.base.clone();
-        next.input(movement);
-        self.last = self.next.replace(next);
+    pub fn commit(&mut self, movement: Option<Movement>) -> impl Iterator<Item = Diff> + '_ {
+        let mut base = self.base.0.clone();
+        base.preprocess();
+        base.input(movement);
+        base.postprocess();
+        let snapshot = base.snapshot();
+        let mut base = (base, snapshot);
 
-        let last = self.last.as_ref().unwrap_or(&self.base).view();
-        let next = self.next.as_ref().unwrap_or(&self.base).view();
-        last.diff(next)
+        std::mem::swap(&mut self.base, &mut base);
+        let last = self.last.insert(base);
+        self.mark = Self::calculate(&self.dest, &self.base.1);
+        self.base.1.differ(&last.1)
     }
 
-    pub fn commit(&mut self) -> impl Iterator<Item = Diff> {
-        let last = match self.next.take() {
-            Some(base) => {
-                self.base = base;
-                self.last = None;
-                self.base.view()
-            }
-            None => {
-                let view = self.base.view();
-                self.base.input(None);
-                view
+    pub fn remake(&mut self, movement: Option<Movement>) -> impl Iterator<Item = Diff> + '_ {
+        let pair = match &mut self.last {
+            None => (&self.base.1, &self.base.1),
+            Some(last) => {
+                let mut base = last.0.clone();
+                base.preprocess();
+                base.input(movement);
+                base.postprocess();
+
+                last.1 = base.snapshot();
+                std::mem::swap(&mut self.base.1, &mut last.1);
+                self.base.0 = base;
+
+                (&self.base.1, &last.1)
             }
         };
 
-        self.base.postprocess();
-        self.base.preprocess();
-        let next = self.base.view();
-
-        self.mark = Self::calculate(&self.dest, &next);
-        last.diff(next)
+        self.mark = Self::calculate(&self.dest, &self.base.1);
+        pair.0.differ(&pair.0)
     }
 
-    fn latest(&self) -> &Collection {
-        self.next.as_ref().unwrap_or(&self.base)
-    }
-
-    fn calculate(dest: &[Point], view: &View) -> (usize, usize) {
-        let current = dest.iter().filter(|&&o| view.contains(o)).count();
+    fn calculate(dest: &[Point], snapshot: &Snapshot) -> (usize, usize) {
+        let current = dest.iter().filter(|&&o| snapshot.contains(o)).count();
         let total = dest.len();
         (current, total)
     }

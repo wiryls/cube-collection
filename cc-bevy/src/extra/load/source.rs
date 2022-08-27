@@ -1,5 +1,5 @@
 use crate::model::seed::CubeWorldSeed;
-use cc_core::{model, seed};
+use cc_core::{cube, seed};
 use serde::Deserialize;
 use snafu::{ensure, Snafu};
 
@@ -70,10 +70,10 @@ impl Source {
         for line in self.map.raw.lines() {
             for c in line.chars() {
                 match c {
-                    'W' => builder.make_cube(model::Kind::White),
-                    'R' => builder.make_cube(model::Kind::Red),
-                    'B' => builder.make_cube(model::Kind::Blue),
-                    'G' => builder.make_cube(model::Kind::Green),
+                    'W' => builder.make_cube(cube::Kind::White),
+                    'R' => builder.make_cube(cube::Kind::Red),
+                    'B' => builder.make_cube(cube::Kind::Blue),
+                    'G' => builder.make_cube(cube::Kind::Green),
                     'x' => builder.make_destination(),
                     ' ' => builder.make_empty(),
                     '~' => builder.copy_left()?,
@@ -91,10 +91,10 @@ impl Source {
             for c in m.content.chars() {
                 match c {
                     'I' => put(&mut b, &mut n).put(None),
-                    'L' => put(&mut b, &mut n).put(Some(model::Movement::Left)),
-                    'D' => put(&mut b, &mut n).put(Some(model::Movement::Down)),
-                    'U' => put(&mut b, &mut n).put(Some(model::Movement::Up)),
-                    'R' => put(&mut b, &mut n).put(Some(model::Movement::Right)),
+                    'L' => put(&mut b, &mut n).put(Some(cube::Movement::Left)),
+                    'D' => put(&mut b, &mut n).put(Some(cube::Movement::Down)),
+                    'U' => put(&mut b, &mut n).put(Some(cube::Movement::Up)),
+                    'R' => put(&mut b, &mut n).put(Some(cube::Movement::Right)),
                     '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' if !b.is_empty() => {
                         n.push(c)
                     }
@@ -127,7 +127,7 @@ struct LevelBuilder {
     h: i32,
     w: i32,
     cs: Vec<seed::Cube>,
-    ds: Vec<model::Point>,
+    ds: Vec<cube::Point>,
 
     // cached
     x: i32,
@@ -191,15 +191,15 @@ impl LevelBuilder {
     }
 
     fn make_destination(&mut self) {
-        self.ds.push(model::Point::new(self.x, self.h));
+        self.ds.push(cube::Point::new(self.x, self.h));
         self.make(None);
     }
 
-    fn make_cube(&mut self, kind: model::Kind) {
+    fn make_cube(&mut self, kind: cube::Kind) {
         let i = self.cs.len();
         let c = seed::Cube {
             kind,
-            body: vec![model::Point::new(self.x, self.h)],
+            body: vec![cube::Point::new(self.x, self.h)],
             command: None,
         };
 
@@ -217,7 +217,7 @@ impl LevelBuilder {
         {
             None => Err(Error::Uncopiable { position: (x, y) }),
             Some((i, c)) => {
-                c.body.push(model::Point::new(x + 1, y));
+                c.body.push(cube::Point::new(x + 1, y));
                 self.make(Some(i));
                 Ok(())
             }
@@ -234,7 +234,7 @@ impl LevelBuilder {
         {
             None => Err(Error::Uncopiable { position: (x, y) }),
             Some((i, c)) => {
-                c.body.push(model::Point::new(x, y + 1));
+                c.body.push(cube::Point::new(x, y + 1));
                 self.make(Some(i));
                 Ok(())
             }
@@ -273,7 +273,7 @@ impl LevelBuilder {
                 }
                 if let Some(c) = self.cs.get_mut(l) {
                     c.body.append(v.as_mut());
-                    c.body.push(model::Point::new(upper.0, left.1));
+                    c.body.push(cube::Point::new(upper.0, left.1));
                 }
 
                 // as usual
@@ -357,7 +357,7 @@ impl CommandBuilder {
         })
     }
 
-    fn put(&mut self, movement: Option<model::Movement>) {
+    fn put(&mut self, movement: Option<cube::Movement>) {
         match self.0.movements.last_mut() {
             Some(c) if c.0 == movement => c.1 += 1,
             _ => self.0.movements.push((movement, 1)),

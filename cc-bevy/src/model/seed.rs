@@ -1,10 +1,7 @@
 use std::{collections::HashMap, time::Duration};
 
 use bevy::{reflect::TypeUuid, time::Timer};
-use cc_core::{
-    model::{Diff, Movement},
-    seed,
-};
+use cc_core::{cube::Movement, seed, Diff};
 
 #[derive(Clone, TypeUuid)]
 #[uuid = "c99b1333-8ad3-4b26-a54c-7de542f43c51"]
@@ -77,7 +74,7 @@ impl CubeWorld {
         output
     }
 
-    pub fn cubes(&self) -> impl Iterator<Item = cc_core::model::Item> {
+    pub fn cubes(&self) -> impl Iterator<Item = cc_core::Item> {
         self.state.iter()
     }
 }

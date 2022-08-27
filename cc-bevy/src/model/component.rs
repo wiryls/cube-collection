@@ -3,7 +3,10 @@ use crate::extra::grid::GridMapper;
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
-use cc_core::model::{Constraint, Item, Kind, Movement, Neighborhood, Point};
+use cc_core::{
+    cube::{Constraint, Kind, Movement, Neighborhood, Point},
+    Item,
+};
 
 #[derive(Component, Default)]
 pub struct Earthbound;

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy::window::WindowResized;
-use cc_core::model::Point;
+use cc_core::cube::Point;
 use iyes_loopless::prelude::*;
 use num_traits::AsPrimitive;
 
