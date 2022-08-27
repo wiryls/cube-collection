@@ -1,7 +1,34 @@
-use super::movement::Movement;
+use std::sync::Arc;
+
+use super::Movement;
 
 /////////////////////////////////////////////////////////////////////////////
 // export
+
+#[derive(Clone, Debug)]
+pub struct Agreement(Option<Option<Option<Movement>>>);
+
+impl Agreement {
+    pub fn new() -> Self {
+        Self(Some(None))
+    }
+
+    pub fn submit(&mut self, choice: Option<Movement>) {
+        match self.0 {
+            Some(Some(movement)) if movement != choice => self.0 = None,
+            Some(None) => self.0 = Some(Some(choice)),
+            _ => {}
+        };
+    }
+
+    pub fn fail(&self) -> bool {
+        self.0 == None
+    }
+
+    pub fn result(&self) -> Option<Option<Movement>> {
+        self.0.flatten()
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct Motion(Any);
@@ -11,15 +38,14 @@ impl Motion {
         Motion(Any::Stop)
     }
 
-    pub fn from_sequence<'a, I>(is_loop: bool, movements: I) -> Self
+    pub fn from_sequence<I>(is_loop: bool, movements: I) -> Self
     where
         I: Iterator<Item = (Option<Movement>, usize)>,
     {
         Motion(Any::Move(Move {
-            looping: is_loop,
-            actions: movements.collect(),
-            count: 0,
-            index: 0,
+            source: Arc::new(Sequence::new(is_loop, movements)),
+            primary: 0,
+            secondary: 0,
         }))
     }
 
@@ -52,31 +78,6 @@ impl Iterator for Motion {
     fn next(&mut self) -> Option<Self::Item> {
         self.0 = self.take_inner().slim();
         self.0.next()
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Agreement(Option<Option<Option<Movement>>>);
-
-impl Agreement {
-    pub fn new() -> Self {
-        Self(Some(None))
-    }
-
-    pub fn submit(&mut self, choice: Option<Movement>) {
-        match self.0 {
-            Some(Some(movement)) if movement != choice => self.0 = None,
-            Some(None) => self.0 = Some(Some(choice)),
-            _ => {}
-        };
-    }
-
-    pub fn fail(&self) -> bool {
-        self.0 == None
-    }
-
-    pub fn result(&self) -> Option<Option<Movement>> {
-        self.0.flatten()
     }
 }
 
@@ -115,36 +116,36 @@ impl Iterator for Any {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 struct Move {
-    looping: bool,
-    actions: Box<[(Option<Movement>, usize)]>,
-    count: usize,
-    index: usize,
+    source: Arc<Sequence>,
+    primary: usize,
+    secondary: usize,
 }
 
 impl Iterator for Move {
     type Item = Option<Movement>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let n = self.actions.len();
-        if self.index == n {
+        let actions = self.source.actions.as_ref();
+
+        let limit = actions.len();
+        if self.primary == limit {
             return None;
         }
 
-        let (o, m) = self.actions[self.index];
-        self.count += 1;
-        if self.count == m {
-            self.index += 1;
-            if self.index == n {
-                if self.looping {
-                    self.index = 0;
-                }
+        let (movement, times) = actions[self.primary];
+        self.secondary += 1;
+        if self.secondary == times {
+            self.secondary = 0;
+
+            self.primary += 1;
+            if self.primary == limit && self.source.looping {
+                self.primary = 0;
             }
-            self.count = 0;
         }
 
-        return Some(o);
+        return Some(movement);
     }
 }
 
@@ -155,27 +156,42 @@ impl Iterator for Team {
     type Item = Option<Movement>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // I need retain_mut
-
-        let mut agreement = Agreement::new();
-        let mut k = 0;
-        for i in 0..self.0.len() {
-            if let Some(choice) = self.0[i].next() {
-                agreement.submit(choice);
-                if k != i {
-                    self.0.swap(i, k);
-                }
-                k += 1;
+        let mut vote = Agreement::new();
+        self.0.retain_mut(|one| match one.next() {
+            None => false,
+            Some(choice) => {
+                vote.submit(choice);
+                true
             }
-        }
-        self.0.truncate(k);
+        });
 
         match self.0.len() {
             0 => None,
-            _ => agreement.result().or(Some(None)),
+            _ => vote.result().or(Some(None)),
         }
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// internal - Sequence
+
+#[derive(Debug)]
+struct Sequence {
+    looping: bool,
+    actions: Box<[(Option<Movement>, usize)]>,
+}
+
+impl Sequence {
+    fn new(looping: bool, actions: impl Iterator<Item = (Option<Movement>, usize)>) -> Self {
+        Self {
+            looping,
+            actions: actions.collect(),
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// tests
 
 #[cfg(test)]
 mod tests {

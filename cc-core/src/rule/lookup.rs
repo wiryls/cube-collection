@@ -3,7 +3,7 @@ use std::{
     collections::{HashMap, HashSet},
 };
 
-use super::point::Point;
+use crate::model::Point;
 
 /////////////////////////////////////////////////////////////////////////////
 // Collision
@@ -147,9 +147,22 @@ impl DisjointSet {
             *upper = root;
         }
 
-        // we have to call it again to avoid non-lexical lifetime issue:
-        // https://github.com/rust-lang/rust/issues/21906
         self.parent_mut(root)
+        // We have to call `parent_mut` again to avoid non-lexical lifetime issue:
+        // https://github.com/rust-lang/rust/issues/21906
+        //
+        // Although NLL is enable by default in Rust 1.63, but the following code
+        // still not works. It seems we need to wait for the polonius.
+        // https://blog.rust-lang.org/2022/08/05/nll-by-default.html
+        //
+        // loop {
+        //     let upper = self.parent_mut(index);
+        //     if *upper == root {
+        //         return upper;
+        //     }
+        //     index = *upper;
+        //     *upper = root;
+        // }
     }
 
     fn parent_mut(&mut self, index: usize) -> &mut usize {

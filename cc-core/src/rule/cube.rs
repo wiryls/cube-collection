@@ -5,14 +5,10 @@ use std::{
 
 use super::{
     extension::CollisionExtension,
-    item::Diff,
-    item::Item,
-    kind::Kind,
     lookup::{BitmapCollision, Collision, Digraph, DisjointSet, HashSetCollision},
-    motion::{Agreement, Motion},
-    movement::{Constraint, Movement},
-    neighborhood::{Adjacence, Neighborhood},
-    point::Point,
+};
+use crate::model::{
+    Adjacence, Agreement, Constraint, Diff, Item, Kind, Motion, Movement, Neighborhood, Point,
 };
 
 /////////////////////////////////////////////////////////////////////////////

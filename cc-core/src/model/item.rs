@@ -1,9 +1,4 @@
-use super::{
-    kind::Kind,
-    movement::{Constraint, Movement},
-    neighborhood::Neighborhood,
-    point::Point,
-};
+use super::{Constraint, Kind, Movement, Neighborhood, Point};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Item {

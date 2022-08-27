@@ -1,5 +1,6 @@
 use super::{
-    model::{Collection, Diff, Item, Kind, Motion, Movement, Point, View},
+    model::{Diff, Item, Kind, Motion, Movement, Point},
+    rule::{Collection, View},
     seed::{Cube, Seed},
 };
 

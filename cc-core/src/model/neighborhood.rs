@@ -1,4 +1,4 @@
-use super::point::Point;
+use super::Point;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct Adjacence(u8);

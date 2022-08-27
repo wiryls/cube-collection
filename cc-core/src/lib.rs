@@ -1,4 +1,5 @@
 pub mod model;
+mod rule;
 pub mod seed;
 pub mod state;
 

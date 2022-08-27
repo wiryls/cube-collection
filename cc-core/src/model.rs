@@ -1,15 +1,11 @@
-mod cube;
-mod extension;
 mod item;
 mod kind;
-mod lookup;
 mod motion;
 mod movement;
 mod neighborhood;
 mod point;
 
-pub(crate) use cube::{Collection, View};
-pub(crate) use motion::Motion;
+pub(crate) use motion::{Agreement, Motion};
 #[allow(unused_imports)]
 pub(crate) use neighborhood::Adjacence;
 

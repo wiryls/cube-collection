@@ -1,4 +1,5 @@
-use super::{lookup::Collision, neighborhood::Neighborhood, point::Point};
+use super::lookup::Collision;
+use crate::model::{Neighborhood, Point};
 
 pub trait CollisionExtension {
     fn neighborhood(&self, point: Point) -> Neighborhood;
