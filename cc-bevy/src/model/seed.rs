@@ -1,14 +1,14 @@
 use std::{collections::HashMap, time::Duration};
 
 use bevy::{reflect::TypeUuid, time::Timer};
-use cc_core::{cube::Movement, seed, Diff};
+use cc_core::{cube::Movement, seed::Seed, Diff};
 
 #[derive(Clone, TypeUuid)]
 #[uuid = "c99b1333-8ad3-4b26-a54c-7de542f43c51"]
-pub struct CubeWorldSeed(pub seed::Seed);
+pub struct CubeWorldSeed(pub Seed);
 
 impl CubeWorldSeed {
-    pub fn new(seed: seed::Seed) -> Self {
+    pub fn new(seed: Seed) -> Self {
         Self(seed)
     }
 
@@ -73,7 +73,7 @@ impl CubeWorld {
         output
     }
 
-    pub fn cubes(&self) -> impl Iterator<Item = cc_core::Item> + '_ {
+    pub fn cubes(&self) -> impl Iterator<Item = cc_core::Unit> + '_ {
         self.state.iter()
     }
 }

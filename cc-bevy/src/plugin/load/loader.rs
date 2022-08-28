@@ -1,4 +1,4 @@
-use super::source::Source;
+use super::source::LoaderSource;
 use bevy::{
     asset::{AssetLoader, BoxedFuture, LoadContext, LoadedAsset},
     reflect::TypeUuid,
@@ -14,7 +14,7 @@ impl AssetLoader for TOMLSourceLoader {
         context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, Result<(), anyhow::Error>> {
         Box::pin(async move {
-            let source = toml::from_slice::<Source>(bytes)?;
+            let source = toml::from_slice::<LoaderSource>(bytes)?;
             let target = source.into_seed()?;
             context.set_default_asset(LoadedAsset::new(target));
             Ok(())

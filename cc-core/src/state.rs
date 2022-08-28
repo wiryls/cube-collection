@@ -1,6 +1,6 @@
 use super::{
     cube::{Kind, Motion, Movement, Point},
-    rule::{Collection, Diff, Item, Snapshot},
+    rule::{Collection, Diff, Snapshot, Unit},
     seed::{Cube, Seed},
 };
 
@@ -42,7 +42,7 @@ impl State {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = Item> + '_ {
+    pub fn iter(&self) -> impl Iterator<Item = Unit> + '_ {
         self.base.1.iter()
     }
 

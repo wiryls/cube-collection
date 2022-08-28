@@ -3,7 +3,7 @@ use std::{
     sync::Arc,
 };
 
-use super::{CollisionExtension, Digraph, DisjointSet, Frozen, HashSetCollision, Item, Snapshot};
+use super::{output, CollisionExtension, Digraph, DisjointSet, Frozen, HashSetCollision, Snapshot};
 use crate::cube::{Adjacence, Agreement, Constraint, Kind, Motion, Movement, Neighborhood, Point};
 
 /////////////////////////////////////////////////////////////////////////////
@@ -66,7 +66,7 @@ impl Collection {
     }
 
     pub fn snapshot(&self) -> Snapshot {
-        let default = Item {
+        let default = output::Unit {
             id: 0,
             kind: Kind::White,
             position: Point::new(0, 0),
@@ -78,7 +78,7 @@ impl Collection {
         let mut output = vec![default; size];
         for cube in self.cube.iter() {
             for unit in cube.units.iter() {
-                output[unit.index] = Item {
+                output[unit.index] = output::Unit {
                     id: unit.index,
                     kind: cube.kind,
                     position: unit.position,

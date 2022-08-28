@@ -1,7 +1,7 @@
 use crate::cube::{Constraint, Kind, Movement, Neighborhood, Point};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Item {
+pub struct Unit {
     pub id: usize,
     pub kind: Kind,
     pub position: Point,

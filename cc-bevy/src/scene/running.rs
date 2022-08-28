@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-use super::state::State;
-use crate::extra::grid::{GridPlugin, GridUpdated, GridView};
+use super::game_state::GameState;
 use crate::model::{component, seed, system};
+use crate::plugin::grid::{GridPlugin, GridUpdated, GridView};
 
 /// - input: ```Res<seed::Seeds>```
 /// - output: none
@@ -12,11 +12,11 @@ impl Plugin for RunningScene {
     fn build(&self, app: &mut App) {
         app.add_plugin(GridPlugin)
             .add_event::<WorldChanged>()
-            .add_enter_system(State::Running, setup_world)
+            .add_enter_system(GameState::Running, setup_world)
             .add_system_set(
                 ConditionSet::new()
                     .label("flow")
-                    .run_in_state(State::Running)
+                    .run_in_state(GameState::Running)
                     .with_system(switch_world.run_on_event::<WorldChanged>())
                     .with_system(update_scale.run_on_event::<GridUpdated>())
                     .into(),
@@ -25,7 +25,7 @@ impl Plugin for RunningScene {
                 ConditionSet::new()
                     .label("rule")
                     .after("flow")
-                    .run_in_state(State::Running)
+                    .run_in_state(GameState::Running)
                     .with_system(system::movement.run_if_resource_exists::<seed::CubeWorld>())
                     .into(),
             );

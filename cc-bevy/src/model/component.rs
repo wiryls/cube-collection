@@ -1,11 +1,11 @@
 use super::seed::CubeWorld;
-use crate::extra::grid::GridMapper;
+use crate::plugin::grid::GridMapper;
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 use cc_core::{
     cube::{Constraint, Kind, Movement, Neighborhood, Point},
-    Item,
+    Unit,
 };
 
 #[derive(Component, Default)]
@@ -21,8 +21,8 @@ pub struct Cubic {
     pub neighborhood: Neighborhood,
 }
 
-impl From<Item> for Cubic {
-    fn from(item: Item) -> Self {
+impl From<Unit> for Cubic {
+    fn from(item: Unit) -> Self {
         Self {
             id: item.id,
             kind: item.kind,

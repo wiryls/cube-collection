@@ -3,7 +3,7 @@ mod rule;
 pub mod seed;
 pub mod state;
 
-pub use self::rule::{Diff, Item};
+pub use self::rule::{Diff, Unit};
 pub use self::state::*;
 
 #[cfg(test)]
@@ -51,7 +51,7 @@ mod tests {
         };
         let mut game = State::new(&seed);
         let stat = [
-            Item {
+            Unit {
                 id: 0,
                 kind: Kind::Green,
                 position: Point::new(0, 0),
@@ -59,7 +59,7 @@ mod tests {
                 constraint: Constraint::Free,
                 neighborhood: Neighborhood::new(),
             },
-            Item {
+            Unit {
                 id: 1,
                 kind: Kind::Blue,
                 position: Point::new(0, 1),
@@ -67,7 +67,7 @@ mod tests {
                 constraint: Constraint::Free,
                 neighborhood: Neighborhood::new(),
             },
-            Item {
+            Unit {
                 id: 2,
                 kind: Kind::White,
                 position: Point::new(1, 0),
@@ -119,7 +119,7 @@ mod tests {
         ];
         assert_eq!(game.commit(Some(Movement::Down)).collect::<Vec<_>>(), diff);
         let stat = [
-            Item {
+            Unit {
                 id: 0,
                 kind: Kind::Green,
                 position: Point::new(0, 1),
@@ -127,7 +127,7 @@ mod tests {
                 constraint: Constraint::Free,
                 neighborhood: Neighborhood::from([Adjacence::BOTTOM].into_iter()),
             },
-            Item {
+            Unit {
                 id: 1,
                 kind: Kind::Green,
                 position: Point::new(0, 2),
@@ -135,7 +135,7 @@ mod tests {
                 constraint: Constraint::Free,
                 neighborhood: Neighborhood::from([Adjacence::TOP].into_iter()),
             },
-            Item {
+            Unit {
                 id: 2,
                 kind: Kind::White,
                 position: Point::new(1, 0),

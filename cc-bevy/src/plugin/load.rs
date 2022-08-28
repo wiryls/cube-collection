@@ -1,6 +1,6 @@
 mod loader;
 mod source;
-pub use source::{Error, Source};
+pub use source::{LoaderError, LoaderSource};
 
 use crate::model::seed;
 use bevy::prelude::*;

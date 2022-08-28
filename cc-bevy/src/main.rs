@@ -1,18 +1,18 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-mod extra;
 mod model;
+mod plugin;
 mod scene;
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         // plugins
-        .add_plugin(extra::debug::DebugPlugin)
-        .add_plugin(extra::poly::PolyPlugin)
+        .add_plugin(plugin::DebugPlugin)
+        .add_plugin(plugin::PolyPlugin)
         // scenes
-        .add_loopless_state(scene::State::default())
+        .add_loopless_state(scene::GameState::default())
         .add_plugin(scene::LoadingScene)
         .add_plugin(scene::RunningScene)
         // done

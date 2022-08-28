@@ -5,7 +5,7 @@ use snafu::{ensure, Snafu};
 
 #[derive(Debug, Snafu)]
 #[snafu(context(suffix(false)))]
-pub enum Error {
+pub enum LoaderError {
     #[snafu(display("missing field '{}'", field))]
     MissingField { field: &'static str },
 
@@ -26,7 +26,7 @@ pub enum Error {
 }
 
 #[derive(Deserialize)]
-pub struct Source {
+pub struct LoaderSource {
     info: Info,
     map: Map,
 }
@@ -50,8 +50,8 @@ struct Command {
     binding: Vec<[i32; 2]>,
 }
 
-impl Source {
-    pub fn into_seed(self) -> Result<CubeWorldSeed, Error> {
+impl LoaderSource {
+    pub fn into_seed(self) -> Result<CubeWorldSeed, LoaderError> {
         ensure!(
             !self.info.title.is_empty(),
             MissingField {
@@ -207,7 +207,7 @@ impl LevelBuilder {
         self.make(Some(i));
     }
 
-    fn copy_left(&mut self) -> Result<(), Error> {
+    fn copy_left(&mut self) -> Result<(), LoaderError> {
         let x = self.x - 1;
         let y = self.h;
         match self
@@ -215,7 +215,7 @@ impl LevelBuilder {
             .get(x, y)
             .and_then(|i| self.cs.get_mut(i).map(|c| (i, c)))
         {
-            None => Err(Error::Uncopiable { position: (x, y) }),
+            None => Err(LoaderError::Uncopiable { position: (x, y) }),
             Some((i, c)) => {
                 c.body.push(cube::Point::new(x + 1, y));
                 self.make(Some(i));
@@ -224,7 +224,7 @@ impl LevelBuilder {
         }
     }
 
-    fn copy_upper(&mut self) -> Result<(), Error> {
+    fn copy_upper(&mut self) -> Result<(), LoaderError> {
         let x = self.x;
         let y = self.h - 1;
         match self
@@ -232,7 +232,7 @@ impl LevelBuilder {
             .get(x, y)
             .and_then(|i| self.cs.get_mut(i).map(|c| (i, c)))
         {
-            None => Err(Error::Uncopiable { position: (x, y) }),
+            None => Err(LoaderError::Uncopiable { position: (x, y) }),
             Some((i, c)) => {
                 c.body.push(cube::Point::new(x, y + 1));
                 self.make(Some(i));
@@ -241,7 +241,7 @@ impl LevelBuilder {
         }
     }
 
-    fn copy_upper_and_left(&mut self) -> Result<(), Error> {
+    fn copy_upper_and_left(&mut self) -> Result<(), LoaderError> {
         let upper = (self.x, self.h - 1);
         let left = (self.x - 1, self.h);
 
@@ -293,10 +293,10 @@ impl LevelBuilder {
         Ok(())
     }
 
-    fn bind_command(&mut self, x: i32, y: i32, command: seed::Command) -> Result<(), Error> {
+    fn bind_command(&mut self, x: i32, y: i32, command: seed::Command) -> Result<(), LoaderError> {
         match self.m.get(x, y).and_then(|i| self.cs.get_mut(i)) {
             Some(x) => Ok(x.command = Some(command)),
-            None => Err(Error::InvalidLocation { position: (x, y) }),
+            None => Err(LoaderError::InvalidLocation { position: (x, y) }),
         }
     }
 }

@@ -2,18 +2,18 @@ use std::sync::Arc;
 
 use super::{
     frozen::Frozen,
-    item::{Diff, Item},
+    output::{Diff, Unit},
 };
 use crate::cube::{Constraint, Kind, Neighborhood, Point};
 
 #[derive(Clone, Debug)]
 pub struct Snapshot {
-    active: Vec<Item>,
+    active: Vec<Unit>,
     forzen: Arc<Frozen>,
 }
 
 impl Snapshot {
-    pub(crate) fn new(active: Vec<Item>, forzen: Arc<Frozen>) -> Self {
+    pub(crate) fn new(active: Vec<Unit>, forzen: Arc<Frozen>) -> Self {
         Self { active, forzen }
     }
 
@@ -58,12 +58,12 @@ impl Snapshot {
 
 pub struct SnapshotIter<'a> {
     source: &'a Snapshot,
-    primary: Option<std::slice::Iter<'a, Item>>,
+    primary: Option<std::slice::Iter<'a, Unit>>,
     secondary: Option<std::iter::Enumerate<std::slice::Iter<'a, (Point, Neighborhood)>>>,
 }
 
 impl<'a> Iterator for SnapshotIter<'a> {
-    type Item = Item;
+    type Item = Unit;
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         let x = self.source.active.len() + self.source.forzen.len();
@@ -80,7 +80,7 @@ impl<'a> Iterator for SnapshotIter<'a> {
 
         if let Some(iter) = &mut self.secondary {
             if let Some((index, (point, neighborhood))) = iter.next() {
-                return Some(Item {
+                return Some(Unit {
                     id: index + self.source.active.len(),
                     kind: Kind::White,
                     position: point.clone(),
