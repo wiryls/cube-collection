@@ -24,15 +24,11 @@ impl Collection {
         let mut count = 0;
         let mut cubes = Vec::new();
         let mut other = Vec::new();
-        for (kind, points, mut motion) in it {
-            let movement = match motion.next() {
-                None if kind == Kind::White => {
-                    other.push(points);
-                    continue;
-                }
-                Some(movement) => movement,
-                _ => None,
-            };
+        for (kind, points, motion) in it {
+            if kind == Kind::White && motion.is_stopped() {
+                other.push(points);
+                continue;
+            }
 
             let collision = HashSetCollision::new(points.iter().cloned());
             let units = points
@@ -46,6 +42,7 @@ impl Collection {
                 .collect::<Vec<_>>();
             let contours = Arc::new(Contours::new(&units));
 
+            // note: make sure loop invariant work for our cubes' status.
             let cube = Cube {
                 index,
                 kind,
@@ -53,7 +50,7 @@ impl Collection {
                 motion,
                 contours,
                 balanced: false,
-                movement,
+                movement: None,
                 constraint: Constraint::Free,
             };
 
@@ -94,7 +91,63 @@ impl Collection {
         Snapshot::new(output, Arc::clone(&self.area))
     }
 
-    pub fn preprocess(&mut self) {
+    pub fn commit(&mut self, movement: Option<Movement>) {
+        // update and prepare next move
+        self.update_cube_status();
+        self.update_cube_movement(movement);
+
+        // connect cube with different kinds.
+        self.process_different_kinds();
+
+        // find blocked cubes and mark them with Constraint::Stop, and
+        // also find out the movement dependencies between cubes.
+        let successors = self.process_stopped_cubes();
+
+        // find conflicts and marks them with Constraint::Lock.
+        let (impact, undetermined) = self.process_locked_cubes(&successors);
+
+        // find impact position and marks them with Constraint::Slap.
+        self.process_slapped_cubes(&successors, impact, undetermined);
+
+        // update to next positions.
+        self.update_cube_positions();
+
+        // do some cleaning
+        self.retain_alive_cube();
+    }
+
+    fn update_cube_status(&mut self) {
+        for cube in self.cube.iter_mut() {
+            cube.balanced = false;
+            cube.movement = cube.motion.next().unwrap_or_default();
+            cube.constraint = Constraint::Free;
+        }
+    }
+
+    fn update_cube_movement(&mut self, movement: Option<Movement>) {
+        const CONTROLED: Kind = Kind::Green;
+        if let Some(movement) = movement {
+            for cube in self.cube.iter_mut().filter(|cube| cube.kind == CONTROLED) {
+                cube.movement = Some(movement);
+            }
+        }
+    }
+
+    fn update_cube_positions(&mut self) {
+        for cube in self.cube.iter_mut() {
+            if cube.constraint == Constraint::Free {
+                if let Some(movement) = cube.movement {
+                    let direction = movement.into();
+                    for unit in cube.units.iter_mut() {
+                        unit.position += direction;
+                    }
+                }
+            }
+        }
+    }
+
+    fn process_different_kinds(&mut self) {
+        // prepare to connect
         let number_of_cubes = self.cube.len();
         let unstable = self.cube.iter().filter(|u| u.alive() && u.unstable());
 
@@ -141,33 +194,8 @@ impl Collection {
         }
     }
 
-    pub fn postprocess(&mut self) {
-        for cube in self.cube.iter_mut() {
-            if cube.constraint == Constraint::Free {
-                if let Some(movement) = cube.movement {
-                    let direction = movement.into();
-                    for unit in cube.units.iter_mut() {
-                        unit.position += direction;
-                    }
-                }
-            }
-            cube.balanced = false;
-            cube.movement = cube.motion.next().unwrap_or_default();
-            cube.constraint = Constraint::Free;
-        }
-
-        self.bury();
-    }
-
-    pub fn input(&mut self, movement: Option<Movement>) {
-        // update movements if not None.
-        if let Some(movement) = movement {
-            for cube in self.cube.iter_mut().filter(|cube| cube.kind == Kind::Green) {
-                cube.movement = Some(movement);
-            }
-        }
-
-        // shared tables.
+    fn process_stopped_cubes(&mut self) -> Digraph {
+        // preapre
         let number_of_cubes = self.cube.len();
         let mut connection = DisjointSet::new(number_of_cubes);
         let mut successors = Digraph::with_capacity(number_of_cubes);
@@ -213,7 +241,12 @@ impl Collection {
             .for_each(|index| self.cube[index].constraint = Constraint::Stop);
         self.link(&mut connection);
 
-        // find conflicts and marks them with Constraint::Lock.
+        successors
+    }
+
+    fn process_locked_cubes(&mut self, successors: &Digraph) -> (HashSet<usize>, HashSet<usize>) {
+        let number_of_cubes = self.cube.len();
+        let mut connection = DisjointSet::new(number_of_cubes);
         let mut conflict = Conflict::with_capacity(number_of_cubes);
         self.cube
             .iter()
@@ -258,8 +291,19 @@ impl Collection {
             .for_each(|index| self.cube[index].constraint = Constraint::Lock);
         self.link(&mut connection);
 
-        // find impact position and marks them with Constraint::Slap.
+        (impact, undetermined)
+    }
+
+    fn process_slapped_cubes(
+        &mut self,
+        successors: &Digraph,
+        mut impact: HashSet<usize>,
+        undetermined: HashSet<usize>,
+    ) {
         self.cube.iter_mut().for_each(|cube| cube.balanced = false);
+
+        let number_of_cubes = self.cube.len();
+        let mut connection = DisjointSet::new(number_of_cubes);
         let territory = QuarterTerritory::new(self.cube.iter().filter(|u| u.alive()));
 
         let mut visit = vec![false; number_of_cubes];
@@ -306,6 +350,19 @@ impl Collection {
         self.connect(impact, &successors, Constraint::Slap, &mut connection)
             .into_iter()
             .for_each(|index| self.cube[index].constraint = Constraint::Slap);
+    }
+
+    fn retain_alive_cube(&mut self) {
+        let len = self.cube.len();
+        self.cube.retain(Cube::alive);
+        if len != self.cube.len() {
+            self.cube
+                .iter_mut()
+                .enumerate()
+                .rev()
+                .take_while(|(index, cube)| *index != cube.index)
+                .for_each(|(index, cube)| cube.index = index);
+        }
     }
 
     fn connect(
@@ -413,19 +470,6 @@ impl Collection {
                 movement,
                 constraint,
             };
-        }
-    }
-
-    fn bury(&mut self) {
-        let len = self.cube.len();
-        self.cube.retain(Cube::alive);
-        if len != self.cube.len() {
-            self.cube
-                .iter_mut()
-                .enumerate()
-                .rev()
-                .take_while(|(index, cube)| *index != cube.index)
-                .for_each(|(index, cube)| cube.index = index);
         }
     }
 }

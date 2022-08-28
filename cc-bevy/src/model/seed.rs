@@ -67,14 +67,13 @@ impl CubeWorld {
     pub fn next(&mut self, delta: Duration) -> HashMap<usize, Diff> {
         let mut output = HashMap::new();
         if self.timer.tick(delta).finished() {
-            self.state.commit();
-            self.state.input(None);
+            self.state.commit(None);
         }
 
         output
     }
 
-    pub fn cubes(&self) -> impl Iterator<Item = cc_core::Item> {
+    pub fn cubes(&self) -> impl Iterator<Item = cc_core::Item> + '_ {
         self.state.iter()
     }
 }

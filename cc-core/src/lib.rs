@@ -57,15 +57,15 @@ mod tests {
                 position: Point::new(0, 0),
                 movement: None,
                 constraint: Constraint::Free,
-                neighborhood: Neighborhood::from([Adjacence::BOTTOM].into_iter()),
+                neighborhood: Neighborhood::new(),
             },
             Item {
                 id: 1,
-                kind: Kind::Green,
+                kind: Kind::Blue,
                 position: Point::new(0, 1),
                 movement: None,
                 constraint: Constraint::Free,
-                neighborhood: Neighborhood::from([Adjacence::TOP].into_iter()),
+                neighborhood: Neighborhood::new(),
             },
             Item {
                 id: 2,
@@ -85,12 +85,15 @@ mod tests {
                 id: 0,
                 movement: Some(Some(Movement::Right)),
                 constraint: Some(Constraint::Stop),
+                neighborhood: Some(Neighborhood::from([Adjacence::BOTTOM].into_iter())),
                 ..Default::default()
             },
             Diff {
                 id: 1,
+                kind: Some(Kind::Green),
                 movement: Some(Some(Movement::Right)),
                 constraint: Some(Constraint::Stop),
+                neighborhood: Some(Neighborhood::from([Adjacence::TOP].into_iter())),
                 ..Default::default()
             },
         ];
@@ -103,12 +106,14 @@ mod tests {
                 id: 0,
                 movement: Some(Some(Movement::Down)),
                 position: Some(Point::new(0, 1)),
+                constraint: Some(Constraint::Free),
                 ..Default::default()
             },
             Diff {
                 id: 1,
                 movement: Some(Some(Movement::Down)),
                 position: Some(Point::new(0, 2)),
+                constraint: Some(Constraint::Free),
                 ..Default::default()
             },
         ];
@@ -118,7 +123,7 @@ mod tests {
                 id: 0,
                 kind: Kind::Green,
                 position: Point::new(0, 1),
-                movement: None,
+                movement: Some(Movement::Down),
                 constraint: Constraint::Free,
                 neighborhood: Neighborhood::from([Adjacence::BOTTOM].into_iter()),
             },
@@ -126,7 +131,7 @@ mod tests {
                 id: 1,
                 kind: Kind::Green,
                 position: Point::new(0, 2),
-                movement: None,
+                movement: Some(Movement::Down),
                 constraint: Constraint::Free,
                 neighborhood: Neighborhood::from([Adjacence::TOP].into_iter()),
             },

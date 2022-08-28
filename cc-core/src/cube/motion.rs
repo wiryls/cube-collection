@@ -58,6 +58,10 @@ impl Motion {
         Motion(Any::Team(Team(others)).slim())
     }
 
+    pub fn is_stopped(&self) -> bool {
+        matches!(self.0, Any::Stop)
+    }
+
     pub fn r#take(&mut self) -> Self {
         Motion(self.take_inner())
     }

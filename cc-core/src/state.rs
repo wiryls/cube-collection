@@ -27,12 +27,11 @@ impl State {
         }
 
         let dest = seed.destnations.clone();
-        let mut collection = Collection::new(
+        let collection = Collection::new(
             seed.size.width.max(1) as usize,
             seed.size.height.max(1) as usize,
             seed.cubes.iter().map(convert),
         );
-        collection.preprocess();
         let snapshot = collection.snapshot();
 
         Self {
@@ -53,16 +52,14 @@ impl State {
 
     pub fn commit(&mut self, movement: Option<Movement>) -> impl Iterator<Item = Diff> + '_ {
         let mut base = self.base.0.clone();
-        base.preprocess();
-        base.input(movement);
-        base.postprocess();
+        base.commit(movement);
         let snapshot = base.snapshot();
         let mut base = (base, snapshot);
 
         std::mem::swap(&mut self.base, &mut base);
         let last = self.last.insert(base);
         self.mark = Self::calculate(&self.dest, &self.base.1);
-        self.base.1.differ(&last.1)
+        last.1.differ(&self.base.1)
     }
 
     pub fn remake(&mut self, movement: Option<Movement>) -> impl Iterator<Item = Diff> + '_ {
@@ -70,20 +67,18 @@ impl State {
             None => (&self.base.1, &self.base.1),
             Some(last) => {
                 let mut base = last.0.clone();
-                base.preprocess();
-                base.input(movement);
-                base.postprocess();
+                base.commit(movement);
 
                 last.1 = base.snapshot();
                 std::mem::swap(&mut self.base.1, &mut last.1);
                 self.base.0 = base;
 
-                (&self.base.1, &last.1)
+                (&last.1, &self.base.1)
             }
         };
 
         self.mark = Self::calculate(&self.dest, &self.base.1);
-        pair.0.differ(&pair.0)
+        pair.0.differ(&pair.1)
     }
 
     fn calculate(dest: &[Point], snapshot: &Snapshot) -> (usize, usize) {
