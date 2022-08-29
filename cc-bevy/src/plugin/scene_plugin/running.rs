@@ -1,35 +1,32 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-use super::game_state::GameState;
+use super::SceneState;
 use crate::model::{component, seed, system};
 use crate::plugin::grid::{GridPlugin, GridUpdated, GridView};
+use crate::plugin::ShapePlugin;
 
-/// - input: ```Res<seed::Seeds>```
-/// - output: none
-pub struct RunningScene;
-impl Plugin for RunningScene {
-    fn build(&self, app: &mut App) {
-        app.add_plugin(GridPlugin)
-            .add_event::<WorldChanged>()
-            .add_enter_system(GameState::Running, setup_world)
-            .add_system_set(
-                ConditionSet::new()
-                    .label("flow")
-                    .run_in_state(GameState::Running)
-                    .with_system(switch_world.run_on_event::<WorldChanged>())
-                    .with_system(update_scale.run_on_event::<GridUpdated>())
-                    .into(),
-            )
-            .add_system_set(
-                ConditionSet::new()
-                    .label("rule")
-                    .after("flow")
-                    .run_in_state(GameState::Running)
-                    .with_system(system::movement.run_if_resource_exists::<seed::CubeWorld>())
-                    .into(),
-            );
-    }
+pub fn setup_scene(app: &mut App) {
+    app.add_plugin(ShapePlugin)
+        .add_plugin(GridPlugin)
+        .add_event::<WorldChanged>()
+        .add_enter_system(SceneState::Running, setup_world)
+        .add_system_set(
+            ConditionSet::new()
+                .label("flow")
+                .run_in_state(SceneState::Running)
+                .with_system(switch_world.run_on_event::<WorldChanged>())
+                .with_system(update_scale.run_on_event::<GridUpdated>())
+                .into(),
+        )
+        .add_system_set(
+            ConditionSet::new()
+                .label("rule")
+                .after("flow")
+                .run_in_state(SceneState::Running)
+                .with_system(system::movement.run_if_resource_exists::<seed::CubeWorld>())
+                .into(),
+        );
 }
 
 #[allow(unused)]
@@ -46,7 +43,7 @@ fn switch_world(
     mut commands: Commands,
     entities: Query<Entity, With<component::Earthbound>>,
     mut view: ResMut<GridView>,
-    mut world_seeds: ResMut<seed::CubeWorldSeeds>,
+    mut world_seeds: ResMut<seed::Seeds>,
     mut world_changed: EventReader<WorldChanged>,
 ) {
     let got = !world_changed.is_empty();
@@ -62,9 +59,9 @@ fn switch_world(
             // [0] update grid
             view.set_source(UiRect {
                 left: 0,
-                right: seed.width(),
+                right: seed.size.width,
                 top: 0,
-                bottom: seed.height(),
+                bottom: seed.size.height,
             });
 
             // [1] remove old objects

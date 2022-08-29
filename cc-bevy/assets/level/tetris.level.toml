@@ -14,10 +14,10 @@ W~~~~~~~~~~~
 |~~~~~~~~~~~'''
 
 [[map.commands]]
-content = "I3D1"
-is_loop = true
 binding = [[4, 1], [4, 2], [5, 2], [5, 3]]
+content = "I3D1"
+looping = true
 
 [info]
-title = "Crossover: Tetris"
 author = "w"
+title = "Crossover: Tetris"

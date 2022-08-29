@@ -1,11 +1,15 @@
-use crate::model::seed::CubeWorldSeed;
 use cc_core::{cube, seed};
 use serde::Deserialize;
 use snafu::{ensure, Snafu};
 
+use super::LevelSeed;
+
+/////////////////////////////////////////////////////////////////////////////
+// Source and Error
+
 #[derive(Debug, Snafu)]
 #[snafu(context(suffix(false)))]
-pub enum LoaderError {
+pub enum LevelError {
     #[snafu(display("missing field '{}'", field))]
     MissingField { field: &'static str },
 
@@ -26,7 +30,7 @@ pub enum LoaderError {
 }
 
 #[derive(Deserialize)]
-pub struct LoaderSource {
+pub struct LevelSource {
     info: Info,
     map: Map,
 }
@@ -46,12 +50,12 @@ struct Map {
 #[derive(Deserialize)]
 struct Command {
     content: String,
-    is_loop: bool,
+    looping: bool,
     binding: Vec<[i32; 2]>,
 }
 
-impl LoaderSource {
-    pub fn into_seed(self) -> Result<CubeWorldSeed, LoaderError> {
+impl LevelSource {
+    pub fn into_seed(self) -> Result<LevelSeed, LevelError> {
         ensure!(
             !self.info.title.is_empty(),
             MissingField {
@@ -66,62 +70,65 @@ impl LoaderSource {
         );
         ensure!(!self.map.raw.is_empty(), MissingField { field: "map.raw" });
 
-        let mut builder: LevelBuilder = self.info.into();
+        let mut parser: LevelParser = self.info.into();
         for line in self.map.raw.lines() {
             for c in line.chars() {
                 match c {
-                    'W' => builder.make_cube(cube::Kind::White),
-                    'R' => builder.make_cube(cube::Kind::Red),
-                    'B' => builder.make_cube(cube::Kind::Blue),
-                    'G' => builder.make_cube(cube::Kind::Green),
-                    'x' => builder.make_destination(),
-                    ' ' => builder.make_empty(),
-                    '~' => builder.copy_left()?,
-                    '|' => builder.copy_upper()?,
-                    '/' => builder.copy_upper_and_left()?,
+                    'W' => parser.make_cube(cube::Kind::White),
+                    'R' => parser.make_cube(cube::Kind::Red),
+                    'B' => parser.make_cube(cube::Kind::Blue),
+                    'G' => parser.make_cube(cube::Kind::Green),
+                    'x' => parser.make_destination(),
+                    ' ' => parser.make_empty(),
+                    '~' => parser.copy_left()?,
+                    '|' => parser.copy_upper()?,
+                    '/' => parser.copy_upper_and_left()?,
                     _ => ensure!(false, InvalidMarker { character: c }),
                 }
             }
-            builder.mark_line_end();
+            parser.mark_line_end();
         }
 
         for m in self.map.commands.unwrap_or_default() {
             let mut n = String::new();
-            let mut b = CommandBuilder::new(m.is_loop);
+            let mut p = CommandParser::new(m.looping);
             for c in m.content.chars() {
                 match c {
-                    'I' => put(&mut b, &mut n).put(None),
-                    'L' => put(&mut b, &mut n).put(Some(cube::Movement::Left)),
-                    'D' => put(&mut b, &mut n).put(Some(cube::Movement::Down)),
-                    'U' => put(&mut b, &mut n).put(Some(cube::Movement::Up)),
-                    'R' => put(&mut b, &mut n).put(Some(cube::Movement::Right)),
-                    '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' if !b.is_empty() => {
+                    'I' => put(&mut p, &mut n).put(None),
+                    'L' => put(&mut p, &mut n).put(Some(cube::Movement::Left)),
+                    'D' => put(&mut p, &mut n).put(Some(cube::Movement::Down)),
+                    'U' => put(&mut p, &mut n).put(Some(cube::Movement::Up)),
+                    'R' => put(&mut p, &mut n).put(Some(cube::Movement::Right)),
+                    '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' if !p.is_empty() => {
                         n.push(c)
                     }
                     _ => ensure!(false, InvalidMovement { character: c }),
                 }
             }
 
-            let c: seed::Command = b.into();
+            let c: seed::Command = p.into();
             for p in m.binding {
-                builder.bind_command(p[0], p[1], c.clone())?;
+                parser.bind_command(p[0], p[1], c.clone())?;
             }
         }
-        fn put<'a>(builder: &'a mut CommandBuilder, buffer: &mut String) -> &'a mut CommandBuilder {
+        fn put<'a>(parser: &'a mut CommandParser, buffer: &mut String) -> &'a mut CommandParser {
             if !buffer.is_empty() {
                 if let Ok(i) = buffer.parse::<i32>() {
-                    builder.add(i);
+                    parser.add(i);
                     buffer.clear();
                 }
             }
-            builder
+            parser
         }
 
-        Ok(CubeWorldSeed::new(builder.into()))
+        Ok(LevelSeed::new(parser.into()))
     }
 }
 
-struct LevelBuilder {
+/////////////////////////////////////////////////////////////////////////////
+// Parsers
+
+struct LevelParser {
     // output
     i: seed::Info,
     h: i32,
@@ -131,19 +138,17 @@ struct LevelBuilder {
 
     // cached
     x: i32,
-    m: Indexer,
+    m: LevelMapBuilder,
 }
 
-impl Into<LevelBuilder> for Info {
-    fn into(self) -> LevelBuilder {
-        LevelBuilder::new(seed::Info {
-            title: self.title,
-            author: self.author,
-        })
+impl Into<LevelParser> for Info {
+    fn into(self) -> LevelParser {
+        let (title, author) = (self.title, self.author);
+        LevelParser::new(seed::Info { title, author })
     }
 }
 
-impl Into<seed::Seed> for LevelBuilder {
+impl Into<seed::Seed> for LevelParser {
     fn into(mut self) -> seed::Seed {
         self.cs.retain(|c| !c.body.is_empty());
         seed::Seed {
@@ -158,19 +163,17 @@ impl Into<seed::Seed> for LevelBuilder {
     }
 }
 
-impl LevelBuilder {
+impl LevelParser {
     fn new(i: seed::Info) -> Self {
+        let (title, author) = (i.title, i.author);
         Self {
-            i: seed::Info {
-                title: i.title,
-                author: i.author,
-            },
+            i: seed::Info { title, author },
             h: 0,
             w: 0,
             cs: Vec::new(),
             ds: Vec::new(),
             x: 0,
-            m: Indexer(Vec::new()),
+            m: LevelMapBuilder(Vec::new()),
         }
     }
 
@@ -207,7 +210,7 @@ impl LevelBuilder {
         self.make(Some(i));
     }
 
-    fn copy_left(&mut self) -> Result<(), LoaderError> {
+    fn copy_left(&mut self) -> Result<(), LevelError> {
         let x = self.x - 1;
         let y = self.h;
         match self
@@ -215,7 +218,7 @@ impl LevelBuilder {
             .get(x, y)
             .and_then(|i| self.cs.get_mut(i).map(|c| (i, c)))
         {
-            None => Err(LoaderError::Uncopiable { position: (x, y) }),
+            None => Err(LevelError::Uncopiable { position: (x, y) }),
             Some((i, c)) => {
                 c.body.push(cube::Point::new(x + 1, y));
                 self.make(Some(i));
@@ -224,7 +227,7 @@ impl LevelBuilder {
         }
     }
 
-    fn copy_upper(&mut self) -> Result<(), LoaderError> {
+    fn copy_upper(&mut self) -> Result<(), LevelError> {
         let x = self.x;
         let y = self.h - 1;
         match self
@@ -232,7 +235,7 @@ impl LevelBuilder {
             .get(x, y)
             .and_then(|i| self.cs.get_mut(i).map(|c| (i, c)))
         {
-            None => Err(LoaderError::Uncopiable { position: (x, y) }),
+            None => Err(LevelError::Uncopiable { position: (x, y) }),
             Some((i, c)) => {
                 c.body.push(cube::Point::new(x, y + 1));
                 self.make(Some(i));
@@ -241,7 +244,7 @@ impl LevelBuilder {
         }
     }
 
-    fn copy_upper_and_left(&mut self) -> Result<(), LoaderError> {
+    fn copy_upper_and_left(&mut self) -> Result<(), LevelError> {
         let upper = (self.x, self.h - 1);
         let left = (self.x - 1, self.h);
 
@@ -283,27 +286,25 @@ impl LevelBuilder {
             _ => false,
         };
 
-        ensure!(
-            ok,
-            Unmergeable {
-                this: upper,
-                that: left
-            }
-        );
-        Ok(())
+        if ok {
+            Ok(())
+        } else {
+            let (this, that) = (upper, left);
+            Err(LevelError::Unmergeable { this, that })
+        }
     }
 
-    fn bind_command(&mut self, x: i32, y: i32, command: seed::Command) -> Result<(), LoaderError> {
+    fn bind_command(&mut self, x: i32, y: i32, command: seed::Command) -> Result<(), LevelError> {
         match self.m.get(x, y).and_then(|i| self.cs.get_mut(i)) {
             Some(x) => Ok(x.command = Some(command)),
-            None => Err(LoaderError::InvalidLocation { position: (x, y) }),
+            None => Err(LevelError::InvalidLocation { position: (x, y) }),
         }
     }
 }
 
-struct Indexer(Vec<Vec<Option<usize>>>);
+struct LevelMapBuilder(Vec<Vec<Option<usize>>>);
 
-impl Indexer {
+impl LevelMapBuilder {
     fn make_row(&mut self) {
         self.0.push(Vec::new());
     }
@@ -340,16 +341,16 @@ impl Indexer {
     }
 }
 
-struct CommandBuilder(seed::Command);
+struct CommandParser(seed::Command);
 
-impl Into<seed::Command> for CommandBuilder {
+impl Into<seed::Command> for CommandParser {
     fn into(mut self) -> seed::Command {
         self.0.movements.retain(|m| m.1 > 0);
         self.0
     }
 }
 
-impl CommandBuilder {
+impl CommandParser {
     fn new(is_loop: bool) -> Self {
         Self(seed::Command {
             is_loop,

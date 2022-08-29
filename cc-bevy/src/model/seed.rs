@@ -1,33 +1,14 @@
+use bevy::time::Timer;
+use cc_core::{cube::Movement, seed::Seed, Diff};
 use std::{collections::HashMap, time::Duration};
 
-use bevy::{reflect::TypeUuid, time::Timer};
-use cc_core::{cube::Movement, seed::Seed, Diff};
-
-#[derive(Clone, TypeUuid)]
-#[uuid = "c99b1333-8ad3-4b26-a54c-7de542f43c51"]
-pub struct CubeWorldSeed(pub Seed);
-
-impl CubeWorldSeed {
-    pub fn new(seed: Seed) -> Self {
-        Self(seed)
-    }
-
-    pub fn height(&self) -> i32 {
-        self.0.size.height
-    }
-
-    pub fn width(&self) -> i32 {
-        self.0.size.width
-    }
-}
-
-pub struct CubeWorldSeeds {
-    list: Vec<CubeWorldSeed>,
+pub struct Seeds {
+    list: Vec<Seed>,
     head: usize,
 }
 
-impl CubeWorldSeeds {
-    pub fn current(&self) -> Option<&CubeWorldSeed> {
+impl Seeds {
+    pub fn current(&self) -> Option<&Seed> {
         self.list.get(self.head)
     }
 
@@ -42,8 +23,8 @@ impl CubeWorldSeeds {
     }
 }
 
-impl From<Vec<CubeWorldSeed>> for CubeWorldSeeds {
-    fn from(seeds: Vec<CubeWorldSeed>) -> Self {
+impl From<Vec<Seed>> for Seeds {
+    fn from(seeds: Vec<Seed>) -> Self {
         Self {
             list: seeds,
             head: 0,
@@ -57,9 +38,9 @@ pub struct CubeWorld {
 }
 
 impl CubeWorld {
-    pub fn new(seed: &CubeWorldSeed) -> Self {
+    pub fn new(seed: &Seed) -> Self {
         Self {
-            state: cc_core::State::new(&seed.0),
+            state: cc_core::State::new(&seed),
             timer: Timer::new(Duration::from_millis(200), true),
         }
     }

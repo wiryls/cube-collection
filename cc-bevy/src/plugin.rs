@@ -1,9 +1,11 @@
-pub mod debug;
+pub mod debug_plugin;
 pub mod grid;
-pub mod load;
-pub mod poly;
+pub mod loader_plugin;
+pub mod scene_plugin;
+pub mod shape_plugin;
 
-pub use debug::DebugPlugin;
+pub use debug_plugin::DebugPlugin;
 pub use grid::{GridPlugin, GridUpdated};
-pub use load::LoaderPlugin;
-pub use poly::PolyPlugin;
+pub use loader_plugin::LoaderPlugin;
+pub use scene_plugin::{ScenePlugin, SceneState};
+pub use shape_plugin::ShapePlugin;

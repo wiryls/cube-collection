@@ -1,11 +1,11 @@
 use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::*;
+use bevy_prototype_lyon::plugin;
 
 /// A wrapper of ShapePlugin.
-pub struct PolyPlugin;
-impl Plugin for PolyPlugin {
+pub struct ShapePlugin;
+impl Plugin for ShapePlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(Msaa { samples: 4 })
-            .add_plugin(ShapePlugin);
+            .add_plugin(plugin::ShapePlugin);
     }
 }
