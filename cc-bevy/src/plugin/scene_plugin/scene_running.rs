@@ -3,16 +3,17 @@ use iyes_loopless::prelude::*;
 
 use super::rule::{component, system, world};
 use super::view::{GridView, ViewUpdated};
-use super::SceneState;
+use super::{Lable, SceneState};
 use crate::plugin::ShapePlugin;
 
-pub fn setup_scene(app: &mut App) {
+pub fn setup(app: &mut App) {
     app.add_plugin(ShapePlugin)
         .add_event::<WorldChanged>()
         .add_enter_system(SceneState::Running, setup_world)
         .add_system_set(
             ConditionSet::new()
-                .label("flow")
+                .label("prepare")
+                .after(Lable::LOADING)
                 .run_in_state(SceneState::Running)
                 .with_system(switch_world.run_on_event::<WorldChanged>())
                 .with_system(update_scale.run_on_event::<ViewUpdated>())
@@ -20,8 +21,8 @@ pub fn setup_scene(app: &mut App) {
         )
         .add_system_set(
             ConditionSet::new()
-                .label("rule")
-                .after("flow")
+                .label(Lable::RUNNING)
+                .after("prepare")
                 .run_in_state(SceneState::Running)
                 .with_system(system::movement.run_if_resource_exists::<world::World>())
                 .into(),

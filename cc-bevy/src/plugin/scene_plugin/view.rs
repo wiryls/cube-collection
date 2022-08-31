@@ -1,3 +1,4 @@
+use super::Lable;
 use bevy::prelude::*;
 use bevy::window::WindowResized;
 use cc_core::cube::Point;
@@ -8,11 +9,15 @@ pub struct ViewUpdated {
     pub mapper: ViewMapper,
 }
 
-pub fn setup_adaptive_view(app: &mut App) {
+pub fn setup(app: &mut App) {
     app.init_resource::<GridView>()
         .add_event::<ViewUpdated>()
         .add_startup_system(setup_camera)
-        .add_system(update_gridview.run_on_event::<WindowResized>());
+        .add_system(
+            update_gridview
+                .run_on_event::<WindowResized>()
+                .label(Lable::VIEW),
+        );
 }
 
 fn setup_camera(mut commands: Commands) {

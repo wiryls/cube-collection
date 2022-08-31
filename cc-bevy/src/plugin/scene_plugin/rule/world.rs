@@ -1,5 +1,5 @@
 use bevy::time::Timer;
-use cc_core::{cube::Movement, seed::Seed, Diff};
+use cc_core::{seed::Seed, Diff};
 use std::{collections::HashMap, time::Duration};
 
 pub struct Seeds {
@@ -60,19 +60,9 @@ impl World {
 }
 
 pub enum Command {
-    Left,
-    Down,
-    Up,
-    Right,
-}
-
-impl From<Command> for Movement {
-    fn from(command: Command) -> Self {
-        match command {
-            Command::Left => Movement::Left,
-            Command::Down => Movement::Down,
-            Command::Up => Movement::Up,
-            Command::Right => Movement::Right,
-        }
-    }
+    MoveLeft,
+    MoveDown,
+    MoveUp,
+    MoveRight,
+    Stop,
 }
