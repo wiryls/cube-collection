@@ -32,12 +32,12 @@ impl From<Vec<Seed>> for Seeds {
     }
 }
 
-pub struct CubeWorld {
+pub struct World {
     state: cc_core::State,
     timer: Timer,
 }
 
-impl CubeWorld {
+impl World {
     pub fn new(seed: &Seed) -> Self {
         Self {
             state: cc_core::State::new(&seed),

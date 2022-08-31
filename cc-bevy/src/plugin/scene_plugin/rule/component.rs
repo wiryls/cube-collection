@@ -1,5 +1,5 @@
 use super::super::view::ViewMapper;
-use super::seed::CubeWorld;
+use super::world::World;
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
@@ -42,14 +42,14 @@ struct CubeBundle {
     shape: ShapeBundle,
 }
 
-pub fn spawn_cubes(state: &CubeWorld, commands: &mut Commands, mapper: &ViewMapper) {
+pub fn spawn_cubes(state: &World, commands: &mut Commands, mapper: &ViewMapper) {
     let scale = mapper.scale(1.0f32);
     for item in state.cubes() {
         let color = match item.kind {
-            Kind::White => Color::rgb(1., 1., 1.),
-            Kind::Red => Color::rgb(1., 0., 0.),
-            Kind::Blue => Color::rgb(0., 0., 1.),
-            Kind::Green => Color::rgb(0., 1., 0.),
+            Kind::White /* **/ => Color::rgb(1.0, 1.0, 1.0),
+            Kind::Red /*   **/ => Color::rgb(0.9, 0.1, 0.1),
+            Kind::Blue /*  **/ => Color::rgb(0.1, 0.1, 0.9),
+            Kind::Green /* **/ => Color::rgb(0.1, 0.9, 0.1),
         };
         let points = cube_boundaries(item.neighborhood, 1., 0.95);
         let translation = mapper.absolute(&item.position).extend(0.);

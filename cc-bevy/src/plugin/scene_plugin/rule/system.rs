@@ -1,5 +1,5 @@
 use super::super::view::GridView;
-use super::{component::Cubic, seed::CubeWorld};
+use super::{component::Cubic, world::World};
 use bevy::prelude::*;
 
 #[derive(Component, Default)]
@@ -8,7 +8,7 @@ pub struct Test;
 pub fn movement(
     mut commands: Commands,
     mut cubes: Query<&mut Cubic>,
-    mut world: ResMut<CubeWorld>,
+    mut world: ResMut<World>,
     view: ResMut<GridView>,
     time: Res<Time>,
 ) {

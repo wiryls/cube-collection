@@ -1,13 +1,12 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-use super::rule::{component, seed, system};
-use super::view::{self, GridView, ViewUpdated};
+use super::rule::{component, system, world};
+use super::view::{GridView, ViewUpdated};
 use super::SceneState;
 use crate::plugin::ShapePlugin;
 
 pub fn setup_scene(app: &mut App) {
-    view::setup_adaptive_view(app);
     app.add_plugin(ShapePlugin)
         .add_event::<WorldChanged>()
         .add_enter_system(SceneState::Running, setup_world)
@@ -24,7 +23,7 @@ pub fn setup_scene(app: &mut App) {
                 .label("rule")
                 .after("flow")
                 .run_in_state(SceneState::Running)
-                .with_system(system::movement.run_if_resource_exists::<seed::CubeWorld>())
+                .with_system(system::movement.run_if_resource_exists::<world::World>())
                 .into(),
         );
 }
@@ -43,7 +42,7 @@ fn switch_world(
     mut commands: Commands,
     entities: Query<Entity, With<component::Earthbound>>,
     mut view: ResMut<GridView>,
-    mut world_seeds: ResMut<seed::Seeds>,
+    mut world_seeds: ResMut<world::Seeds>,
     mut world_changed: EventReader<WorldChanged>,
 ) {
     let got = !world_changed.is_empty();
@@ -69,7 +68,7 @@ fn switch_world(
 
             // [2] create new cubes
             let mapper = view.mapping();
-            let world = seed::CubeWorld::new(&seed);
+            let world = world::World::new(&seed);
             component::spawn_cubes(&world, &mut commands, &mapper);
             commands.insert_resource(world);
         }

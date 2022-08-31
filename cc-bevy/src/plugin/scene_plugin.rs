@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+mod input;
 mod rule;
 mod scene_loading;
 mod scene_running;
@@ -20,6 +21,8 @@ impl Default for SceneState {
 pub struct ScenePlugin;
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
+        view::setup_adaptive_view(app);
+
         scene_loading::setup_scene(app);
         scene_running::setup_scene(app);
     }
