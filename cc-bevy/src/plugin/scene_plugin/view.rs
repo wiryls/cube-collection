@@ -1,37 +1,32 @@
-mod location;
-mod view;
-
-pub use location::Location;
-pub use view::{GridMapper, GridView};
-
 use bevy::prelude::*;
 use bevy::window::WindowResized;
 use iyes_loopless::prelude::*;
 
-pub struct GridUpdated {
-    pub mapper: GridMapper,
+mod grid;
+mod location;
+pub use grid::{GridView, ViewMapper};
+pub use location::Location;
+
+pub struct ViewUpdated {
+    pub mapper: ViewMapper,
 }
 
-// GridPlugin adds a GridView resource and a GridUpdated event.
-pub struct GridPlugin;
-impl Plugin for GridPlugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
-        app.init_resource::<GridView>()
-            .add_event::<GridUpdated>()
-            .add_startup_system(setup_camera)
-            .add_system(window_resized.run_on_event::<WindowResized>());
-    }
+pub fn setup_adaptive_view(app: &mut App) {
+    app.init_resource::<GridView>()
+        .add_event::<ViewUpdated>()
+        .add_startup_system(setup_camera)
+        .add_system(update_gridview.run_on_event::<WindowResized>());
 }
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default());
 }
 
-fn window_resized(
+fn update_gridview(
     windows: ResMut<Windows>,
     mut view: ResMut<GridView>,
     mut window_resized: EventReader<WindowResized>,
-    mut mapper_updated: EventWriter<GridUpdated>,
+    mut mapper_updated: EventWriter<ViewUpdated>,
 ) {
     if let Some(window) = windows.get_primary() {
         // multiple windows are not supported, we just watch the primary one.
@@ -50,7 +45,7 @@ fn window_resized(
 
             if view.set_target(r) && view.available() {
                 let mapper = view.mapping().clone();
-                mapper_updated.send(GridUpdated { mapper });
+                mapper_updated.send(ViewUpdated { mapper });
             }
         }
     }

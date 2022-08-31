@@ -8,7 +8,7 @@ pub struct GridView {
     source: Option<UiRect<i32>>,
     target: Option<UiRect<f32>>,
     // output
-    mapper: GridMapper,
+    mapper: ViewMapper,
 }
 
 impl GridView {
@@ -40,7 +40,7 @@ impl GridView {
         self.source.is_some() && self.target.is_some()
     }
 
-    pub fn mapping(&self) -> &GridMapper {
+    pub fn mapping(&self) -> &ViewMapper {
         &self.mapper
     }
 
@@ -52,7 +52,7 @@ impl GridView {
             let sh = (source.bottom - source.top) as f32;
             let scale = f32::min(tw / sw, th / sh);
 
-            self.mapper = GridMapper {
+            self.mapper = ViewMapper {
                 source: IVec2 {
                     x: source.left,
                     y: source.top,
@@ -68,13 +68,13 @@ impl GridView {
 }
 
 #[derive(Default, Clone, Copy)]
-pub struct GridMapper {
+pub struct ViewMapper {
     source: IVec2,
     target: Vec2,
     scale: f32,
 }
 
-impl GridMapper {
+impl ViewMapper {
     pub fn scale<T>(&self, o: T) -> f32
     where
         T: AsPrimitive<f32>,

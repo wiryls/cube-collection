@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
+use super::rule::seed::Seeds;
 use super::SceneState;
-use crate::model::seed::Seeds;
 use crate::plugin::loader_plugin::{LevelLoadingUpdated, LoadLevels, LoaderPlugin};
 
 pub fn setup_scene(app: &mut App) {
@@ -15,8 +15,8 @@ fn loading_enter(mut commands: Commands) {
     commands.insert_resource(LoadLevels::new(r"level/index.toml"));
 }
 
-fn loading_updated(mut commands: Commands, mut status: EventReader<LevelLoadingUpdated>) {
-    for event in status.iter() {
+fn loading_updated(mut commands: Commands, mut events: EventReader<LevelLoadingUpdated>) {
+    for event in events.iter() {
         use LevelLoadingUpdated::*;
         match event {
             Loading { total, done } => println!("Loading: {}/{}", done, total),

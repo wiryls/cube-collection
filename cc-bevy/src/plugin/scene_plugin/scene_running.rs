@@ -1,14 +1,14 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
+use super::rule::{component, seed, system};
+use super::view::{self, GridView, ViewUpdated};
 use super::SceneState;
-use crate::model::{component, seed, system};
-use crate::plugin::grid::{GridPlugin, GridUpdated, GridView};
 use crate::plugin::ShapePlugin;
 
 pub fn setup_scene(app: &mut App) {
+    view::setup_adaptive_view(app);
     app.add_plugin(ShapePlugin)
-        .add_plugin(GridPlugin)
         .add_event::<WorldChanged>()
         .add_enter_system(SceneState::Running, setup_world)
         .add_system_set(
@@ -16,7 +16,7 @@ pub fn setup_scene(app: &mut App) {
                 .label("flow")
                 .run_in_state(SceneState::Running)
                 .with_system(switch_world.run_on_event::<WorldChanged>())
-                .with_system(update_scale.run_on_event::<GridUpdated>())
+                .with_system(update_scale.run_on_event::<ViewUpdated>())
                 .into(),
         )
         .add_system_set(
@@ -78,7 +78,7 @@ fn switch_world(
 
 fn update_scale(
     mut cubes: Query<(&component::Cubic, &mut Transform)>,
-    mut grid_updated: EventReader<GridUpdated>,
+    mut grid_updated: EventReader<ViewUpdated>,
 ) {
     let event = match grid_updated.iter().last() {
         None => return,

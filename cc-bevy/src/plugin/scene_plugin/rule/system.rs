@@ -1,5 +1,5 @@
+use super::super::view::GridView;
 use super::{component::Cubic, seed::CubeWorld};
-use crate::plugin::grid::GridView;
 use bevy::prelude::*;
 
 #[derive(Component, Default)]

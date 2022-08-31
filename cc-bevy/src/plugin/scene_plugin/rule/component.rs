@@ -1,5 +1,5 @@
+use super::super::view::ViewMapper;
 use super::seed::CubeWorld;
-use crate::plugin::grid::GridMapper;
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
@@ -42,7 +42,7 @@ struct CubeBundle {
     shape: ShapeBundle,
 }
 
-pub fn spawn_cubes(state: &CubeWorld, commands: &mut Commands, mapper: &GridMapper) {
+pub fn spawn_cubes(state: &CubeWorld, commands: &mut Commands, mapper: &ViewMapper) {
     let scale = mapper.scale(1.0f32);
     for item in state.cubes() {
         let color = match item.kind {

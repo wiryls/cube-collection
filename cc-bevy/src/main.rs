@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-mod model;
 mod plugin;
 
 fn main() {

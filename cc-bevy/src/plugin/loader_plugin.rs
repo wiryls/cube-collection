@@ -13,7 +13,7 @@ use loader::{LevelList, LevelSeed};
 /// commands.insert_resource(LoadSeeds::new("INDEX_PATH"))
 /// ```
 ///
-/// to start loading ```Res<Vec<Seed>>```.
+/// to start loading.
 pub struct LoaderPlugin;
 impl Plugin for LoaderPlugin {
     fn build(&self, app: &mut App) {
@@ -56,7 +56,6 @@ impl Default for LoadLevelState {
 }
 
 fn load_levels(
-    mut commands: Commands,
     mut status: ResMut<LoadLevels>,
     mut progress: Local<(usize, usize)>,
     mut load_updated: EventWriter<LevelLoadingUpdated>,
