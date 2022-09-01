@@ -58,11 +58,3 @@ impl World {
         self.state.iter()
     }
 }
-
-pub enum Command {
-    MoveLeft,
-    MoveDown,
-    MoveUp,
-    MoveRight,
-    Stop,
-}
