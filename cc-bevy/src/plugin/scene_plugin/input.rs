@@ -4,7 +4,7 @@ use num_traits::Signed;
 
 use super::Lable;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MovementChanged {
     Add(Movement),
     Set(Option<Movement>),
@@ -62,14 +62,10 @@ fn keyboard(
         };
 
         match output {
-            Command::Movement(movement) => {
-                movement_changed.send(movement);
-            }
+            Command::Movement(movement) => movement_changed.send(movement),
             Command::DoNothing => {}
         }
     }
-
-    // todo!()
 }
 
 /////////////////////////////////////////////////////////////////////////////

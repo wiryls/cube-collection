@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-use super::cube::{component, movement_system, world};
+use super::cube::{component, system, world};
 use super::view::{GridView, ViewUpdated};
 use super::{Lable, SceneState};
 use crate::plugin::ShapePlugin;
@@ -24,7 +24,7 @@ pub fn setup(app: &mut App) {
                 .label(Lable::RUNNING)
                 .after("prepare")
                 .run_in_state(SceneState::Running)
-                .with_system(movement_system::movement.run_if_resource_exists::<world::World>())
+                .with_system(system::movement.run_if_resource_exists::<world::World>())
                 .into(),
         );
 }

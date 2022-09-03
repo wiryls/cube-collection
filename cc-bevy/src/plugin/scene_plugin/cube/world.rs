@@ -1,5 +1,5 @@
 use bevy::time::Timer;
-use cc_core::{seed::Seed, Diff};
+use cc_core::{cube::Movement, seed::Seed, Diff};
 use std::{collections::HashMap, time::Duration};
 
 /////////////////////////////////////////////////////////////////////////////
@@ -38,6 +38,10 @@ impl From<Vec<Seed>> for Seeds {
 /////////////////////////////////////////////////////////////////////////////
 // World
 
+pub trait Input {
+    fn fetch(&mut self) -> Option<Movement>;
+}
+
 pub struct World {
     state: cc_core::State,
     timer: Timer,
@@ -51,13 +55,15 @@ impl World {
         }
     }
 
-    pub fn next(&mut self, delta: Duration) -> HashMap<usize, Diff> {
-        let mut output = HashMap::new();
+    pub fn next(&mut self, delta: Duration, input: &mut impl Input) -> HashMap<usize, Diff> {
         if self.timer.tick(delta).finished() {
-            self.state.commit(None);
+            self.state
+                .commit(input.fetch())
+                .map(|diff| (diff.id, diff))
+                .collect()
+        } else {
+            HashMap::with_capacity(0)
         }
-
-        output
     }
 
     pub fn cubes(&self) -> impl Iterator<Item = cc_core::Unit> + '_ {

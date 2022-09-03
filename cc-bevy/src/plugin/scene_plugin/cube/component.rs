@@ -1,5 +1,3 @@
-use super::super::view::ViewMapper;
-use super::world::World;
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
@@ -7,6 +5,8 @@ use cc_core::{
     cube::{Constraint, Kind, Movement, Neighborhood, Point},
     Unit,
 };
+
+use super::{super::view::ViewMapper, world::World};
 
 #[derive(Component, Default)]
 pub struct Earthbound;
