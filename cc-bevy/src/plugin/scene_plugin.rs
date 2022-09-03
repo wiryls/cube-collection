@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
+mod cube;
 mod input;
-mod rule;
 mod scene_loading;
 mod scene_running;
 mod view;

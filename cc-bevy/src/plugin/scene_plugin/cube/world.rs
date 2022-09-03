@@ -2,6 +2,9 @@ use bevy::time::Timer;
 use cc_core::{seed::Seed, Diff};
 use std::{collections::HashMap, time::Duration};
 
+/////////////////////////////////////////////////////////////////////////////
+// Seeds
+
 pub struct Seeds {
     list: Vec<Seed>,
     head: usize,
@@ -31,6 +34,9 @@ impl From<Vec<Seed>> for Seeds {
         }
     }
 }
+
+/////////////////////////////////////////////////////////////////////////////
+// World
 
 pub struct World {
     state: cc_core::State,

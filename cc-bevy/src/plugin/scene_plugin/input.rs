@@ -4,8 +4,29 @@ use num_traits::Signed;
 
 use super::Lable;
 
+#[derive(Clone, PartialEq, Eq)]
+pub enum MovementChanged {
+    Add(Movement),
+    Set(Option<Movement>),
+}
+impl MovementChanged {
+    fn cover(&self, that: &Self) -> bool {
+        use MovementChanged::*;
+        match self {
+            _ if self == that => true,
+            Add(_) => false,
+            Set(m) => m.map(|movement| *that == Add(movement)).unwrap_or_default(),
+        }
+    }
+}
+impl Default for MovementChanged {
+    fn default() -> Self {
+        Self::Set(None)
+    }
+}
+
 pub fn setup(app: &mut App) {
-    app.add_system_set(
+    app.add_event::<MovementChanged>().add_system_set(
         SystemSet::new()
             .label(Lable::INPUT)
             .after(Lable::VIEW)
@@ -16,13 +37,16 @@ pub fn setup(app: &mut App) {
 
 #[derive(Default)]
 enum Command {
-    AddMovement(Movement),
-    SetMovement(Option<Movement>),
+    Movement(MovementChanged),
     #[default]
     DoNothing,
 }
 
-fn keyboard(mut input: EventReader<KeyboardInput>, mut actions: Local<ActionInput>) {
+fn keyboard(
+    mut input: EventReader<KeyboardInput>,
+    mut movement_changed: EventWriter<MovementChanged>,
+    mut actions: Local<ActionSequence>,
+) {
     // try to calculate a command and send it to movement system.
     for (code, key) in input
         .iter()
@@ -38,14 +62,8 @@ fn keyboard(mut input: EventReader<KeyboardInput>, mut actions: Local<ActionInpu
         };
 
         match output {
-            Command::AddMovement(movement) => {
-                println!("append {:?}", movement);
-            }
-            Command::SetMovement(movement) => {
-                println!("reset");
-                if let Some(movement) = movement {
-                    println!("switch {:?}", movement);
-                }
+            Command::Movement(movement) => {
+                movement_changed.send(movement);
             }
             Command::DoNothing => {}
         }
@@ -55,53 +73,22 @@ fn keyboard(mut input: EventReader<KeyboardInput>, mut actions: Local<ActionInpu
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// action
-
-#[derive(Clone, PartialEq, Eq)]
-enum CommandMovement {
-    Add(Movement),
-    Set(Option<Movement>),
-}
-impl CommandMovement {
-    fn cover(&self, that: &Self) -> bool {
-        use CommandMovement::*;
-        match self {
-            _ if self == that => true,
-            Add(_) => false,
-            Set(movement) => movement
-                .map(|movement| *that == Add(movement))
-                .unwrap_or_default(),
-        }
-    }
-}
-impl Default for CommandMovement {
-    fn default() -> Self {
-        Self::Set(None)
-    }
-}
-impl From<&CommandMovement> for Command {
-    fn from(command: &CommandMovement) -> Self {
-        match command {
-            CommandMovement::Add(movement) => Command::AddMovement(*movement),
-            CommandMovement::Set(movement) => Command::SetMovement(*movement),
-        }
-    }
-}
+// action sequence
 
 #[derive(Default /* required by Local */)]
-struct ActionInput(Vec<Movement>, CommandMovement);
-impl ActionInput {
+struct ActionSequence(Vec<Movement>, MovementChanged);
+impl ActionSequence {
     fn input(&mut self, movement: Movement, pressed: bool) -> Command {
         let next = self.update(movement, pressed);
         if !self.1.cover(&next) {
             self.1 = next;
-            (&self.1).into()
+            Command::Movement(self.1.clone())
         } else {
             Command::DoNothing
         }
     }
 
-    fn update(&mut self, movement: Movement, pressed: bool) -> CommandMovement {
+    fn update(&mut self, movement: Movement, pressed: bool) -> MovementChanged {
         self.0.retain(|&m| m != movement);
         if pressed {
             self.0.push(movement);
@@ -109,11 +96,11 @@ impl ActionInput {
 
         let (conflic, movement) = self.evaluate();
         if conflic {
-            CommandMovement::Set(movement)
+            MovementChanged::Set(movement)
         } else if let Some(movement) = movement {
-            CommandMovement::Add(movement)
+            MovementChanged::Add(movement)
         } else {
-            CommandMovement::Set(None)
+            MovementChanged::Set(None)
         }
     }
 
