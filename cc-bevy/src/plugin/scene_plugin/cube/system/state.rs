@@ -2,16 +2,19 @@ use bevy::prelude::*;
 use cc_core::cube::Movement;
 use std::collections::VecDeque;
 
-use super::super::{
-    super::input::MovementChanged,
-    component::Cubic,
-    world::{Input, World},
+use super::{
+    super::{
+        super::input::MovementChanged,
+        component::Cubic,
+        world::{Input, World},
+    },
+    translate::Translate,
 };
 
-pub fn movement(
+pub fn system(
     mut commands: Commands,
     mut input: EventReader<MovementChanged>,
-    mut cubes: Query<&mut Cubic>,
+    mut cubes: Query<(Entity, &mut Cubic)>,
     mut world: ResMut<World>,
     mut actions: Local<ActionQueue>,
     time: Res<Time>,
@@ -27,12 +30,25 @@ pub fn movement(
     // Update world.
     let diffs = world.next(time.delta(), &mut *actions);
     if !diffs.is_empty() {
-        for (mut cube, diff) in cubes
+        for (id, mut cube, diff) in cubes
             .iter_mut()
-            .filter_map(|cube| diffs.get(&cube.id).map(|diff| (cube, diff)))
+            .filter_map(|(id, cube)| diffs.get(&cube.id).map(|diff| (id, cube, diff)))
         {
+            // color
             if let Some(value) = diff.kind {
+                // TODO: add another component
                 cube.kind = value;
+            }
+
+            // shape
+            if let Some(value) = diff.neighborhood {
+                // TODO: add another component
+                cube.neighborhood = value;
+            }
+
+            // translation
+            if let Some(component) = Translate::make(&*cube, diff) {
+                commands.entity(id).insert(component);
             }
             if let Some(value) = diff.position {
                 cube.position = value;
@@ -42,9 +58,6 @@ pub fn movement(
             }
             if let Some(value) = diff.constraint {
                 cube.constraint = value;
-            }
-            if let Some(value) = diff.neighborhood {
-                cube.neighborhood = value;
             }
         }
     }

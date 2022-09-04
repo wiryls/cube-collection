@@ -20,12 +20,22 @@ pub fn setup(app: &mut App) {
                 .into(),
         )
         .add_system_set(
-            ConditionSet::new()
-                .label(Lable::RUNNING)
-                .after("prepare")
-                .run_in_state(SceneState::Running)
-                .with_system(system::movement.run_if_resource_exists::<world::World>())
-                .into(),
+            system::calculate(
+                ConditionSet::new()
+                    .label("calculate")
+                    .after("prepare")
+                    .run_in_state(SceneState::Running),
+            )
+            .into(),
+        )
+        .add_system_set(
+            system::execute(
+                ConditionSet::new()
+                    .label(Lable::RUNNING)
+                    .after("calculate")
+                    .run_in_state(SceneState::Running),
+            )
+            .into(),
         );
 }
 
