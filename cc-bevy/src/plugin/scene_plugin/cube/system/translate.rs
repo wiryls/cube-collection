@@ -1,111 +1,96 @@
 use bevy::prelude::*;
 use cc_core::{
-    cube::{Constraint, Movement, Point},
+    cube::{Constraint, Point},
     Diff,
 };
 use std::time::Duration;
 
 use super::super::{super::view::GridView, component::Cubic};
 
-#[derive(Component)]
-pub struct Translate {
+#[derive(Component, Debug)]
+pub struct TranslatePosition {
     elapse: Timer,
-    parameters: Parameters,
+    parameters: PositionParameters,
 }
 
-impl Translate {
-    pub fn make(cube: &Cubic, diff: &Diff) -> Option<Self> {
-        const DURATION: Duration = Duration::from_millis(200);
-
+impl TranslatePosition {
+    pub fn make(cube: &Cubic, diff: &Diff, duration: Duration) -> Option<Self> {
         if let Some(position) = diff.position {
-            return Some(Translate {
-                elapse: Timer::new(DURATION, false),
-                parameters: Parameters::Move {
-                    source: cube.position,
-                    target: position,
-                },
+            return Some(TranslatePosition {
+                elapse: Timer::new(duration, false),
+                parameters: PositionParameters::Move(cube.position, position),
             });
         }
 
         let movement = diff.movement.unwrap_or(cube.movement);
         let constraint = diff.constraint.unwrap_or(cube.constraint);
         if constraint == Constraint::Stop || movement.is_none() {
-            return Some(Translate {
+            return Some(TranslatePosition {
                 elapse: Timer::new(Duration::from_secs(0), false),
-                parameters: Parameters::Stop,
+                parameters: PositionParameters::Stop,
             });
         }
 
         let movement = movement.unwrap();
-        match constraint {
-            Constraint::Slap => {
-                return Some(Translate {
-                    elapse: Timer::new(DURATION, true),
-                    parameters: Parameters::Slap {
-                        source: cube.position,
-                        action: movement,
-                    },
-                })
-            }
-            Constraint::Lock => {
-                return Some(Translate {
-                    elapse: Timer::new(DURATION, true),
-                    parameters: Parameters::Lock {
-                        source: cube.position,
-                        action: movement,
-                    },
-                })
-            }
-            _ => None,
-        }
+        let limit = match constraint {
+            Constraint::Slap => 0.5,
+            Constraint::Lock => 0.05,
+            _ => return None,
+        };
+
+        Some(TranslatePosition {
+            elapse: Timer::new(duration, true),
+            parameters: PositionParameters::Spin(cube.position, movement.into(), limit),
+        })
     }
 }
 
-enum Parameters {
-    Move { source: Point, target: Point },
-    Slap { source: Point, action: Movement },
-    Lock { source: Point, action: Movement },
+#[derive(Debug)]
+enum PositionParameters {
+    Move(Point, Point),      // (from, to)
+    Spin(Point, Point, f32), // (from, delta, limit)
     Stop,
 }
 
-pub fn system(
+pub fn position_system(
     mut commands: Commands,
-    mut cubes: Query<(Entity, &mut Translate, &mut Transform)>,
+    mut cubes: Query<(Entity, &mut TranslatePosition, &mut Transform)>,
     view: Res<GridView>,
     time: Res<Time>,
 ) {
     let delta = time.delta();
     let mapper = view.mapping();
     for (id, mut translate, mut transform) in cubes.iter_mut() {
+        use PositionParameters::*;
         if translate.elapse.tick(delta).finished() {
             match translate.parameters {
-                Parameters::Move { source: _, target } => {
-                    transform.translation = mapper.absolute(&target).extend(0.);
-                    commands.entity(id).remove::<Translate>();
+                Move(_, to) => {
+                    transform.translation = mapper.absolute(&to).extend(0.);
                 }
-                Parameters::Slap { source, action: _ } => {
-                    transform.translation = mapper.absolute(&source).extend(0.);
+                Spin(from, _, _) => {
+                    transform.translation = mapper.absolute(&from).extend(0.);
                 }
-                Parameters::Lock { source, action: _ } => {
-                    transform.translation = mapper.absolute(&source).extend(0.);
-                }
-                Parameters::Stop => {
-                    commands.entity(id).remove::<Translate>();
+                Stop => {
+                    commands.entity(id).remove::<TranslatePosition>();
                 }
             }
         } else {
             match translate.parameters {
-                Parameters::Move { source: _, target } => {
-                    // TODO:
+                Move(from, to) => {
+                    let percent = translate.elapse.percent();
+                    let source = mapper.absolute(&from).extend(0.);
+                    let target = mapper.absolute(&to).extend(0.);
+                    transform.translation = source + (target - source) * percent;
                 }
-                Parameters::Slap { source, action } => {
-                    // TODO:
+                Spin(from, delta, limit) => {
+                    let percent = translate.elapse.percent();
+                    let percent = (1.0 - percent).min(percent).min(limit);
+                    let source = mapper.absolute(&from).extend(0.);
+                    let delta = mapper.absolute(&delta).extend(0.);
+                    transform.translation = source + delta * percent;
                 }
-                Parameters::Lock { source, action } => {
-                    // TODO:
-                }
-                Parameters::Stop => {
-                    commands.entity(id).remove::<Translate>();
+                Stop => {
+                    commands.entity(id).remove::<TranslatePosition>();
                 }
             }
         }

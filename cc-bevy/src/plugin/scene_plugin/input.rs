@@ -35,7 +35,7 @@ pub fn setup(app: &mut App) {
     );
 }
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 enum Command {
     Movement(MovementChanged),
     #[default]

@@ -8,10 +8,10 @@ use super::{
         component::Cubic,
         world::{Input, World},
     },
-    translate::Translate,
+    translate::TranslatePosition,
 };
 
-pub fn system(
+pub fn state_system(
     mut commands: Commands,
     mut input: EventReader<MovementChanged>,
     mut cubes: Query<(Entity, &mut Cubic)>,
@@ -47,7 +47,7 @@ pub fn system(
             }
 
             // translation
-            if let Some(component) = Translate::make(&*cube, diff) {
+            if let Some(component) = TranslatePosition::make(&*cube, diff, world.step_duration()) {
                 commands.entity(id).insert(component);
             }
             if let Some(value) = diff.position {
@@ -71,9 +71,8 @@ pub struct ActionQueue {
 
 impl ActionQueue {
     fn add(&mut self, movement: Movement) {
-        if let Some(movement) = self.repeat.replace(movement) {
-            self.once.push_back(movement);
-        }
+        self.once.push_back(movement);
+        self.repeat = Some(movement);
     }
 
     fn set(&mut self, movement: Option<Movement>) {
@@ -99,5 +98,37 @@ impl ActionQueue {
 impl Input for ActionQueue {
     fn fetch(&mut self) -> Option<Movement> {
         self.pop()
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// tests
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn action_queue() {
+        {
+            let mut queue = ActionQueue::default();
+            queue.add(Movement::Up);
+            queue.set(None);
+            assert_eq!(queue.pop(), Some(Movement::Up));
+            assert_eq!(queue.pop(), None);
+        }
+        {
+            let mut queue = ActionQueue::default();
+            queue.add(Movement::Up);
+            queue.set(None);
+            queue.add(Movement::Up);
+            queue.set(None);
+            queue.add(Movement::Left);
+            queue.set(None);
+            assert_eq!(queue.pop(), Some(Movement::Up));
+            assert_eq!(queue.pop(), Some(Movement::Up));
+            assert_eq!(queue.pop(), Some(Movement::Left));
+            assert_eq!(queue.pop(), None);
+        }
     }
 }

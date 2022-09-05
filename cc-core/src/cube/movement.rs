@@ -39,18 +39,14 @@ impl Movement {
     }
 }
 
-impl Into<Point> for Movement {
-    fn into(self) -> Point {
-        const LEFT: Point = Point::new(-1, 0);
-        const DOWN: Point = Point::new(0, 1);
-        const UP: Point = Point::new(0, -1);
-        const RIGHT: Point = Point::new(1, 0);
+impl From<Movement> for Point {
+    fn from(movement: Movement) -> Self {
         use Movement::*;
-        match self {
-            Left => LEFT,
-            Down => DOWN,
-            Up => UP,
-            Right => RIGHT,
+        match movement {
+            Left => Point::new(-1, 0),
+            Down => Point::new(0, 1),
+            Up => Point::new(0, -1),
+            Right => Point::new(1, 0),
         }
     }
 }

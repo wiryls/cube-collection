@@ -69,4 +69,8 @@ impl World {
     pub fn cubes(&self) -> impl Iterator<Item = cc_core::Unit> + '_ {
         self.state.iter()
     }
+
+    pub fn step_duration(&self) -> Duration {
+        self.timer.duration()
+    }
 }
