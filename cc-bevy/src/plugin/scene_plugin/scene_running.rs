@@ -3,39 +3,32 @@ use iyes_loopless::prelude::*;
 
 use super::cube::{component, system, world};
 use super::view::{GridView, ViewUpdated};
-use super::{Lable, SceneState};
-use crate::plugin::ShapePlugin;
+use super::SceneState;
 
-pub fn setup(app: &mut App) {
-    app.add_plugin(ShapePlugin)
-        .add_event::<WorldChanged>()
+pub fn setup(appx: &mut App, prepare: impl StageLabel, rule: impl StageLabel) {
+    appx.add_event::<WorldChanged>()
         .add_enter_system(SceneState::Running, setup_world)
-        .add_system_set(
+        .add_system_set_to_stage(
+            prepare,
             ConditionSet::new()
-                .label("prepare")
-                .after(Lable::LOADING)
                 .run_in_state(SceneState::Running)
                 .with_system(switch_world.run_on_event::<WorldChanged>())
                 .with_system(update_scale.run_on_event::<ViewUpdated>())
                 .into(),
         )
-        .add_system_set(
-            system::calculate(
-                ConditionSet::new()
-                    .label("calculate")
-                    .after("prepare")
-                    .run_in_state(SceneState::Running),
-            )
-            .into(),
+        .add_system_to_stage(
+            rule,
+            system::state
+                .run_in_state(SceneState::Running)
+                .run_if_resource_exists::<world::World>(),
         )
         .add_system_set(
-            system::execute(
-                ConditionSet::new()
-                    .label(Lable::RUNNING)
-                    .after("calculate")
-                    .run_in_state(SceneState::Running),
-            )
-            .into(),
+            ConditionSet::new()
+                .run_in_state(SceneState::Running)
+                .with_system(system::position)
+                .with_system(system::recolor)
+                .with_system(system::reshape)
+                .into(),
         );
 }
 
@@ -63,26 +56,23 @@ fn switch_world(
         }
     }
 
-    match got.then(|| world_seeds.current()).flatten() {
-        None => return,
-        Some(seed) => {
-            // [0] update grid
-            view.set_source(UiRect {
-                left: 0,
-                right: seed.size.width,
-                top: 0,
-                bottom: seed.size.height,
-            });
+    if let Some(seed) = got.then(|| world_seeds.current()).flatten() {
+        // [0] update grid
+        view.set_source(UiRect {
+            left: 0,
+            right: seed.size.width,
+            top: 0,
+            bottom: seed.size.height,
+        });
 
-            // [1] remove old objects
-            entities.for_each(|i| commands.entity(i).despawn_recursive());
+        // [1] remove old objects
+        entities.for_each(|i| commands.entity(i).despawn_recursive());
 
-            // [2] create new cubes
-            let mapper = view.mapping();
-            let world = world::World::new(&seed);
-            component::spawn_cubes(&world, &mut commands, &mapper);
-            commands.insert_resource(world);
-        }
+        // [2] create new cubes
+        let mapper = view.mapping();
+        let world = world::World::new(&seed);
+        component::spawn_cubes(&world, &mut commands, &mapper);
+        commands.insert_resource(world);
     }
 }
 

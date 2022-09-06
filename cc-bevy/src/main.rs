@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use iyes_loopless::prelude::*;
 
 mod plugin;
 
@@ -9,7 +8,6 @@ fn main() {
         // optional plugins
         .add_plugin(plugin::DebugPlugin)
         // scenes
-        .add_loopless_state(plugin::SceneState::default())
         .add_plugin(plugin::ScenePlugin)
         // done
         .run();

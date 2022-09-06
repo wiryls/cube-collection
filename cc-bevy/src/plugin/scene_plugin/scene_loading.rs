@@ -2,18 +2,13 @@ use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
 use super::cube::world::Seeds;
-use super::{Lable, SceneState};
+use super::SceneState;
 use crate::plugin::loader_plugin::{LevelLoadingUpdated, LoadLevels, LoaderPlugin};
 
-pub fn setup(app: &mut App) {
-    app.add_plugin(LoaderPlugin)
+pub fn setup(appx: &mut App) {
+    appx.add_plugin(LoaderPlugin)
         .add_enter_system(SceneState::Loading, loading_enter)
-        .add_system(
-            loading_updated
-                .run_in_state(SceneState::Loading)
-                .label(Lable::LOADING)
-                .after(Lable::VIEW),
-        );
+        .add_system(loading_updated.run_in_state(SceneState::Loading));
 }
 
 fn loading_enter(mut commands: Commands) {

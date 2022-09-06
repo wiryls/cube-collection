@@ -2,7 +2,10 @@ use bevy::{input::keyboard::KeyboardInput, prelude::*};
 use cc_core::cube::Movement;
 use num_traits::Signed;
 
-use super::Lable;
+pub fn setup(appx: &mut App, stage: impl StageLabel) {
+    appx.add_event::<MovementChanged>()
+        .add_system_to_stage(stage, keyboard);
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MovementChanged {
@@ -23,16 +26,6 @@ impl Default for MovementChanged {
     fn default() -> Self {
         Self::Set(None)
     }
-}
-
-pub fn setup(app: &mut App) {
-    app.add_event::<MovementChanged>().add_system_set(
-        SystemSet::new()
-            .label(Lable::INPUT)
-            .after(Lable::VIEW)
-            .with_system(keyboard)
-            .into(),
-    );
 }
 
 #[derive(Default, Debug)]

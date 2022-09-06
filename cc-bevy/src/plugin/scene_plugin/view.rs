@@ -1,23 +1,18 @@
-use super::Lable;
 use bevy::prelude::*;
 use bevy::window::WindowResized;
 use cc_core::cube::Point;
 use iyes_loopless::prelude::*;
 use num_traits::AsPrimitive;
 
-pub struct ViewUpdated {
-    pub mapper: ViewMapper,
-}
-
-pub fn setup(app: &mut App) {
-    app.init_resource::<GridView>()
+pub fn setup(appx: &mut App, stage: impl StageLabel) {
+    appx.init_resource::<GridView>()
         .add_event::<ViewUpdated>()
         .add_startup_system(setup_camera)
-        .add_system(
-            update_gridview
-                .run_on_event::<WindowResized>()
-                .label(Lable::VIEW),
-        );
+        .add_system_to_stage(stage, update_gridview.run_on_event::<WindowResized>());
+}
+
+pub struct ViewUpdated {
+    pub mapper: ViewMapper,
 }
 
 fn setup_camera(mut commands: Commands) {

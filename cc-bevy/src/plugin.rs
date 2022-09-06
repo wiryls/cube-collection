@@ -5,5 +5,5 @@ pub mod shape_plugin;
 
 pub use debug_plugin::DebugPlugin;
 pub use loader_plugin::LoaderPlugin;
-pub use scene_plugin::{ScenePlugin, SceneState};
+pub use scene_plugin::ScenePlugin;
 pub use shape_plugin::ShapePlugin;

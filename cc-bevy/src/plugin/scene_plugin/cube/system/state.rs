@@ -8,7 +8,7 @@ use super::{
         component::Cubic,
         world::{Input, World},
     },
-    translate::TranslatePosition,
+    translate::{TranslateColor, TranslatePosition, TranslateShape},
 };
 
 pub fn state_system(
@@ -28,6 +28,7 @@ pub fn state_system(
     }
 
     // Update world.
+    let step = world.step_duration();
     let diffs = world.next(time.delta(), &mut *actions);
     if !diffs.is_empty() {
         for (id, mut cube, diff) in cubes
@@ -36,18 +37,20 @@ pub fn state_system(
         {
             // color
             if let Some(value) = diff.kind {
-                // TODO: add another component
+                let component = TranslateColor::new(cube.kind, value, step / 2);
+                commands.entity(id).insert(component);
                 cube.kind = value;
             }
 
             // shape
             if let Some(value) = diff.neighborhood {
-                // TODO: add another component
+                let component = TranslateShape::new(value);
+                commands.entity(id).insert(component);
                 cube.neighborhood = value;
             }
 
             // translation
-            if let Some(component) = TranslatePosition::make(&*cube, diff, world.step_duration()) {
+            if let Some(component) = TranslatePosition::make(&*cube, diff, step) {
                 commands.entity(id).insert(component);
             }
             if let Some(value) = diff.position {
