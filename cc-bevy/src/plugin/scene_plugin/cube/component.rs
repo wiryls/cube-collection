@@ -12,6 +12,19 @@ use super::{super::view::ViewMapper, style, world::World};
 pub struct Earthbound;
 
 #[derive(Component)]
+pub struct Destination {
+    pub position: Point,
+}
+
+#[derive(Bundle)]
+struct DestinationBundle {
+    destination: Destination,
+    bound: Earthbound,
+    #[bundle]
+    shape: ShapeBundle,
+}
+
+#[derive(Component)]
 pub struct Cubic {
     pub id: usize,
     pub kind: Kind,
@@ -42,12 +55,35 @@ struct CubeBundle {
     shape: ShapeBundle,
 }
 
-pub fn spawn_cubes(state: &World, commands: &mut Commands, mapper: &ViewMapper) {
+pub fn spawn_objects(state: &World, commands: &mut Commands, mapper: &ViewMapper) {
     let scale = mapper.scale(1.0f32);
+
+    for goal in state.goals() {
+        let color = Color::rgba(0.5, 0.5, 0.5, 0.5);
+        let points = style::cube_boundaries(Neighborhood::new(), 1., 0.95);
+        let translation = mapper.absolute(&goal).extend(0.);
+        commands.spawn_bundle(DestinationBundle {
+            destination: Destination { position: goal },
+            bound: Earthbound::default(),
+            shape: GeometryBuilder::build_as(
+                &shapes::Polygon {
+                    points,
+                    closed: true,
+                },
+                DrawMode::Fill(FillMode::color(color)),
+                Transform {
+                    translation,
+                    scale: Vec3::new(scale, scale, 1.),
+                    ..default()
+                },
+            ),
+        });
+    }
+
     for item in state.cubes() {
         let color = style::cube_color(item.kind);
         let points = style::cube_boundaries(item.neighborhood, 1., 0.95);
-        let translation = mapper.absolute(&item.position).extend(0.);
+        let translation = mapper.absolute(&item.position).extend(1.);
 
         commands.spawn_bundle(CubeBundle {
             cubic: item.into(),
@@ -65,12 +101,5 @@ pub fn spawn_cubes(state: &World, commands: &mut Commands, mapper: &ViewMapper) 
                 },
             ),
         });
-    }
-}
-
-pub fn spawn_goals(state: &World, commands: &mut Commands, mapper: &ViewMapper) {
-    let scale = mapper.scale(1.0f32);
-    for goal in state.goals() {
-        
     }
 }

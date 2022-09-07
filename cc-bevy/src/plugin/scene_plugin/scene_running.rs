@@ -74,8 +74,7 @@ fn switch_world(
 
         // [2] create new world
         let world = world::World::new(&seed);
-        component::spawn_goals(&world, &mut commands, &mapper);
-        component::spawn_cubes(&world, &mut commands, &mapper);
+        component::spawn_objects(&world, &mut commands, &mapper);
         commands.insert_resource(world);
     }
 }

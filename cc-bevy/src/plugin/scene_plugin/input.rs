@@ -30,15 +30,9 @@ impl Default for MovementChanged {
     }
 }
 
-#[derive(Debug)]
-enum Control {
-    ResetWorld,
-    RestartWorld,
-}
-
-#[derive(Default, Debug)]
+#[derive(Default)]
 enum Command {
-    Control(Control),
+    Control(WorldChanged),
     Movement(MovementChanged),
     #[default]
     DoNothing,
@@ -58,22 +52,22 @@ fn keyboard(
         let presse = key.state.is_pressed();
         let output = match code {
             // control
-            KeyCode::Escape if presse => Command::Control(Control::ResetWorld),
-            KeyCode::R if presse => Command::Control(Control::RestartWorld),
-            // input
+            KeyCode::Escape if presse => Command::Control(WorldChanged::Reset),
+            KeyCode::R if presse => Command::Control(WorldChanged::Restart),
+            KeyCode::N if presse => Command::Control(WorldChanged::Next),
+
+            // movement
             KeyCode::W | KeyCode::Up => actions.input(Movement::Up, presse),
             KeyCode::A | KeyCode::Left => actions.input(Movement::Left, presse),
             KeyCode::S | KeyCode::Down => actions.input(Movement::Down, presse),
             KeyCode::D | KeyCode::Right => actions.input(Movement::Right, presse),
+
             // ignore
             _ => Command::DoNothing,
         };
 
         match output {
-            Command::Control(control) => match control {
-                Control::ResetWorld => change_world.send(WorldChanged::Reset),
-                Control::RestartWorld => change_world.send(WorldChanged::Restart),
-            },
+            Command::Control(control) => change_world.send(control),
             Command::Movement(movement) => change_movement.send(movement),
             Command::DoNothing => {}
         }
