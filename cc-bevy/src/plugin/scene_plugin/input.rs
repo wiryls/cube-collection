@@ -2,6 +2,8 @@ use bevy::{input::keyboard::KeyboardInput, prelude::*};
 use cc_core::cube::Movement;
 use num_traits::Signed;
 
+use super::scene_running::WorldChanged;
+
 pub fn setup(appx: &mut App, stage: impl StageLabel) {
     appx.add_event::<MovementChanged>()
         .add_system_to_stage(stage, keyboard);
@@ -28,8 +30,15 @@ impl Default for MovementChanged {
     }
 }
 
+#[derive(Debug)]
+enum Control {
+    ResetWorld,
+    RestartWorld,
+}
+
 #[derive(Default, Debug)]
 enum Command {
+    Control(Control),
     Movement(MovementChanged),
     #[default]
     DoNothing,
@@ -37,7 +46,8 @@ enum Command {
 
 fn keyboard(
     mut input: EventReader<KeyboardInput>,
-    mut movement_changed: EventWriter<MovementChanged>,
+    mut change_world: EventWriter<WorldChanged>,
+    mut change_movement: EventWriter<MovementChanged>,
     mut actions: Local<ActionSequence>,
 ) {
     // try to calculate a command and send it to movement system.
@@ -47,15 +57,24 @@ fn keyboard(
     {
         let presse = key.state.is_pressed();
         let output = match code {
+            // control
+            KeyCode::Escape if presse => Command::Control(Control::ResetWorld),
+            KeyCode::R if presse => Command::Control(Control::RestartWorld),
+            // input
             KeyCode::W | KeyCode::Up => actions.input(Movement::Up, presse),
             KeyCode::A | KeyCode::Left => actions.input(Movement::Left, presse),
             KeyCode::S | KeyCode::Down => actions.input(Movement::Down, presse),
             KeyCode::D | KeyCode::Right => actions.input(Movement::Right, presse),
+            // ignore
             _ => Command::DoNothing,
         };
 
         match output {
-            Command::Movement(movement) => movement_changed.send(movement),
+            Command::Control(control) => match control {
+                Control::ResetWorld => change_world.send(WorldChanged::Reset),
+                Control::RestartWorld => change_world.send(WorldChanged::Restart),
+            },
+            Command::Movement(movement) => change_movement.send(movement),
             Command::DoNothing => {}
         }
     }

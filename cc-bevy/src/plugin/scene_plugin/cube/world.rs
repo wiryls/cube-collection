@@ -1,5 +1,9 @@
 use bevy::time::Timer;
-use cc_core::{cube::Movement, seed::Seed, Diff};
+use cc_core::{
+    cube::{Movement, Point},
+    seed::Seed,
+    Diff, Unit,
+};
 use std::{collections::HashMap, time::Duration};
 
 /////////////////////////////////////////////////////////////////////////////
@@ -13,6 +17,10 @@ pub struct Seeds {
 impl Seeds {
     pub fn current(&self) -> Option<&Seed> {
         self.list.get(self.head)
+    }
+
+    pub fn reset(&mut self) {
+        self.head = 0;
     }
 
     pub fn next(&mut self) -> bool {
@@ -66,8 +74,12 @@ impl World {
         }
     }
 
-    pub fn cubes(&self) -> impl Iterator<Item = cc_core::Unit> + '_ {
+    pub fn cubes(&self) -> impl Iterator<Item = Unit> + '_ {
         self.state.iter()
+    }
+
+    pub fn goals(&self) -> impl Iterator<Item = Point> + '_ {
+        self.state.goals().map(|(point, _)| point)
     }
 
     pub fn step(&self) -> Duration {

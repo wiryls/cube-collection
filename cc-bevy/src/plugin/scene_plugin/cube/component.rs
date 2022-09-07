@@ -67,3 +67,10 @@ pub fn spawn_cubes(state: &World, commands: &mut Commands, mapper: &ViewMapper) 
         });
     }
 }
+
+pub fn spawn_goals(state: &World, commands: &mut Commands, mapper: &ViewMapper) {
+    let scale = mapper.scale(1.0f32);
+    for goal in state.goals() {
+        
+    }
+}

@@ -32,14 +32,14 @@ pub fn setup(appx: &mut App, prepare: impl StageLabel, rule: impl StageLabel) {
         );
 }
 
-#[allow(unused)]
 pub enum WorldChanged {
     Reset,
+    Restart,
     Next,
 }
 
-fn setup_world(mut reset: EventWriter<WorldChanged>) {
-    reset.send(WorldChanged::Reset)
+fn setup_world(mut change_world: EventWriter<WorldChanged>) {
+    change_world.send(WorldChanged::Reset)
 }
 
 fn switch_world(
@@ -51,26 +51,30 @@ fn switch_world(
 ) {
     let got = !world_changed.is_empty();
     for event in world_changed.iter() {
-        if let WorldChanged::Next = event {
-            world_seeds.next();
+        use WorldChanged::*;
+        match event {
+            Reset => world_seeds.reset(),
+            Restart => {}
+            Next => drop(world_seeds.next()),
         }
     }
 
     if let Some(seed) = got.then(|| world_seeds.current()).flatten() {
-        // [0] update grid
+        // [0] remove all old objects
+        entities.for_each(|i| commands.entity(i).despawn_recursive());
+
+        // [1] update grid
         view.set_source(UiRect {
             left: 0,
             right: seed.size.width,
             top: 0,
             bottom: seed.size.height,
         });
-
-        // [1] remove old objects
-        entities.for_each(|i| commands.entity(i).despawn_recursive());
-
-        // [2] create new cubes
         let mapper = view.mapping();
+
+        // [2] create new world
         let world = world::World::new(&seed);
+        component::spawn_goals(&world, &mut commands, &mapper);
         component::spawn_cubes(&world, &mut commands, &mapper);
         commands.insert_resource(world);
     }

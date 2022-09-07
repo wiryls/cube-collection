@@ -14,6 +14,12 @@ impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
         const MARK: CoreStage = CoreStage::Update;
 
+        // stage: StateTransitionStage -> INPUT -> CHECK -> WORLD -> CoreStage::Update
+        //
+        // with the help of stage, it adds a hard sync point between processing world and
+        // updating animations, in order to avoid an insert-remove race in my situation.
+        //
+        // see: https://github.com/bevyengine/bevy/issues/1613
         app.add_plugin(ShapePlugin)
             .add_loopless_state(SceneState::default())
             .add_stage_before(MARK, CustomStage::INPUT, SystemStage::parallel())
