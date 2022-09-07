@@ -5,6 +5,7 @@ use std::collections::VecDeque;
 use super::{
     super::{
         super::input::MovementChanged,
+        super::scene_running::WorldChanged,
         component::Cubic,
         world::{Input, World},
     },
@@ -13,22 +14,23 @@ use super::{
 
 pub fn state_system(
     mut commands: Commands,
-    mut input: EventReader<MovementChanged>,
+    mut input_action: EventReader<MovementChanged>,
+    mut change_world: EventWriter<WorldChanged>,
     mut cubes: Query<(Entity, &mut Cubic)>,
     mut world: ResMut<World>,
     mut actions: Local<ActionQueue>,
     time: Res<Time>,
 ) {
-    // Update actions
-    for action in input.iter() {
+    // update actions
+    for action in input_action.iter() {
         match action {
             MovementChanged::Add(m) => actions.add(*m),
             MovementChanged::Set(m) => actions.set(*m),
         };
     }
 
-    // Update world.
-    let step = world.step_duration();
+    // update world
+    let step = world.step();
     let diffs = world.next(time.delta(), &mut *actions);
     if !diffs.is_empty() {
         for (id, mut cube, diff) in cubes
@@ -62,6 +64,11 @@ pub fn state_system(
             if let Some(value) = diff.constraint {
                 cube.constraint = value;
             }
+        }
+
+        // check progress
+        if world.done() {
+            change_world.send(WorldChanged::Next);
         }
     }
 }

@@ -77,7 +77,7 @@ mod tests {
             },
         ];
         assert_eq!(game.iter().collect::<Vec<_>>(), stat);
-        assert_eq!(game.progress(), (1, 2));
+        assert_eq!(game.goals().filter(|(_, o)| *o).count(), 1);
 
         // STEP 01
         let diff = [
@@ -98,7 +98,7 @@ mod tests {
             },
         ];
         assert_eq!(game.commit(Some(Movement::Right)).collect::<Vec<_>>(), diff);
-        assert_eq!(game.progress(), (1, 2));
+        assert_eq!(game.goals().filter(|(_, o)| *o).count(), 1);
 
         // STEP 02
         let diff = [
@@ -145,6 +145,6 @@ mod tests {
             },
         ];
         assert_eq!(game.iter().collect::<Vec<_>>(), stat);
-        assert_eq!(game.progress(), (2, 2));
+        assert_eq!(game.goals().filter(|(_, o)| *o).count(), 2);
     }
 }

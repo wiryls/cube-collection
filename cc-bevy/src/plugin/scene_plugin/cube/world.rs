@@ -70,7 +70,11 @@ impl World {
         self.state.iter()
     }
 
-    pub fn step_duration(&self) -> Duration {
+    pub fn step(&self) -> Duration {
         self.timer.duration()
+    }
+
+    pub fn done(&self) -> bool {
+        self.state.goals().all(|(_, ok)| ok)
     }
 }

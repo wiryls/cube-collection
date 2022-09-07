@@ -5,7 +5,6 @@ use super::{
 };
 
 pub struct State {
-    mark: (usize, usize),
     dest: Vec<Point>,
     last: Option<(Collection, Snapshot)>,
     base: (Collection, Snapshot),
@@ -35,7 +34,6 @@ impl State {
         let snapshot = collection.snapshot();
 
         Self {
-            mark: Self::calculate(&dest, &snapshot),
             dest,
             last: None,
             base: (collection, snapshot),
@@ -46,8 +44,8 @@ impl State {
         self.base.1.iter()
     }
 
-    pub fn progress(&self) -> (usize, usize) {
-        self.mark
+    pub fn goals(&self) -> impl Iterator<Item = (Point, bool)> + '_ {
+        self.dest.iter().map(|&o| (o, self.base.1.contains(o)))
     }
 
     pub fn commit(&mut self, movement: Option<Movement>) -> impl Iterator<Item = Diff> + '_ {
@@ -58,7 +56,6 @@ impl State {
 
         std::mem::swap(&mut self.base, &mut base);
         let last = self.last.insert(base);
-        self.mark = Self::calculate(&self.dest, &self.base.1);
         last.1.differ(&self.base.1)
     }
 
@@ -77,13 +74,6 @@ impl State {
             }
         };
 
-        self.mark = Self::calculate(&self.dest, &self.base.1);
         pair.0.differ(&pair.1)
-    }
-
-    fn calculate(dest: &[Point], snapshot: &Snapshot) -> (usize, usize) {
-        let current = dest.iter().filter(|&&o| snapshot.contains(o)).count();
-        let total = dest.len();
-        (current, total)
     }
 }
