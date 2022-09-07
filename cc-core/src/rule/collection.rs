@@ -179,9 +179,9 @@ impl Collection {
 
         // try to absorb each others.
         for group in connection.groups() {
-            let mut arena = Arena::new(self);
+            let mut arena = Arena::new();
             for &index in group.iter() {
-                if !arena.input(index) {
+                if !arena.input(self.cube[index].kind) {
                     break;
                 }
             }
@@ -330,9 +330,9 @@ impl Collection {
         }
 
         for group in connection.groups() {
-            let mut arena = Arena::new(self);
+            let mut arena = Arena::new();
             for &index in group.iter() {
-                if !arena.input(index) {
+                if !arena.input(self.cube[index].kind) {
                     break;
                 }
             }
@@ -402,9 +402,9 @@ impl Collection {
 
     fn link(&mut self, connection: &mut DisjointSet) {
         for group in connection.groups() {
-            let mut arena = Arena::new(self);
+            let mut arena = Arena::new();
             for &index in group.iter() {
-                arena.input(index);
+                arena.input(self.cube[index].kind);
             }
             if let ArenaResult::Pure(kind) = arena.output() {
                 self.merge(group, kind);
@@ -775,43 +775,42 @@ impl Conflict {
     }
 }
 
-struct Arena<'a>([bool; 3], &'a Collection);
+struct Arena([bool; 3]);
 
+#[derive(Debug, PartialEq, Eq)]
 enum ArenaResult {
-    Have(Kind),
     Draw,
+    Have(Kind),
     Pure(Kind),
     None,
 }
 
-impl<'a> Arena<'a> {
-    fn new(collection: &'a Collection) -> Self {
-        Self([false; 3], collection)
+impl Arena {
+    fn new() -> Self {
+        Self([false; 3])
     }
 
-    fn input(&mut self, i: usize) -> bool {
-        // "try" expression is experimental :-(
-        if let Some(index) = self.1.cube.get(i).and_then(|x| Self::kind_to_index(x.kind)) {
+    fn input(&mut self, kind: Kind) -> bool {
+        if let Some(index) = Self::kind_to_index(kind) {
             self.0[index] = true;
         };
-
         !(self.0[0] && self.0[1] && self.0[2])
     }
 
     fn output(&self) -> ArenaResult {
         use ArenaResult::*;
         use Kind::*;
-        match ((self.0[0] as usize) << 2)
-            | ((self.0[1] as usize) << 1)
-            | ((self.0[2] as usize) << 0)
-        {
+        match ((self.0[0] as usize) << 2) // R
+            | ((self.0[1] as usize) << 1) // B
+            | ((self.0[2] as usize) << 0) // G
+        { //  RGB
             0b111 => Draw,
             0b101 => Have(Red),
             0b110 => Have(Blue),
             0b011 => Have(Green),
-            0b001 => Pure(Red),
+            0b001 => Pure(Green),
             0b010 => Pure(Blue),
-            0b100 => Pure(Green),
+            0b100 => Pure(Red),
             _else => None,
         }
     }
@@ -886,6 +885,55 @@ impl<'a> std::ops::Deref for Moving<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn arena() {
+        let cases = vec![
+            (vec![], ArenaResult::None),
+            (
+                vec![(Kind::Red, true), (Kind::Red, true), (Kind::Red, true)],
+                ArenaResult::Pure(Kind::Red),
+            ),
+            (
+                vec![(Kind::Blue, true), (Kind::Blue, true), (Kind::Blue, true)],
+                ArenaResult::Pure(Kind::Blue),
+            ),
+            (
+                vec![(Kind::Green, true), (Kind::Green, true)],
+                ArenaResult::Pure(Kind::Green),
+            ),
+            (
+                vec![(Kind::Red, true), (Kind::Green, true), (Kind::Green, true)],
+                ArenaResult::Have(Kind::Red),
+            ),
+            (
+                vec![(Kind::Blue, true), (Kind::Red, true), (Kind::Blue, true)],
+                ArenaResult::Have(Kind::Blue),
+            ),
+            (
+                vec![(Kind::Blue, true), (Kind::Blue, true), (Kind::Green, true)],
+                ArenaResult::Have(Kind::Green),
+            ),
+            (
+                vec![
+                    (Kind::Green, true),
+                    (Kind::Red, true),
+                    (Kind::Blue, false),
+                    (Kind::Green, false),
+                    (Kind::Red, false),
+                ],
+                ArenaResult::Draw,
+            ),
+        ];
+
+        for (input, output) in cases {
+            let mut arena = Arena::new();
+            for (kind, value) in input {
+                assert_eq!(arena.input(kind), value);
+            }
+            assert_eq!(arena.output(), output);
+        }
+    }
 
     #[test]
     fn contours() {

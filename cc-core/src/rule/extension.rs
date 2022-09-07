@@ -10,7 +10,7 @@ impl<T: Collision> CollisionExtension for T {
         Neighborhood::from(
             Neighborhood::AROUNDS
                 .into_iter()
-                .filter(|o| self.occupied(point + o.into())),
+                .filter(|o| self.existed(point + o.into())),
         )
     }
 }

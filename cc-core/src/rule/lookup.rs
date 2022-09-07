@@ -9,7 +9,7 @@ use crate::cube::Point;
 // Collision
 
 pub trait Collision {
-    fn occupied(&self, point: Point) -> bool;
+    fn existed(&self, point: Point) -> bool;
     fn available(&self, point: Point) -> bool;
     fn put(&mut self, point: Point);
 }
@@ -23,12 +23,12 @@ impl HashSetCollision {
 }
 
 impl Collision for HashSetCollision {
-    fn occupied(&self, point: Point) -> bool {
+    fn existed(&self, point: Point) -> bool {
         self.0.contains(&point)
     }
 
     fn available(&self, point: Point) -> bool {
-        self.occupied(point)
+        self.existed(point)
     }
 
     fn put(&mut self, point: Point) {
@@ -66,7 +66,7 @@ impl BitmapCollision {
 }
 
 impl Collision for BitmapCollision {
-    fn occupied(&self, point: Point) -> bool {
+    fn existed(&self, point: Point) -> bool {
         match self.collapse(point) {
             Some((index, delta)) => self.bits[index] & (1 << delta) != 0,
             None => false,
@@ -230,10 +230,10 @@ mod tests {
                 it.put(o);
             }
             for o in put {
-                assert!(it.occupied(o), "{} {:?}", tag, o);
+                assert!(it.existed(o), "{} {:?}", tag, o);
             }
             for o in not {
-                assert!(!it.occupied(o), "{} {:?}", tag, o);
+                assert!(!it.existed(o), "{} {:?}", tag, o);
             }
         }
 
