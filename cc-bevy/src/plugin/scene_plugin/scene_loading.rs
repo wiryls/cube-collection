@@ -19,8 +19,8 @@ fn loading_updated(mut commands: Commands, mut events: EventReader<LevelLoadingU
     for event in events.iter() {
         use LevelLoadingUpdated::*;
         match event {
-            Loading { total, done } => println!("Loading: {}/{}", done, total),
-            Failure { which } => println!("Loading: {}", which),
+            Loading { total, done } => info!("Loading: {}/{}", done, total),
+            Failure { which } => error!("Failed to load: {}", which),
             Success { seeds } => {
                 commands.insert_resource(Seeds::from(seeds.clone()));
                 commands.insert_resource(NextState(SceneState::Running));
