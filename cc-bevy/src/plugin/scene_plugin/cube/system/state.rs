@@ -37,7 +37,7 @@ pub fn state_system(
         {
             // color
             if let Some(value) = diff.kind {
-                let component = TranslateColor::new(cube.kind, value, step / 2);
+                let component = TranslateColor::new(cube.kind, value, step);
                 commands.entity(id).insert(component);
                 cube.kind = value;
             }

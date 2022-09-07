@@ -9,7 +9,8 @@ use crate::cube::Point;
 // Collision
 
 pub trait Collision {
-    fn hit(&self, point: Point) -> bool;
+    fn occupied(&self, point: Point) -> bool;
+    fn available(&self, point: Point) -> bool;
     fn put(&mut self, point: Point);
 }
 
@@ -22,8 +23,12 @@ impl HashSetCollision {
 }
 
 impl Collision for HashSetCollision {
-    fn hit(&self, point: Point) -> bool {
+    fn occupied(&self, point: Point) -> bool {
         self.0.contains(&point)
+    }
+
+    fn available(&self, point: Point) -> bool {
+        self.occupied(point)
     }
 
     fn put(&mut self, point: Point) {
@@ -61,9 +66,16 @@ impl BitmapCollision {
 }
 
 impl Collision for BitmapCollision {
-    fn hit(&self, point: Point) -> bool {
+    fn occupied(&self, point: Point) -> bool {
         match self.collapse(point) {
             Some((index, delta)) => self.bits[index] & (1 << delta) != 0,
+            None => false,
+        }
+    }
+
+    fn available(&self, point: Point) -> bool {
+        match self.collapse(point) {
+            Some((index, delta)) => self.bits[index] & (1 << delta) == 0,
             None => false,
         }
     }
@@ -212,16 +224,16 @@ mod tests {
     fn collisions() {
         fn case<C: Collision>(mut it: C, tag: &'static str) {
             let put = [(1, 1), (1, 2), (4, 2)].map(Point::from);
-            let not = [(-1, -1), (0, 0), (1, 0), (0, 1), (1, 4)].map(Point::from);
+            let not = [(-1, -1), (0, 0), (1, 0), (0, 1), (1, 11)].map(Point::from);
 
             for o in put {
                 it.put(o);
             }
             for o in put {
-                assert!(it.hit(o), "{} {:?}", tag, o);
+                assert!(it.occupied(o), "{} {:?}", tag, o);
             }
             for o in not {
-                assert!(!it.hit(o), "{} {:?}", tag, o);
+                assert!(!it.occupied(o), "{} {:?}", tag, o);
             }
         }
 

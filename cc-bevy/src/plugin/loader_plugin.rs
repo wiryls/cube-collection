@@ -56,23 +56,23 @@ impl Default for LoadLevelState {
 }
 
 fn load_levels(
+    mut commands: Commands,
     mut status: ResMut<LoadLevels>,
-    mut progress: Local<(usize, usize)>,
     mut load_updated: EventWriter<LevelLoadingUpdated>,
     server: Res<AssetServer>,
     index_assets: Res<Assets<LevelList>>,
     seeds_assets: Res<Assets<LevelSeed>>,
 ) {
     use bevy::asset::LoadState;
-    match &status.0 {
+    match &mut status.as_mut().0 {
         LoadLevelState::Pending(path) => {
-            status.0 = LoadLevelState::Finding(server.load(path));
+            status.0 = LoadLevelState::Finding(server.load(&*path));
         }
 
-        LoadLevelState::Finding(handle) => match server.get_load_state(handle) {
+        LoadLevelState::Finding(handle) => match server.get_load_state(&*handle) {
             LoadState::Loading => {}
             LoadState::Loaded => {
-                status.0 = if let Some(index) = index_assets.get(handle) {
+                status.0 = if let Some(index) = index_assets.get(&*handle) {
                     let dir = std::path::Path::new(&index.directory);
                     let out = index
                         .name_list
@@ -83,11 +83,11 @@ fn load_levels(
 
                     LoadLevelState::Loading(out)
                 } else {
-                    server.get_handle_path(handle).into()
+                    server.get_handle_path(&*handle).into()
                 }
             }
             _ => {
-                status.0 = server.get_handle_path(handle).into();
+                status.0 = server.get_handle_path(&*handle).into();
             }
         },
 
@@ -114,28 +114,27 @@ fn load_levels(
                     .map(|x| x.clone().into())
                     .collect::<Vec<_>>();
                 status.0 = LoadLevelState::Success(output);
-            } else if progress.0 != total || progress.1 != done {
-                *progress = (total, done);
+            } else {
                 load_updated.send(LevelLoadingUpdated::Loading { total, done });
             }
         }
 
-        LoadLevelState::Success(_) => {
-            if let LoadLevelState::Success(output) = &mut status.into_inner().0 {
-                let mut seeds = Vec::new();
-                std::mem::swap(&mut seeds, output);
-                let event = LevelLoadingUpdated::Success { seeds };
-                load_updated.send(event);
-            }
+        LoadLevelState::Success(output) => {
+            let mut seeds = Vec::new();
+            std::mem::swap(&mut seeds, output);
+
+            let event = LevelLoadingUpdated::Success { seeds };
+            load_updated.send(event);
+            commands.remove_resource::<LoadLevels>();
         }
 
-        LoadLevelState::Failure(_) => {
-            if let LoadLevelState::Failure(output) = &mut status.into_inner().0 {
-                let mut which = String::new();
-                std::mem::swap(&mut which, output);
-                let event = LevelLoadingUpdated::Failure { which };
-                load_updated.send(event);
-            }
+        LoadLevelState::Failure(output) => {
+            let mut which = String::new();
+            std::mem::swap(&mut which, output);
+
+            let event = LevelLoadingUpdated::Failure { which };
+            load_updated.send(event);
+            commands.remove_resource::<LoadLevels>();
         }
     }
 }

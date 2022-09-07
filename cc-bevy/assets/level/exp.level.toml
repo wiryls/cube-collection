@@ -1,17 +1,10 @@
 [map]
 raw = '''
 W~   
-|    
-| G  
-|    
-|    '''
-
-# raw = '''
-# W~   
-# | R  
-# B G G
-# |~R G
-# | W  '''
+| R  
+B G G
+|~R G
+| W  '''
 
 [info]
 author = "w"

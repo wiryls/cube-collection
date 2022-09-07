@@ -36,7 +36,7 @@ impl Frozen {
     }
 
     pub fn blocked(&self, point: Point) -> bool {
-        self.collision.hit(point)
+        !self.collision.available(point)
     }
 
     pub fn iter<'a>(&'a self) -> std::slice::Iter<'a, (Point, Neighborhood)> {
