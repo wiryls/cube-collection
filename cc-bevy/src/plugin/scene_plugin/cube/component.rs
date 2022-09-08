@@ -1,9 +1,11 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 use cc_core::cube::{Constraint, Kind, Movement, Neighborhood, Point};
 
-use super::{super::view::ViewMapper, style, world::World};
+use super::{super::view::ViewMapper, style, system::TranslateAlpha, world::World};
 
 #[derive(Component, Default)]
 pub struct Earthbound;
@@ -55,26 +57,28 @@ pub fn spawn_objects(state: &World, commands: &mut Commands, mapper: &ViewMapper
     let scale = mapper.scale(1.0f32);
 
     for goal in state.goals() {
-        let color = Color::rgba(0.5, 0.5, 0.5, 0.2);
+        let color = Color::rgb(0.5, 0.5, 0.5);
         let points = style::cube_boundaries(Neighborhood::new(), 1., 0.95);
         let translation = mapper.absolute(&goal).extend(0.);
 
-        commands.spawn_bundle(DestinationBundle {
-            point: goal.into(),
-            bound: Earthbound::default(),
-            shape: GeometryBuilder::build_as(
-                &shapes::Polygon {
-                    points,
-                    closed: true,
-                },
-                DrawMode::Fill(FillMode::color(color)),
-                Transform {
-                    translation,
-                    scale: Vec3::new(scale, scale, 0.),
-                    ..default()
-                },
-            ),
-        });
+        commands
+            .spawn_bundle(DestinationBundle {
+                point: goal.into(),
+                bound: Earthbound::default(),
+                shape: GeometryBuilder::build_as(
+                    &shapes::Polygon {
+                        points,
+                        closed: true,
+                    },
+                    DrawMode::Fill(FillMode::color(color)),
+                    Transform {
+                        translation,
+                        scale: Vec3::new(scale, scale, 0.),
+                        ..default()
+                    },
+                ),
+            })
+            .insert(TranslateAlpha::new(0.1, 0.4, Duration::from_secs(4)));
     }
 
     for item in state.cubes() {

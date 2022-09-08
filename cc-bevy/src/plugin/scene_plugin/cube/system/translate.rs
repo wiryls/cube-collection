@@ -14,19 +14,36 @@ use super::super::{super::cube::style, super::view::GridView, component::Cubic};
 #[derive(Component, Debug)]
 pub struct TranslateColor {
     elapse: Timer,
-    from: Vec4,
-    to: Vec4,
+    source: (f32 /* H */, Vec2 /* (S, L) */),
+    target: (f32 /* H */, Vec2 /* (S, L) */),
 }
 
 impl TranslateColor {
     pub fn new(from: Kind, to: Kind, duration: Duration) -> Self {
-        let from = style::cube_color(from).as_rgba_f32().into();
-        let to = style::cube_color(to).as_rgba_f32().into();
         Self {
             elapse: Timer::new(duration, false),
-            from,
-            to,
+            source: Self::from_kind_to_vec3(from),
+            target: Self::from_kind_to_vec3(to),
         }
+    }
+
+    fn from_kind_to_vec3(kind: Kind) -> (f32, Vec2) {
+        let [h, s, l, _] = style::cube_color(kind).as_hsla_f32();
+        (h, [s, l].into())
+    }
+
+    fn rotate_to(source: f32, target: f32, limit: f32, percent: f32) -> f32 {
+        let delta = target - source;
+        let step = delta.min(limit - delta);
+        let sign = (limit * 0.5 - delta).signum();
+        let mut output = source + sign * step * percent;
+        while output > limit {
+            output -= limit;
+        }
+        while output < 0. {
+            output += limit;
+        }
+        output
     }
 }
 
@@ -37,17 +54,31 @@ pub fn recolor_system(
 ) {
     let delta = time.delta();
     for (id, mut translate, mut draw) in cubes.iter_mut() {
-        let [r, g, b, a] = if translate.elapse.tick(delta).finished() {
+        let [h, s, l] = if translate.elapse.tick(delta).finished() {
             commands.entity(id).remove::<TranslateColor>();
-            translate.to.to_array()
+            let pair = translate.target;
+            [pair.0, pair.1.x, pair.1.y]
         } else {
+            let source = translate.source;
+            let target = translate.target;
             let percent = translate.elapse.percent();
-            let from = translate.from;
-            let to = translate.to;
-            let color = from + (to - from) * percent;
-            color.to_array()
+            let sl = source.1 + (target.1 - source.1) * percent;
+            let h = TranslateColor::rotate_to(source.0, target.0, 360., percent);
+            [h, sl.x, sl.y]
         };
-        *draw = DrawMode::Fill(FillMode::color(Color::rgba(r, g, b, a)));
+
+        let target = Color::hsl(h, s, l);
+        let source = match draw.as_mut() {
+            DrawMode::Fill(mode) => &mut mode.color,
+            DrawMode::Stroke(mode) => &mut mode.color,
+            DrawMode::Outlined {
+                fill_mode,
+                outline_mode: _,
+            } => &mut fill_mode.color,
+        };
+        source.set_r(target.r());
+        source.set_g(target.g());
+        source.set_b(target.b());
     }
 }
 
@@ -174,5 +205,51 @@ pub fn position_system(
                 }
             }
         }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// fade in and fade out
+
+#[derive(Component, Debug)]
+pub struct TranslateAlpha {
+    elapse: Timer,
+    source: f32,
+    target: f32,
+}
+
+impl TranslateAlpha {
+    pub fn new(from: f32, to: f32, cycle: Duration) -> Self {
+        Self {
+            elapse: Timer::new(cycle, true),
+            source: from,
+            target: to,
+        }
+    }
+}
+
+pub fn realpha_system(mut cubes: Query<(&mut TranslateAlpha, &mut DrawMode)>, time: Res<Time>) {
+    let delta = time.delta();
+    for (mut translate, mut draw) in cubes.iter_mut() {
+        let alpha = if translate.elapse.tick(delta).finished() {
+            translate.source
+        } else {
+            let percent = (std::f32::consts::PI * translate.elapse.percent()).sin();
+            let from = translate.source;
+            let to = translate.target;
+            from + (to - from) * percent
+        };
+
+        match draw.as_mut() {
+            DrawMode::Fill(mode) => mode.color.set_a(alpha),
+            DrawMode::Stroke(mode) => mode.color.set_a(alpha),
+            DrawMode::Outlined {
+                fill_mode,
+                outline_mode,
+            } => {
+                fill_mode.color.set_a(alpha);
+                outline_mode.color.set_a(alpha)
+            }
+        };
     }
 }

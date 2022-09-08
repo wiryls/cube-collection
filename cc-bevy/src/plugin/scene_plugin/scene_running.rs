@@ -25,7 +25,9 @@ pub fn setup(appx: &mut App, prepare: impl StageLabel, rule: impl StageLabel) {
         .add_system_set(
             ConditionSet::new()
                 .run_in_state(SceneState::Running)
+                .run_if_resource_exists::<world::World>()
                 .with_system(system::position)
+                .with_system(system::realpha)
                 .with_system(system::recolor)
                 .with_system(system::reshape)
                 .into(),
