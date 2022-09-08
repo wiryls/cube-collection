@@ -35,11 +35,9 @@ impl Seeds {
 }
 
 impl From<Vec<Seed>> for Seeds {
-    fn from(seeds: Vec<Seed>) -> Self {
-        Self {
-            list: seeds,
-            head: 0,
-        }
+    fn from(list: Vec<Seed>) -> Self {
+        let head = list.len() - 1;
+        Self { list, head }
     }
 }
 

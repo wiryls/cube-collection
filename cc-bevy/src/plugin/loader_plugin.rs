@@ -18,8 +18,7 @@ pub struct LoaderPlugin;
 impl Plugin for LoaderPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<LevelLoadingUpdated>()
-            .add_asset_loader(loader::TOMLLevelSeedLoader::default())
-            .add_asset_loader(loader::TOMLLevelListLoader::default())
+            .add_asset_loader(loader::TOMLAssetLoader::default())
             .add_asset::<LevelList>()
             .add_asset::<LevelSeed>()
             .add_system(load_levels.run_if_resource_exists::<LoadLevels>());
