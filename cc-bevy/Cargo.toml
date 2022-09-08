@@ -19,11 +19,6 @@ serde = {version = "1.0", features = ["derive"]}
 snafu = "0.7"
 toml = "0.5"
 
-# Exception
-# Note: Bevy 0.7 has an implicit dependency on anyhow, remove it someday
-# https://github.com/bevyengine/bevy/issues/3138
-anyhow = "1.0.4"
-
 [profile.dev]
 opt-level = 1
 
