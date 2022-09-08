@@ -90,11 +90,11 @@ pub struct TranslatePosition {
 }
 
 impl TranslatePosition {
-    pub fn make(cube: &Cubic, diff: &Diff, duration: Duration) -> Option<Self> {
-        if let Some(position) = diff.position {
+    pub fn make(cube: &Cubic, position: Point, diff: &Diff, duration: Duration) -> Option<Self> {
+        if let Some(target) = diff.position {
             return Some(TranslatePosition {
                 elapse: Timer::new(duration, false),
-                parameters: PositionParameters::Move(cube.position, position),
+                parameters: PositionParameters::Move(position, target),
             });
         }
 
@@ -116,7 +116,7 @@ impl TranslatePosition {
 
         Some(TranslatePosition {
             elapse: Timer::new(duration, true),
-            parameters: PositionParameters::Spin(cube.position, movement.into(), limit),
+            parameters: PositionParameters::Spin(position, movement.into(), limit),
         })
     }
 }

@@ -36,7 +36,7 @@ impl Collision for HashSetCollision {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BitmapCollision {
     width: i32,
     height: i32,
@@ -52,6 +52,14 @@ impl BitmapCollision {
             width: width as i32,
             height: height as i32,
             bits: vec![0; size].into(),
+        }
+    }
+
+    pub fn or(&mut self, that: &Self) {
+        if self.width == that.width && self.height == that.height {
+            for (l, r) in self.bits.iter_mut().zip(that.bits.iter()) {
+                *l |= *r;
+            }
         }
     }
 

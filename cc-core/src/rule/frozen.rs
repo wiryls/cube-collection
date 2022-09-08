@@ -1,6 +1,6 @@
 use super::{
     extension::CollisionExtension,
-    lookup::{BitmapCollision, Collision, HashSetCollision},
+    lookup::{BitmapCollision, Collision},
 };
 use crate::cube::{Neighborhood, Point};
 
@@ -15,18 +15,15 @@ impl Frozen {
     where
         I: Iterator<Item = &'a [Point]>,
     {
+        let mut collision = BitmapCollision::new(width, height);
         let cubes = {
             let build = |os: &'a [Point]| {
-                let c = HashSetCollision::new(os.iter());
-                os.iter().map(move |&o| (o, c.neighborhood(o)))
+                let mut c = BitmapCollision::new(width, height);
+                os.iter().for_each(|&o| c.put(o));
+                collision.or(&c);
+                os.iter().map(move |&o| (o, c.neighborhood_or_border(o)))
             };
             it.flat_map(build).collect::<Box<_>>()
-        };
-
-        let collision = {
-            let mut it = BitmapCollision::new(width, height);
-            cubes.iter().for_each(|x| it.put(x.0));
-            it
         };
 
         Self {

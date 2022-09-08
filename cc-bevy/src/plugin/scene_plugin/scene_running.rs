@@ -80,7 +80,7 @@ fn switch_world(
 }
 
 fn update_scale(
-    mut cubes: Query<(&component::Cubic, &mut Transform)>,
+    mut cubes: Query<(&component::GridPoint, &mut Transform)>,
     mut grid_updated: EventReader<ViewUpdated>,
 ) {
     let event = match grid_updated.iter().last() {
@@ -90,8 +90,8 @@ fn update_scale(
 
     let grid = &event.mapper;
     let scale = grid.scale(1.0);
-    for (cube, mut transform) in cubes.iter_mut() {
-        transform.translation = grid.absolute(&cube.position).extend(0.);
+    for (position, mut transform) in cubes.iter_mut() {
+        transform.translation = grid.absolute(&position.point).extend(0.);
         transform.scale = Vec3::new(scale, scale, 1.0);
     }
 }

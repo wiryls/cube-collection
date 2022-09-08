@@ -2,6 +2,8 @@ use bevy::prelude::*;
 use cc_core::cube::Movement;
 use std::collections::VecDeque;
 
+use crate::plugin::scene_plugin::cube::component::GridPoint;
+
 use super::{
     super::{
         super::input::MovementChanged,
@@ -16,7 +18,7 @@ pub fn state_system(
     mut commands: Commands,
     mut input_action: EventReader<MovementChanged>,
     mut change_world: EventWriter<WorldChanged>,
-    mut cubes: Query<(Entity, &mut Cubic)>,
+    mut cubes: Query<(Entity, &mut Cubic, &mut GridPoint)>,
     mut world: ResMut<World>,
     mut actions: Local<ActionQueue>,
     time: Res<Time>,
@@ -33,10 +35,11 @@ pub fn state_system(
     let step = world.step();
     let diffs = world.next(time.delta(), &mut *actions);
     if !diffs.is_empty() {
-        for (id, mut cube, diff) in cubes
-            .iter_mut()
-            .filter_map(|(id, cube)| diffs.get(&cube.id).map(|diff| (id, cube, diff)))
-        {
+        let query = cubes.iter_mut().filter_map(|(id, cube, position)| {
+            diffs.get(&cube.id).map(|diff| (id, cube, position, diff))
+        });
+
+        for (id, mut cube, mut position, diff) in query {
             // color
             if let Some(value) = diff.kind {
                 let component = TranslateColor::new(cube.kind, value, step);
@@ -52,11 +55,11 @@ pub fn state_system(
             }
 
             // translation
-            if let Some(component) = TranslatePosition::make(&*cube, diff, step) {
+            if let Some(component) = TranslatePosition::make(&*cube, position.point, diff, step) {
                 commands.entity(id).insert(component);
             }
             if let Some(value) = diff.position {
-                cube.position = value;
+                position.point = value;
             }
             if let Some(value) = diff.movement {
                 cube.movement = value;

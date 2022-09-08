@@ -1,10 +1,7 @@
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
-use cc_core::{
-    cube::{Constraint, Kind, Movement, Neighborhood, Point},
-    Unit,
-};
+use cc_core::cube::{Constraint, Kind, Movement, Neighborhood, Point};
 
 use super::{super::view::ViewMapper, style, world::World};
 
@@ -12,13 +9,25 @@ use super::{super::view::ViewMapper, style, world::World};
 pub struct Earthbound;
 
 #[derive(Component)]
-pub struct Destination {
-    pub position: Point,
+pub struct GridPoint {
+    pub point: Point,
+}
+
+impl From<Point> for GridPoint {
+    fn from(point: Point) -> Self {
+        Self { point }
+    }
+}
+
+impl From<GridPoint> for Point {
+    fn from(position: GridPoint) -> Self {
+        position.point
+    }
 }
 
 #[derive(Bundle)]
 struct DestinationBundle {
-    destination: Destination,
+    point: GridPoint,
     bound: Earthbound,
     #[bundle]
     shape: ShapeBundle,
@@ -28,28 +37,15 @@ struct DestinationBundle {
 pub struct Cubic {
     pub id: usize,
     pub kind: Kind,
-    pub position: Point,
     pub movement: Option<Movement>,
     pub constraint: Constraint,
     pub neighborhood: Neighborhood,
 }
 
-impl From<Unit> for Cubic {
-    fn from(item: Unit) -> Self {
-        Self {
-            id: item.id,
-            kind: item.kind,
-            position: item.position,
-            movement: None,
-            constraint: Constraint::Free,
-            neighborhood: item.neighborhood,
-        }
-    }
-}
-
 #[derive(Bundle)]
 struct CubeBundle {
     cubic: Cubic,
+    point: GridPoint,
     bound: Earthbound,
     #[bundle]
     shape: ShapeBundle,
@@ -59,12 +55,12 @@ pub fn spawn_objects(state: &World, commands: &mut Commands, mapper: &ViewMapper
     let scale = mapper.scale(1.0f32);
 
     for goal in state.goals() {
-        let color = Color::rgba(0.5, 0.5, 0.5, 0.5);
+        let color = Color::rgba(0.5, 0.5, 0.5, 0.2);
         let points = style::cube_boundaries(Neighborhood::new(), 1., 0.95);
         let translation = mapper.absolute(&goal).extend(0.);
 
         commands.spawn_bundle(DestinationBundle {
-            destination: Destination { position: goal },
+            point: goal.into(),
             bound: Earthbound::default(),
             shape: GeometryBuilder::build_as(
                 &shapes::Polygon {
@@ -87,7 +83,14 @@ pub fn spawn_objects(state: &World, commands: &mut Commands, mapper: &ViewMapper
         let translation = mapper.absolute(&item.position).extend(1.);
 
         commands.spawn_bundle(CubeBundle {
-            cubic: item.into(),
+            cubic: Cubic {
+                id: item.id,
+                kind: item.kind,
+                movement: None,
+                constraint: Constraint::Free,
+                neighborhood: item.neighborhood,
+            },
+            point: item.position.into(),
             bound: Earthbound::default(),
             shape: GeometryBuilder::build_as(
                 &shapes::Polygon {
