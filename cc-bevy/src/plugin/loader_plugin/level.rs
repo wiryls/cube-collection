@@ -302,7 +302,9 @@ impl LevelParser {
     }
 }
 
-struct LevelMapBuilder(Vec<Vec<Option<usize>>>);
+struct LevelMapBuilder(
+    Vec<Vec<Option<usize>>>, /* add a DisjointSet if needed */
+);
 
 impl LevelMapBuilder {
     fn make_row(&mut self) {

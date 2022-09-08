@@ -20,8 +20,8 @@ pub struct TranslateColor {
 
 impl TranslateColor {
     pub fn new(from: Kind, to: Kind, duration: Duration) -> Self {
-        let from = style::cube_color(from).as_hsla_f32().into();
-        let to = style::cube_color(to).as_hsla_f32().into();
+        let from = style::cube_color(from).as_rgba_f32().into();
+        let to = style::cube_color(to).as_rgba_f32().into();
         Self {
             elapse: Timer::new(duration, false),
             from,
@@ -37,7 +37,7 @@ pub fn recolor_system(
 ) {
     let delta = time.delta();
     for (id, mut translate, mut draw) in cubes.iter_mut() {
-        let [h, s, l, a] = if translate.elapse.tick(delta).finished() {
+        let [r, g, b, a] = if translate.elapse.tick(delta).finished() {
             commands.entity(id).remove::<TranslateColor>();
             translate.to.to_array()
         } else {
@@ -47,7 +47,7 @@ pub fn recolor_system(
             let color = from + (to - from) * percent;
             color.to_array()
         };
-        *draw = DrawMode::Fill(FillMode::color(Color::hsla(h, s, l, a)));
+        *draw = DrawMode::Fill(FillMode::color(Color::rgba(r, g, b, a)));
     }
 }
 
