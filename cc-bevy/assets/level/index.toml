@@ -1,7 +1,7 @@
 directory = 'level'
 extension = 'toml'
 name_list = [
+  'swap',
   'exp',
-  'introduction',
-  'swap', # 'tetris',
+  'introduction', # 'tetris',
 ]

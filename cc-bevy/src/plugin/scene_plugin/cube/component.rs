@@ -62,6 +62,7 @@ pub fn spawn_objects(state: &World, commands: &mut Commands, mapper: &ViewMapper
         let color = Color::rgba(0.5, 0.5, 0.5, 0.5);
         let points = style::cube_boundaries(Neighborhood::new(), 1., 0.95);
         let translation = mapper.absolute(&goal).extend(0.);
+
         commands.spawn_bundle(DestinationBundle {
             destination: Destination { position: goal },
             bound: Earthbound::default(),
@@ -73,7 +74,7 @@ pub fn spawn_objects(state: &World, commands: &mut Commands, mapper: &ViewMapper
                 DrawMode::Fill(FillMode::color(color)),
                 Transform {
                     translation,
-                    scale: Vec3::new(scale, scale, 1.),
+                    scale: Vec3::new(scale, scale, 0.),
                     ..default()
                 },
             ),

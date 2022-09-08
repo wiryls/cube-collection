@@ -138,14 +138,15 @@ pub fn position_system(
     let mapper = view.mapping();
     for (id, mut translate, mut transform) in cubes.iter_mut() {
         use PositionParameters::*;
+        let z = transform.translation.z;
         if translate.elapse.tick(delta).finished() {
             match translate.parameters {
                 Move(_, to) => {
-                    transform.translation = mapper.absolute(&to).extend(0.);
+                    transform.translation = mapper.absolute(&to).extend(z);
                     commands.entity(id).remove::<TranslatePosition>();
                 }
                 Spin(from, _, _) => {
-                    transform.translation = mapper.absolute(&from).extend(0.);
+                    transform.translation = mapper.absolute(&from).extend(z);
                 }
                 Stop => {
                     commands.entity(id).remove::<TranslatePosition>();
@@ -155,17 +156,18 @@ pub fn position_system(
             match translate.parameters {
                 Move(from, to) => {
                     let percent = translate.elapse.percent();
-                    let source = mapper.absolute(&from).extend(0.);
-                    let target = mapper.absolute(&to).extend(0.);
+                    let source = mapper.absolute(&from);
+                    let target = mapper.absolute(&to);
                     let current = source + (target - source) * percent;
-                    transform.translation = current;
+                    transform.translation = current.extend(z);
                 }
                 Spin(from, delta, limit) => {
                     let percent = translate.elapse.percent();
                     let percent = (1.0 - percent).min(percent).min(limit);
-                    let source = mapper.absolute(&from).extend(0.);
-                    let delta = mapper.absolute(&delta).extend(0.);
-                    transform.translation = source + delta * percent;
+                    let source = mapper.absolute(&from);
+                    let delta = mapper.absolute(&delta);
+                    let current = source + delta * percent;
+                    transform.translation = current.extend(z);
                 }
                 Stop => {
                     commands.entity(id).remove::<TranslatePosition>();
