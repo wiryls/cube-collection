@@ -137,6 +137,17 @@ impl ViewMapper {
         Vec2::new(o.x().as_(), -o.y().as_())
     }
 
+    pub fn relative<T, U>(&self, o: &T) -> Vec2
+    where
+        T: Location<U>,
+        U: AsPrimitive<i32>,
+    {
+        Vec2::new(
+            o.x().as_() as f32 * self.scale,
+            -o.y().as_() as f32 * self.scale,
+        )
+    }
+
     pub fn absolute<T, U>(&self, o: &T) -> Vec2
     where
         T: Location<U>,

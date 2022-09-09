@@ -196,7 +196,7 @@ pub fn position_system(
                     let percent = translate.elapse.percent();
                     let percent = (1.0 - percent).min(percent).min(limit);
                     let source = mapper.absolute(&from);
-                    let delta = mapper.absolute(&delta);
+                    let delta = mapper.relative(&delta);
                     let current = source + delta * percent;
                     transform.translation = current.extend(z);
                 }

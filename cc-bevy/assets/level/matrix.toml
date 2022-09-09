@@ -1,0 +1,19 @@
+[map]
+raw = '''
+W~~~~~~~~~~~~
+|x         x|
+| W W W W W |
+|           |
+| W W W W W |
+|    GGG    |
+| W WGWGW W |
+|    GGG    |
+| W W W W W |
+|           |
+| W W W W W |
+|x         x|
+|~~~~~~~~~~~|'''
+
+[info]
+author = "w"
+title = "Matrix"

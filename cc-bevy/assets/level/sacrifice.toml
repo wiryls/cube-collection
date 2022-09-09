@@ -1,0 +1,16 @@
+[map]
+raw = '''
+W~~~~~~~~~~~~~~
+|             |
+|GG WRWRWRW x |
+|             |
+|~~~~~~~~~~~~~|'''
+
+[[map.commands]]
+binding = [[5, 2], [7, 2], [9, 2]]
+content = "UID2IU"
+looping = true
+
+[info]
+author = "w"
+title = "Sacrifice"
