@@ -21,8 +21,7 @@ impl Plugin for ScenePlugin {
         // updating animations, in order to avoid an insert-remove race in my situation.
         //
         // see: https://github.com/bevyengine/bevy/issues/1613
-        app.insert_resource(ClearColor(Color::BLACK))
-            .add_plugin(ShapePlugin)
+        app.add_plugin(ShapePlugin)
             .add_loopless_state(SceneState::default())
             .add_stage_before(MARK, CustomStage::INPUT, SystemStage::parallel())
             .add_stage_before(MARK, CustomStage::CHECK, SystemStage::parallel())

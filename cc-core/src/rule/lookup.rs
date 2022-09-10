@@ -55,6 +55,14 @@ impl BitmapCollision {
         }
     }
 
+    pub fn width(&self) -> usize {
+        self.width as usize
+    }
+
+    pub fn height(&self) -> usize {
+        self.height as usize
+    }
+
     pub fn or(&mut self, that: &Self) {
         if self.width == that.width && self.height == that.height {
             for (l, r) in self.bits.iter_mut().zip(that.bits.iter()) {

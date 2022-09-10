@@ -2,8 +2,8 @@ use bevy::prelude::*;
 
 use super::{
     super::{input::MovementChanged, model::World, scene_running::WorldChanged},
+    adaption::AutoRescale,
     bundle::Cubic,
-    positioned::Gridded,
     translate::{TranslateColor, TranslatePosition, TranslateShape},
 };
 
@@ -11,7 +11,7 @@ pub fn state_system(
     mut commands: Commands,
     mut input_action: EventReader<MovementChanged>,
     mut change_world: EventWriter<WorldChanged>,
-    mut cubes: Query<(Entity, &mut Cubic, &mut Gridded)>,
+    mut query: Query<(Entity, &mut Cubic, &mut AutoRescale)>,
     mut world: ResMut<World>,
     mut actions: Local<detail::ActionQueue>,
     time: Res<Time>,
@@ -28,7 +28,7 @@ pub fn state_system(
     let step = world.step();
     let diffs = world.next(time.delta(), || actions.pop());
     if !diffs.is_empty() {
-        let query = cubes.iter_mut().filter_map(|(id, cube, position)| {
+        let query = query.iter_mut().filter_map(|(id, cube, position)| {
             diffs.get(&cube.id).map(|diff| (id, cube, position, diff))
         });
 

@@ -17,7 +17,8 @@ use loader::{LevelList, LevelSeed};
 pub struct LoaderPlugin;
 impl Plugin for LoaderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<LevelLoadingUpdated>()
+        app.insert_resource(ClearColor(Color::BLACK))
+            .add_event::<LevelLoadingUpdated>()
             .add_asset_loader(loader::TOMLAssetLoader::default())
             .add_asset::<LevelList>()
             .add_asset::<LevelSeed>()

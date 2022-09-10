@@ -3,20 +3,20 @@ use std::time::Duration;
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
-use cc_core::cube::{Constraint, Kind, Movement, Neighborhood};
+use cc_core::cube::{Constraint, Kind, Movement, Neighborhood, Point};
 
 use super::{
     super::{model::World, view::ViewMapper},
+    adaption::AutoRescale,
     marker::Earthbound,
-    positioned::Gridded,
     style,
     translate::TranslateAlpha,
 };
 
 #[derive(Bundle)]
 struct DestinationBundle {
-    point: Gridded,
     bound: Earthbound,
+    scale: AutoRescale,
     #[bundle]
     shape: ShapeBundle,
 }
@@ -33,24 +33,66 @@ pub struct Cubic {
 #[derive(Bundle)]
 struct CubeBundle {
     cubic: Cubic,
-    point: Gridded,
     bound: Earthbound,
+    scale: AutoRescale,
     #[bundle]
     shape: ShapeBundle,
 }
 
-pub fn spawn_objects(commands: &mut Commands, state: &World, mapper: &ViewMapper) {
-    let scale = mapper.scale(1.0f32);
+#[derive(Bundle)]
+pub struct FloorBundle {
+    bound: Earthbound,
+    scale: AutoRescale,
+    #[bundle]
+    shape: ShapeBundle,
+}
 
+pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) {
+    let scale = mapper.unit();
+
+    // background color
+    commands.insert_resource(ClearColor(style::background_color()));
+
+    // create floor
+    let right = state.width();
+    let bottom = state.height();
+    commands.spawn_bundle(FloorBundle {
+        bound: Earthbound,
+        scale: AutoRescale {
+            point: Point::default(),
+            offset: 0.,
+        },
+        shape: GeometryBuilder::build_as(
+            &shapes::Polygon {
+                points: [(0, 0), (0, bottom), (right, bottom), (right, 0)]
+                    .iter()
+                    .map(|o| mapper.flip(o))
+                    .collect(),
+                closed: true,
+            },
+            DrawMode::Fill(FillMode::color(style::floor_color())),
+            Transform {
+                translation: mapper.locate(&(0i32, 0)).extend(0.),
+                scale: Vec3::new(scale, scale, 0.),
+                ..default()
+            },
+        ),
+    });
+
+    // create destnations
+    let delta = mapper.scale(&(0.5, 0.5));
     for goal in state.goals() {
-        let color = Color::rgb(0.3, 0.3, 0.3);
+        let color = style::destnation_color();
         let points = style::cube_boundaries(Neighborhood::new(), 1., 0.95);
-        let translation = mapper.absolute(&goal).extend(0.);
+        let translation = (mapper.locate(&goal) + delta).extend(2.);
 
         commands
             .spawn_bundle(DestinationBundle {
-                point: goal.into(),
-                bound: Earthbound::default(),
+                bound: Earthbound,
+                scale: AutoRescale {
+                    point: goal,
+                    offset: 0.5,
+                },
                 shape: GeometryBuilder::build_as(
                     &shapes::Polygon {
                         points,
@@ -64,13 +106,14 @@ pub fn spawn_objects(commands: &mut Commands, state: &World, mapper: &ViewMapper
                     },
                 ),
             })
-            .insert(TranslateAlpha::new(0.1, 0.3, Duration::from_secs(8)));
+            .insert(TranslateAlpha::new(0.1, 0.3, Duration::from_secs(6)));
     }
 
+    // create cubes
     for item in state.cubes() {
         let color = style::cube_color(item.kind);
         let points = style::cube_boundaries(item.neighborhood, 1., 0.95);
-        let translation = mapper.absolute(&item.position).extend(1.);
+        let translation = (mapper.locate(&item.position) + delta).extend(1.);
 
         commands.spawn_bundle(CubeBundle {
             cubic: Cubic {
@@ -80,8 +123,11 @@ pub fn spawn_objects(commands: &mut Commands, state: &World, mapper: &ViewMapper
                 constraint: Constraint::Free,
                 neighborhood: item.neighborhood,
             },
-            point: item.position.into(),
-            bound: Earthbound::default(),
+            bound: Earthbound,
+            scale: AutoRescale {
+                point: item.position,
+                offset: 0.5,
+            },
             shape: GeometryBuilder::build_as(
                 &shapes::Polygon {
                     points,

@@ -8,7 +8,7 @@ use super::{
     SceneState,
 };
 
-pub fn setup(appx: &mut App, prepare: impl StageLabel, rule: impl StageLabel) {
+pub fn setup(appx: &mut App, prepare: impl StageLabel, calculate: impl StageLabel) {
     appx.add_event::<WorldChanged>()
         .add_enter_system(SceneState::Running, setup_world)
         .add_system_set_to_stage(
@@ -16,11 +16,11 @@ pub fn setup(appx: &mut App, prepare: impl StageLabel, rule: impl StageLabel) {
             ConditionSet::new()
                 .run_in_state(SceneState::Running)
                 .with_system(switch_world.run_on_event::<WorldChanged>())
-                .with_system(system::gridded.run_on_event::<ViewUpdated>())
+                .with_system(system::self_adaption.run_on_event::<ViewUpdated>())
                 .into(),
         )
         .add_system_to_stage(
-            rule,
+            calculate,
             system::state
                 .run_in_state(SceneState::Running)
                 .run_if_resource_exists::<model::World>(),
@@ -79,7 +79,7 @@ fn switch_world(
 
         // [2] create new world
         let world = model::World::new(&seed);
-        bundle::spawn_objects(&mut commands, &world, &mapper);
+        bundle::build_world(&mut commands, &world, &mapper);
         commands.insert_resource(world);
     }
 }

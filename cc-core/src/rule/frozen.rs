@@ -43,4 +43,12 @@ impl Frozen {
     pub fn len(&self) -> usize {
         self.unchanged.len()
     }
+
+    pub fn width(&self) -> usize {
+        self.collision.width()
+    }
+
+    pub fn height(&self) -> usize {
+        self.collision.height()
+    }
 }

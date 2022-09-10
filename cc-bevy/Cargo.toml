@@ -14,7 +14,6 @@ bevy_prototype_lyon = "0.6"
 iyes_loopless = "0.7"
 
 # Extra utilities
-num-traits = "0.2.15"
 serde = {version = "1.0", features = ["derive"]}
 snafu = "0.7"
 toml = "0.5"

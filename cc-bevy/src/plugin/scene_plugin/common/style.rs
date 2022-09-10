@@ -1,7 +1,19 @@
 use bevy::prelude::*;
 use cc_core::cube::{Kind, Neighborhood};
 
-pub fn cube_color(kind: Kind) -> Color {
+pub const fn background_color() -> Color {
+    Color::WHITE
+}
+
+pub const fn floor_color() -> Color {
+    Color::BLACK
+}
+
+pub const fn destnation_color() -> Color {
+    Color::rgb(0.3, 0.3, 0.3)
+}
+
+pub const fn cube_color(kind: Kind) -> Color {
     match kind {
         Kind::White /* **/ => Color::rgb(1.000, 1.000, 1.000),
         Kind::Red /*   **/ => Color::rgb(0.988, 0.512, 0.512),

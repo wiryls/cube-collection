@@ -65,6 +65,14 @@ impl Collection {
         }
     }
 
+    pub fn width(&self) -> usize {
+        self.area.width()
+    }
+
+    pub fn height(&self) -> usize {
+        self.area.height()
+    }
+
     pub fn snapshot(&self) -> Snapshot {
         let default = output::Unit {
             id: 0,

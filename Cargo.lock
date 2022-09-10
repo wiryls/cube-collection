@@ -1004,7 +1004,6 @@ dependencies = [
  "bevy_prototype_lyon",
  "cc-core",
  "iyes_loopless",
- "num-traits",
  "serde",
  "snafu",
  "toml",

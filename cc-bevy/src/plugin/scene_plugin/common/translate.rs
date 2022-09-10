@@ -53,11 +53,11 @@ impl TranslateColor {
 
 pub fn recolor_system(
     mut commands: Commands,
-    mut cubes: Query<(Entity, &mut TranslateColor, &mut DrawMode)>,
+    mut query: Query<(Entity, &mut TranslateColor, &mut DrawMode)>,
     time: Res<Time>,
 ) {
     let delta = time.delta();
-    for (id, mut translate, mut draw) in cubes.iter_mut() {
+    for (id, mut translate, mut draw) in query.iter_mut() {
         let [h, s, l] = if translate.elapse.tick(delta).finished() {
             commands.entity(id).remove::<TranslateColor>();
             let pair = translate.target;
@@ -102,9 +102,9 @@ impl TranslateShape {
 
 pub fn reshape_system(
     mut commands: Commands,
-    mut cubes: Query<(Entity, &TranslateShape, &mut Path)>,
+    mut query: Query<(Entity, &TranslateShape, &mut Path)>,
 ) {
-    for (id, translate, mut path) in cubes.iter_mut() {
+    for (id, translate, mut path) in query.iter_mut() {
         commands.entity(id).remove::<TranslateShape>();
         let points = style::cube_boundaries(translate.to, 1., 0.95);
         let shape = shapes::Polygon {
@@ -165,26 +165,28 @@ enum Position {
 
 pub fn position_system(
     mut commands: Commands,
-    mut cubes: Query<(Entity, &mut TranslatePosition, &mut Transform)>,
+    mut query: Query<(Entity, &mut TranslatePosition, &mut Transform)>,
     view: Res<GridView>,
     time: Res<Time>,
 ) {
     let delta = time.delta();
     let mapper = view.mapping();
-    for (id, mut translate, mut transform) in cubes.iter_mut() {
+    let locate = |o: &Point| (mapper.locate(o) + mapper.scale(&(0.5, 0.5)));
+
+    for (id, mut translate, mut transform) in query.iter_mut() {
         use Position::*;
         let z = transform.translation.z;
         if translate.elapse.tick(delta).finished() {
             match translate.parameters {
                 Move(_, to) => {
-                    transform.translation = mapper.absolute(&to).extend(z);
+                    transform.translation = locate(&to).extend(z);
                     commands.entity(id).remove::<TranslatePosition>();
                 }
                 Spin(from, _, _) => {
-                    transform.translation = mapper.absolute(&from).extend(z);
+                    transform.translation = locate(&from).extend(z);
                 }
                 Stop(from) => {
-                    transform.translation = mapper.absolute(&from).extend(z);
+                    transform.translation = locate(&from).extend(z);
                     commands.entity(id).remove::<TranslatePosition>();
                 }
             }
@@ -192,21 +194,21 @@ pub fn position_system(
             match translate.parameters {
                 Move(from, to) => {
                     let percent = translate.elapse.percent();
-                    let source = mapper.absolute(&from);
-                    let target = mapper.absolute(&to);
+                    let source = locate(&from);
+                    let target = locate(&to);
                     let current = source + (target - source) * percent;
                     transform.translation = current.extend(z);
                 }
                 Spin(from, delta, limit) => {
                     let percent = translate.elapse.percent();
                     let percent = (1.0 - percent).min(percent).min(limit);
-                    let source = mapper.absolute(&from);
-                    let delta = mapper.relative(&delta);
+                    let source = locate(&from);
+                    let delta = mapper.scale(&delta);
                     let current = source + delta * percent;
                     transform.translation = current.extend(z);
                 }
                 Stop(from) => {
-                    transform.translation = mapper.absolute(&from).extend(z);
+                    transform.translation = locate(&from).extend(z);
                     commands.entity(id).remove::<TranslatePosition>();
                 }
             }
@@ -234,9 +236,9 @@ impl TranslateAlpha {
     }
 }
 
-pub fn realpha_system(mut cubes: Query<(&mut TranslateAlpha, &mut DrawMode)>, time: Res<Time>) {
+pub fn realpha_system(mut query: Query<(&mut TranslateAlpha, &mut DrawMode)>, time: Res<Time>) {
     let delta = time.delta();
-    for (mut translate, mut draw) in cubes.iter_mut() {
+    for (mut translate, mut draw) in query.iter_mut() {
         let alpha = if translate.elapse.tick(delta).finished() {
             translate.source
         } else {

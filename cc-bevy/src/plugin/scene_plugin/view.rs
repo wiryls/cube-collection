@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use bevy::window::WindowResized;
 use cc_core::cube::Point;
 use iyes_loopless::prelude::*;
-use num_traits::AsPrimitive;
 
 pub fn setup(appx: &mut App, stage: impl StageLabel) {
     appx.init_resource::<GridView>()
@@ -96,18 +95,15 @@ impl GridView {
             let th = target.top - target.bottom;
             let sw = (source.right - source.left) as f32;
             let sh = (source.bottom - source.top) as f32;
-            let scale = f32::min(tw / sw, th / sh);
+            let unit = f32::min(tw / sw, th / sh);
 
             self.mapper = ViewMapper {
-                source: IVec2 {
-                    x: source.left,
-                    y: source.top,
-                },
+                source: (source.left, source.top),
                 target: Vec2 {
-                    x: target.left + (tw - sw * scale) / 2.,
-                    y: target.top - (th - sh * scale) / 2.,
+                    x: target.left + (tw - sw * unit) / 2.,
+                    y: target.top - (th - sh * unit) / 2.,
                 },
-                scale,
+                unit,
             };
         }
     }
@@ -115,72 +111,76 @@ impl GridView {
 
 #[derive(Default, Clone, Copy)]
 pub struct ViewMapper {
-    source: IVec2,
+    source: (i32, i32),
     target: Vec2,
-    scale: f32,
+    unit: f32,
 }
 
 impl ViewMapper {
-    pub fn scale<T>(&self, o: T) -> f32
-    where
-        T: AsPrimitive<f32>,
-    {
-        self.scale * o.as_()
+    pub const fn unit(&self) -> f32 {
+        self.unit
     }
 
-    #[allow(unused)]
-    pub fn flip<T, U>(&self, o: &T) -> Vec2
-    where
-        T: Location<U>,
-        U: AsPrimitive<f32>,
-    {
-        Vec2::new(o.x().as_(), -o.y().as_())
+    pub fn flip(&self, o: &impl Mappable) -> Vec2 {
+        o.delta(self.source).into()
     }
 
-    pub fn relative<T, U>(&self, o: &T) -> Vec2
-    where
-        T: Location<U>,
-        U: AsPrimitive<i32>,
-    {
-        Vec2::new(
-            o.x().as_() as f32 * self.scale,
-            -o.y().as_() as f32 * self.scale,
+    pub fn scale(&self, o: &impl Mappable) -> Vec2 {
+        o.scale(self.unit).into()
+    }
+
+    pub fn locate(&self, o: &impl Mappable) -> Vec2 {
+        let mut output = Vec2::from(o.delta(self.source));
+        output *= self.unit;
+        output += self.target;
+        output
+    }
+}
+
+pub trait Mappable {
+    fn scale(&self, factor: f32) -> (f32, f32);
+    fn delta(&self, source: (i32, i32)) -> (f32, f32);
+}
+
+impl Mappable for (i32, i32) {
+    fn scale(&self, factor: f32) -> (f32, f32) {
+        (self.0 as f32 * factor, self.1 as f32 * -factor)
+    }
+
+    fn delta(&self, source: (i32, i32)) -> (f32, f32) {
+        ((self.0 - source.0) as f32, (source.1 - self.1) as f32)
+    }
+}
+
+impl Mappable for (f32, f32) {
+    fn scale(&self, factor: f32) -> (f32, f32) {
+        (self.0 * factor, self.1 * -factor)
+    }
+
+    fn delta(&self, source: (i32, i32)) -> (f32, f32) {
+        (self.0 - source.0 as f32, source.1 as f32 - self.1)
+    }
+}
+
+impl Mappable for (usize, usize) {
+    fn scale(&self, factor: f32) -> (f32, f32) {
+        (self.0 as f32 * factor, self.1 as f32 * -factor)
+    }
+
+    fn delta(&self, source: (i32, i32)) -> (f32, f32) {
+        (
+            (self.0 as i64 - source.0 as i64) as f32,
+            (source.1 as i64 - self.1 as i64) as f32,
         )
     }
-
-    pub fn absolute<T, U>(&self, o: &T) -> Vec2
-    where
-        T: Location<U>,
-        U: AsPrimitive<i32>,
-    {
-        let delta = self.scale * 0.5;
-        let x = self.target.x + delta + (o.x().as_() - self.source.x) as f32 * self.scale;
-        let y = self.target.y - delta - (o.y().as_() - self.source.y) as f32 * self.scale;
-        Vec2::new(x, y)
-    }
 }
 
-pub trait Location<T> {
-    fn x(&self) -> T;
-    fn y(&self) -> T;
-}
-
-impl<T: Copy> Location<T> for (T, T) {
-    fn x(&self) -> T {
-        self.0
+impl Mappable for Point {
+    fn scale(&self, factor: f32) -> (f32, f32) {
+        (self.x as f32 * factor, self.y as f32 * -factor)
     }
 
-    fn y(&self) -> T {
-        self.1
-    }
-}
-
-impl<T: Clone> Location<T> for Point<T> {
-    fn x(&self) -> T {
-        self.x.clone()
-    }
-
-    fn y(&self) -> T {
-        self.y.clone()
+    fn delta(&self, source: (i32, i32)) -> (f32, f32) {
+        ((self.x - source.0) as f32, (source.1 - self.y) as f32)
     }
 }

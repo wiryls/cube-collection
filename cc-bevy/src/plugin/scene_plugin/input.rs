@@ -1,6 +1,5 @@
 use bevy::{input::keyboard::KeyboardInput, prelude::*};
 use cc_core::cube::Movement;
-use num_traits::Signed;
 
 use super::scene_running::WorldChanged;
 
@@ -109,8 +108,8 @@ impl ActionSequence {
     }
 
     fn evaluate(&self) -> (bool /* conflic */, Option<Movement> /* result */) {
-        let mut x = 0;
-        let mut y = 0;
+        let mut x = 0i32;
+        let mut y = 0i32;
 
         use Movement::*;
         for &m in self.0.iter() {

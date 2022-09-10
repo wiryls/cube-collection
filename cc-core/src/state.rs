@@ -76,4 +76,12 @@ impl State {
 
         pair.0.differ(&pair.1)
     }
+
+    pub fn width(&self) -> usize {
+        self.base.0.width()
+    }
+
+    pub fn height(&self) -> usize {
+        self.base.0.height()
+    }
 }

@@ -49,4 +49,12 @@ impl World {
     pub fn done(&self) -> bool {
         self.state.goals().all(|(_, ok)| ok)
     }
+
+    pub fn width(&self) -> usize {
+        self.state.width()
+    }
+
+    pub fn height(&self) -> usize {
+        self.state.height()
+    }
 }
