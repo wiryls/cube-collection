@@ -1,8 +1,9 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
 use cc_core::cube::{Constraint, Kind, Movement, Neighborhood};
-use std::time::Duration;
 
 use super::{
     super::{model::World, view::ViewMapper},

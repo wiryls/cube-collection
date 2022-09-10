@@ -1,12 +1,16 @@
+use std::time::Duration;
+
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 use cc_core::{
     cube::{Constraint, Kind, Neighborhood, Point},
     Diff,
 };
-use std::time::Duration;
 
-use super::{super::common::style, super::view::GridView, bundle::Cubic};
+use super::{
+    super::{common::style, view::GridView},
+    bundle::Cubic,
+};
 
 /////////////////////////////////////////////////////////////////////////////
 // color

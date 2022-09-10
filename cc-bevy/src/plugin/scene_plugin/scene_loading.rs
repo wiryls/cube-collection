@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-use super::model::Seeds;
-use super::SceneState;
+use super::{model::Seeds, SceneState};
 use crate::plugin::loader_plugin::{LevelLoadingUpdated, LoadLevels, LoaderPlugin};
 
 pub fn setup(appx: &mut App) {

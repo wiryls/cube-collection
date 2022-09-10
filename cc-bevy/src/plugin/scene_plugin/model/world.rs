@@ -1,10 +1,11 @@
+use std::{collections::HashMap, time::Duration};
+
 use bevy::time::Timer;
 use cc_core::{
     cube::{Movement, Point},
     seed::Seed,
     Diff, Unit,
 };
-use std::{collections::HashMap, time::Duration};
 
 pub struct World {
     state: cc_core::State,

@@ -1,5 +1,6 @@
-pub mod cube;
 mod rule;
+
+pub mod cube;
 pub mod seed;
 pub mod state;
 
