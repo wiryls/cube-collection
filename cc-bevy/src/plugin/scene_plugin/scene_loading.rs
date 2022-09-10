@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-use super::cube::world::Seeds;
+use super::model::Seeds;
 use super::SceneState;
 use crate::plugin::loader_plugin::{LevelLoadingUpdated, LoadLevels, LoaderPlugin};
 

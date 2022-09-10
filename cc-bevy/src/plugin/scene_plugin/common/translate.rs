@@ -6,7 +6,7 @@ use cc_core::{
 };
 use std::time::Duration;
 
-use super::super::{super::cube::style, super::view::GridView, component::Cubic};
+use super::{super::common::style, super::view::GridView, bundle::Cubic};
 
 /////////////////////////////////////////////////////////////////////////////
 // color
@@ -117,7 +117,7 @@ pub fn reshape_system(
 #[derive(Component, Debug)]
 pub struct TranslatePosition {
     elapse: Timer,
-    parameters: PositionParameters,
+    parameters: Position,
 }
 
 impl TranslatePosition {
@@ -125,7 +125,7 @@ impl TranslatePosition {
         if let Some(target) = diff.position {
             return Some(TranslatePosition {
                 elapse: Timer::new(duration, false),
-                parameters: PositionParameters::Move(position, target),
+                parameters: Position::Move(position, target),
             });
         }
 
@@ -134,7 +134,7 @@ impl TranslatePosition {
         if constraint == Constraint::Stop || movement.is_none() {
             return Some(TranslatePosition {
                 elapse: Timer::new(Duration::from_secs(0), false),
-                parameters: PositionParameters::Stop,
+                parameters: Position::Stop(position),
             });
         }
 
@@ -147,16 +147,16 @@ impl TranslatePosition {
 
         Some(TranslatePosition {
             elapse: Timer::new(duration, true),
-            parameters: PositionParameters::Spin(position, movement.into(), limit),
+            parameters: Position::Spin(position, movement.into(), limit),
         })
     }
 }
 
 #[derive(Debug)]
-enum PositionParameters {
+enum Position {
     Move(Point, Point),      // (from, to)
     Spin(Point, Point, f32), // (from, delta, limit)
-    Stop,
+    Stop(Point),             // (from)
 }
 
 pub fn position_system(
@@ -168,7 +168,7 @@ pub fn position_system(
     let delta = time.delta();
     let mapper = view.mapping();
     for (id, mut translate, mut transform) in cubes.iter_mut() {
-        use PositionParameters::*;
+        use Position::*;
         let z = transform.translation.z;
         if translate.elapse.tick(delta).finished() {
             match translate.parameters {
@@ -179,7 +179,8 @@ pub fn position_system(
                 Spin(from, _, _) => {
                     transform.translation = mapper.absolute(&from).extend(z);
                 }
-                Stop => {
+                Stop(from) => {
+                    transform.translation = mapper.absolute(&from).extend(z);
                     commands.entity(id).remove::<TranslatePosition>();
                 }
             }
@@ -200,7 +201,8 @@ pub fn position_system(
                     let current = source + delta * percent;
                     transform.translation = current.extend(z);
                 }
-                Stop => {
+                Stop(from) => {
+                    transform.translation = mapper.absolute(&from).extend(z);
                     commands.entity(id).remove::<TranslatePosition>();
                 }
             }

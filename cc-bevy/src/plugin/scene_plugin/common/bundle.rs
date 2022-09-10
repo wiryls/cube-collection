@@ -1,35 +1,20 @@
-use std::time::Duration;
-
 use bevy::prelude::*;
 use bevy_prototype_lyon::entity::ShapeBundle;
 use bevy_prototype_lyon::prelude::*;
-use cc_core::cube::{Constraint, Kind, Movement, Neighborhood, Point};
+use cc_core::cube::{Constraint, Kind, Movement, Neighborhood};
+use std::time::Duration;
 
-use super::{super::view::ViewMapper, style, system::TranslateAlpha, world::World};
-
-#[derive(Component, Default)]
-pub struct Earthbound;
-
-#[derive(Component)]
-pub struct GridPoint {
-    pub point: Point,
-}
-
-impl From<Point> for GridPoint {
-    fn from(point: Point) -> Self {
-        Self { point }
-    }
-}
-
-impl From<GridPoint> for Point {
-    fn from(position: GridPoint) -> Self {
-        position.point
-    }
-}
+use super::{
+    super::{model::World, view::ViewMapper},
+    marker::Earthbound,
+    positioned::Gridded,
+    style,
+    translate::TranslateAlpha,
+};
 
 #[derive(Bundle)]
 struct DestinationBundle {
-    point: GridPoint,
+    point: Gridded,
     bound: Earthbound,
     #[bundle]
     shape: ShapeBundle,
@@ -47,17 +32,17 @@ pub struct Cubic {
 #[derive(Bundle)]
 struct CubeBundle {
     cubic: Cubic,
-    point: GridPoint,
+    point: Gridded,
     bound: Earthbound,
     #[bundle]
     shape: ShapeBundle,
 }
 
-pub fn spawn_objects(state: &World, commands: &mut Commands, mapper: &ViewMapper) {
+pub fn spawn_objects(commands: &mut Commands, state: &World, mapper: &ViewMapper) {
     let scale = mapper.scale(1.0f32);
 
     for goal in state.goals() {
-        let color = Color::rgb(0.5, 0.5, 0.5);
+        let color = Color::rgb(0.3, 0.3, 0.3);
         let points = style::cube_boundaries(Neighborhood::new(), 1., 0.95);
         let translation = mapper.absolute(&goal).extend(0.);
 
@@ -78,7 +63,7 @@ pub fn spawn_objects(state: &World, commands: &mut Commands, mapper: &ViewMapper
                     },
                 ),
             })
-            .insert(TranslateAlpha::new(0.1, 0.4, Duration::from_secs(4)));
+            .insert(TranslateAlpha::new(0.1, 0.3, Duration::from_secs(8)));
     }
 
     for item in state.cubes() {

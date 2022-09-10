@@ -14,6 +14,7 @@ pub enum MovementChanged {
     Add(Movement),
     Set(Option<Movement>),
 }
+
 impl MovementChanged {
     fn cover(&self, that: &Self) -> bool {
         use MovementChanged::*;
@@ -24,6 +25,7 @@ impl MovementChanged {
         }
     }
 }
+
 impl Default for MovementChanged {
     fn default() -> Self {
         Self::Set(None)

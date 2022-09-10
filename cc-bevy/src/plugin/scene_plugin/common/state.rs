@@ -1,16 +1,9 @@
 use bevy::prelude::*;
-use cc_core::cube::Movement;
-use std::collections::VecDeque;
-
-use crate::plugin::scene_plugin::cube::component::GridPoint;
 
 use super::{
-    super::{
-        super::input::MovementChanged,
-        super::scene_running::WorldChanged,
-        component::Cubic,
-        world::{Input, World},
-    },
+    super::{input::MovementChanged, model::World, scene_running::WorldChanged},
+    bundle::Cubic,
+    positioned::Gridded,
     translate::{TranslateColor, TranslatePosition, TranslateShape},
 };
 
@@ -18,9 +11,9 @@ pub fn state_system(
     mut commands: Commands,
     mut input_action: EventReader<MovementChanged>,
     mut change_world: EventWriter<WorldChanged>,
-    mut cubes: Query<(Entity, &mut Cubic, &mut GridPoint)>,
+    mut cubes: Query<(Entity, &mut Cubic, &mut Gridded)>,
     mut world: ResMut<World>,
-    mut actions: Local<ActionQueue>,
+    mut actions: Local<detail::ActionQueue>,
     time: Res<Time>,
 ) {
     // update actions
@@ -33,7 +26,7 @@ pub fn state_system(
 
     // update world
     let step = world.step();
-    let diffs = world.next(time.delta(), &mut *actions);
+    let diffs = world.next(time.delta(), || actions.pop());
     if !diffs.is_empty() {
         let query = cubes.iter_mut().filter_map(|(id, cube, position)| {
             diffs.get(&cube.id).map(|diff| (id, cube, position, diff))
@@ -71,46 +64,53 @@ pub fn state_system(
 
         // check progress
         if world.done() {
+            // avoid current actions affecting next level.
+            actions.reset();
+            // change to next level.
             change_world.send(WorldChanged::Next);
         }
     }
 }
 
-#[derive(Default)]
-pub struct ActionQueue {
-    once: VecDeque<Movement>,
-    repeat: Option<Movement>,
-}
+mod detail {
+    use cc_core::cube::Movement;
+    use std::collections::VecDeque;
 
-impl ActionQueue {
-    fn add(&mut self, movement: Movement) {
-        self.once.push_back(movement);
-        self.repeat = Some(movement);
+    #[derive(Default)]
+    pub struct ActionQueue {
+        once: VecDeque<Movement>,
+        repeat: Option<Movement>,
     }
 
-    fn set(&mut self, movement: Option<Movement>) {
-        match movement {
-            None => self.repeat = None,
-            Some(movement) => {
-                self.once.clear();
-                self.once.push_back(movement);
-                self.repeat = Some(movement);
+    impl ActionQueue {
+        pub fn add(&mut self, movement: Movement) {
+            self.once.push_back(movement);
+            self.repeat = Some(movement);
+        }
+
+        pub fn set(&mut self, movement: Option<Movement>) {
+            match movement {
+                None => self.repeat = None,
+                Some(movement) => {
+                    self.once.clear();
+                    self.once.push_back(movement);
+                    self.repeat = Some(movement);
+                }
             }
         }
-    }
 
-    fn pop(&mut self) -> Option<Movement> {
-        let output = match self.once.pop_front() {
-            None => self.repeat,
-            Some(movement) => Some(movement),
-        };
-        output
-    }
-}
+        pub fn pop(&mut self) -> Option<Movement> {
+            let output = match self.once.pop_front() {
+                None => self.repeat,
+                Some(movement) => Some(movement),
+            };
+            output
+        }
 
-impl Input for ActionQueue {
-    fn fetch(&mut self) -> Option<Movement> {
-        self.pop()
+        pub fn reset(&mut self) {
+            self.once.clear();
+            self.repeat = None;
+        }
     }
 }
 
@@ -119,7 +119,8 @@ impl Input for ActionQueue {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::detail::*;
+    use cc_core::cube::Movement;
 
     #[test]
     fn action_queue() {

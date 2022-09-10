@@ -1,9 +1,12 @@
 use bevy::prelude::*;
 use iyes_loopless::prelude::*;
 
-use super::cube::{component, system, world};
-use super::view::{GridView, ViewUpdated};
-use super::SceneState;
+use super::{
+    common::{bundle, component, system},
+    model,
+    view::{GridView, ViewUpdated},
+    SceneState,
+};
 
 pub fn setup(appx: &mut App, prepare: impl StageLabel, rule: impl StageLabel) {
     appx.add_event::<WorldChanged>()
@@ -13,19 +16,19 @@ pub fn setup(appx: &mut App, prepare: impl StageLabel, rule: impl StageLabel) {
             ConditionSet::new()
                 .run_in_state(SceneState::Running)
                 .with_system(switch_world.run_on_event::<WorldChanged>())
-                .with_system(update_scale.run_on_event::<ViewUpdated>())
+                .with_system(system::gridded.run_on_event::<ViewUpdated>())
                 .into(),
         )
         .add_system_to_stage(
             rule,
             system::state
                 .run_in_state(SceneState::Running)
-                .run_if_resource_exists::<world::World>(),
+                .run_if_resource_exists::<model::World>(),
         )
         .add_system_set(
             ConditionSet::new()
                 .run_in_state(SceneState::Running)
-                .run_if_resource_exists::<world::World>()
+                .run_if_resource_exists::<model::World>()
                 .with_system(system::position)
                 .with_system(system::realpha)
                 .with_system(system::recolor)
@@ -48,7 +51,7 @@ fn switch_world(
     mut commands: Commands,
     entities: Query<Entity, With<component::Earthbound>>,
     mut view: ResMut<GridView>,
-    mut world_seeds: ResMut<world::Seeds>,
+    mut world_seeds: ResMut<model::Seeds>,
     mut world_changed: EventReader<WorldChanged>,
 ) {
     let got = !world_changed.is_empty();
@@ -75,25 +78,8 @@ fn switch_world(
         let mapper = view.mapping();
 
         // [2] create new world
-        let world = world::World::new(&seed);
-        component::spawn_objects(&world, &mut commands, &mapper);
+        let world = model::World::new(&seed);
+        bundle::spawn_objects(&mut commands, &world, &mapper);
         commands.insert_resource(world);
-    }
-}
-
-fn update_scale(
-    mut cubes: Query<(&component::GridPoint, &mut Transform)>,
-    mut grid_updated: EventReader<ViewUpdated>,
-) {
-    let event = match grid_updated.iter().last() {
-        None => return,
-        Some(event) => event,
-    };
-
-    let grid = &event.mapper;
-    let scale = grid.scale(1.0);
-    for (position, mut transform) in cubes.iter_mut() {
-        transform.translation = grid.absolute(&position.point).extend(0.);
-        transform.scale = Vec3::new(scale, scale, 1.0);
     }
 }

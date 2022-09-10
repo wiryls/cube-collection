@@ -3,10 +3,10 @@ use cc_core::cube::{Kind, Neighborhood};
 
 pub fn cube_color(kind: Kind) -> Color {
     match kind {
-        Kind::White /* **/ => Color::rgb(1.0, 1.0, 1.0),
-        Kind::Red /*   **/ => Color::rgb(0.9, 0.1, 0.1),
-        Kind::Blue /*  **/ => Color::rgb(0.1, 0.1, 0.9),
-        Kind::Green /* **/ => Color::rgb(0.1, 0.9, 0.1),
+        Kind::White /* **/ => Color::rgb(1.000, 1.000, 1.000),
+        Kind::Red /*   **/ => Color::rgb(0.988, 0.512, 0.512),
+        Kind::Blue /*  **/ => Color::rgb(0.582, 0.727, 0.945),
+        Kind::Green /* **/ => Color::rgb(0.533, 0.859, 0.425),
     }
 }
 

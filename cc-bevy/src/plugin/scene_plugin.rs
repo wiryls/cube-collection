@@ -3,8 +3,9 @@ use iyes_loopless::prelude::*;
 
 use crate::plugin::ShapePlugin;
 
-mod cube;
+mod common;
 mod input;
+mod model;
 mod scene_loading;
 mod scene_running;
 mod view;
