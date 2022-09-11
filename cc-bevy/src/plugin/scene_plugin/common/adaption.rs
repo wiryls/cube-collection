@@ -23,7 +23,7 @@ pub fn self_adaption_system(
 
     let mapper = &event.mapper;
     let scale = Vec3::new(mapper.unit(), mapper.unit(), 1.0);
-    for (mut transform, relocate) in query.iter_mut() {
+    for (mut transform, relocate) in &mut query {
         let z = transform.translation.z;
         let v = mapper.locate(&relocate.point) + mapper.scale(&(relocate.offset, relocate.offset));
         transform.translation = v.extend(z);

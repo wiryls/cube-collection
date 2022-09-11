@@ -15,6 +15,12 @@ impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
         const MARK: CoreStage = CoreStage::Update;
 
+        // setup windows
+        app.insert_resource(WindowDescriptor {
+            title: "Cube Collection".to_owned(),
+            ..Default::default()
+        });
+
         // stage: StateTransitionStage -> INPUT -> CHECK -> WORLD -> CoreStage::Update
         //
         // with the help of stage, it adds a hard sync point between processing world and

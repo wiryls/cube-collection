@@ -57,7 +57,7 @@ pub fn recolor_system(
     time: Res<Time>,
 ) {
     let delta = time.delta();
-    for (id, mut translate, mut draw) in query.iter_mut() {
+    for (id, mut translate, mut draw) in &mut query {
         let [h, s, l] = if translate.elapse.tick(delta).finished() {
             commands.entity(id).remove::<TranslateColor>();
             let pair = translate.target;
@@ -104,7 +104,7 @@ pub fn reshape_system(
     mut commands: Commands,
     mut query: Query<(Entity, &TranslateShape, &mut Path)>,
 ) {
-    for (id, translate, mut path) in query.iter_mut() {
+    for (id, translate, mut path) in &mut query {
         commands.entity(id).remove::<TranslateShape>();
         let points = style::cube_boundaries(translate.to, 1., 0.95);
         let shape = shapes::Polygon {
@@ -173,9 +173,10 @@ pub fn position_system(
     let mapper = view.mapping();
     let locate = |o: &Point| (mapper.locate(o) + mapper.scale(&(0.5, 0.5)));
 
-    for (id, mut translate, mut transform) in query.iter_mut() {
+    for (id, mut translate, mut transform) in &mut query {
         use Position::*;
         let z = transform.translation.z;
+
         if translate.elapse.tick(delta).finished() {
             match translate.parameters {
                 Move(_, to) => {
@@ -238,7 +239,7 @@ impl TranslateAlpha {
 
 pub fn realpha_system(mut query: Query<(&mut TranslateAlpha, &mut DrawMode)>, time: Res<Time>) {
     let delta = time.delta();
-    for (mut translate, mut draw) in query.iter_mut() {
+    for (mut translate, mut draw) in &mut query {
         let alpha = if translate.elapse.tick(delta).finished() {
             translate.source
         } else {

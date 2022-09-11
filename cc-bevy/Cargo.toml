@@ -17,9 +17,3 @@ iyes_loopless = "0.7"
 serde = {version = "1.0", features = ["derive"]}
 snafu = "0.7"
 toml = "0.5"
-
-[profile.dev]
-opt-level = 1
-
-[profile.dev.package."*"]
-opt-level = 3
