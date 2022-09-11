@@ -1,21 +1,21 @@
 [map]
 raw = '''
    x           GW
-x             GW 
-    x        GW  
-            GW   
- x         GW    
-          GW     
-         GW      
-        GW       
-       GW        
-      GW         
-     GW          
-    GW           
-   GW            
-  GW             
- GW              
-GW               
+x             GW
+             GW
+    x       GW
+ x         GW
+          GW
+         GW
+        GW
+       GW
+      GW
+     GW
+    GW
+   GW
+  GW
+ GW
+GW
 W                '''
 
 [info]

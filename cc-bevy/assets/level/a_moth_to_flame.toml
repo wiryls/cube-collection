@@ -1,14 +1,12 @@
 [map]
 raw = '''
-W~~~~~~~~~~~~~~~~
-|               |
-|     B   B     |
-|     W   W     |
-| G          xRx|
-|     W   W     |
-|     B   B     |
-|               |
-|~~~~~~~~~~~~~~~|'''
+
+     B   B
+     W   W
+ G          xRx
+     W   W
+     B   B
+               '''
 
 [info]
 author = "w"

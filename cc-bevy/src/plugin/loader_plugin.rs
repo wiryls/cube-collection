@@ -97,7 +97,7 @@ fn load_levels(
             let fail = handles
                 .iter()
                 .find_map(|handle| match server.get_load_state(handle) {
-                    LoadState::Loading => None,
+                    LoadState::Loading | LoadState::NotLoaded => None,
                     LoadState::Loaded => {
                         done += 1;
                         None

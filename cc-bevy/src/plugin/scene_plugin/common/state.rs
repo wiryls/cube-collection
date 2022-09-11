@@ -26,7 +26,8 @@ pub fn state_system(
 
     // update world
     let step = world.step();
-    let diffs = world.next(time.delta(), || actions.pop());
+    let delta = time.delta();
+    let diffs = world.next(delta, || actions.pop());
     if !diffs.is_empty() {
         let query = query.iter_mut().filter_map(|(id, cube, position)| {
             diffs.get(&cube.id).map(|diff| (id, cube, position, diff))

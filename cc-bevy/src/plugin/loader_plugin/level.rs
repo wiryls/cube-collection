@@ -173,7 +173,7 @@ impl LevelParser {
             cs: Vec::new(),
             ds: Vec::new(),
             x: 0,
-            m: LevelMapBuilder(Vec::new()),
+            m: LevelMapBuilder(vec![Vec::new()]),
         }
     }
 

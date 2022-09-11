@@ -9,7 +9,7 @@ use super::{
     super::{model::World, view::ViewMapper},
     adaption::AutoRescale,
     marker::Earthbound,
-    style,
+    style::{self, BoundaryBuilder},
     translate::TranslateAlpha,
 };
 
@@ -53,37 +53,11 @@ pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
     // background color
     commands.insert_resource(ClearColor(style::background_color()));
 
-    // create floor
-    let right = state.width();
-    let bottom = state.height();
-    commands.spawn_bundle(FloorBundle {
-        bound: Earthbound,
-        scale: AutoRescale {
-            point: Point::default(),
-            offset: 0.,
-        },
-        shape: GeometryBuilder::build_as(
-            &shapes::Polygon {
-                points: [(0, 0), (0, bottom), (right, bottom), (right, 0)]
-                    .iter()
-                    .map(|o| mapper.flip(o))
-                    .collect(),
-                closed: true,
-            },
-            DrawMode::Fill(FillMode::color(style::floor_color())),
-            Transform {
-                translation: mapper.locate(&(0i32, 0)).extend(0.),
-                scale: Vec3::new(scale, scale, 0.),
-                ..default()
-            },
-        ),
-    });
-
     // create destnations
     let delta = mapper.scale(&(0.5, 0.5));
     for goal in state.goals() {
         let color = style::destnation_color();
-        let points = style::cube_boundaries(Neighborhood::new(), 1., 0.95);
+        let points = style::cube_boundaries(Neighborhood::new(), 0.95);
         let translation = (mapper.locate(&goal) + delta).extend(2.);
 
         commands
@@ -110,9 +84,12 @@ pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
     }
 
     // create cubes
+    let mut boundary_builder = BoundaryBuilder::new(state.width(), state.height());
     for item in state.cubes() {
+        boundary_builder.put(item.position, item.neighborhood);
+
         let color = style::cube_color(item.kind);
-        let points = style::cube_boundaries(item.neighborhood, 1., 0.95);
+        let points = style::cube_boundaries(item.neighborhood, 0.95);
         let translation = (mapper.locate(&item.position) + delta).extend(1.);
 
         commands.spawn_bundle(CubeBundle {
@@ -142,4 +119,27 @@ pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
             ),
         });
     }
+
+    // create floor
+    let bottom_left = Point::new(0, 0);
+    let points = boundary_builder.build(0.05);
+    commands.spawn_bundle(FloorBundle {
+        bound: Earthbound,
+        scale: AutoRescale {
+            point: bottom_left,
+            offset: 0.,
+        },
+        shape: GeometryBuilder::build_as(
+            &shapes::Polygon {
+                points,
+                closed: true,
+            },
+            DrawMode::Fill(FillMode::color(style::floor_color())),
+            Transform {
+                translation: mapper.locate(&bottom_left).extend(0.),
+                scale: Vec3::new(scale, scale, 0.),
+                ..default()
+            },
+        ),
+    });
 }

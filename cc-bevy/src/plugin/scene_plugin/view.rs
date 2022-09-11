@@ -24,14 +24,17 @@ fn update_gridview(
     mut window_resized: EventReader<WindowResized>,
     mut mapper_updated: EventWriter<ViewUpdated>,
 ) {
+    const PADDING_RATE: f32 = 0.04;
+
     if let Some(window) = windows.get_primary() {
         // multiple windows are not supported, we just watch the primary one.
         let id = window.id();
 
         for event in window_resized.iter().filter(|x| x.id == id).last() {
             // rect is defined by camera's ScalingMode::WindowSize
-            let w = event.width / 2.;
-            let h = event.height / 2.;
+            let p = event.width.min(event.height) * PADDING_RATE;
+            let w = event.width * 0.5 - p;
+            let h = event.height * 0.5 - p;
             let r = UiRect {
                 left: -w,
                 right: w,
@@ -121,6 +124,7 @@ impl ViewMapper {
         self.unit
     }
 
+    #[allow(dead_code)]
     pub fn flip(&self, o: &impl Mappable) -> Vec2 {
         o.delta(self.source).into()
     }
@@ -182,5 +186,15 @@ impl Mappable for Point {
 
     fn delta(&self, source: (i32, i32)) -> (f32, f32) {
         ((self.x - source.0) as f32, (source.1 - self.y) as f32)
+    }
+}
+
+impl Mappable for Vec2 {
+    fn scale(&self, factor: f32) -> (f32, f32) {
+        (self.x as f32 * factor, self.y as f32 * -factor)
+    }
+
+    fn delta(&self, source: (i32, i32)) -> (f32, f32) {
+        (self.x - source.0 as f32, source.1 as f32 - self.y)
     }
 }

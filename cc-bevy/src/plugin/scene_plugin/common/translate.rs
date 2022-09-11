@@ -106,7 +106,7 @@ pub fn reshape_system(
 ) {
     for (id, translate, mut path) in &mut query {
         commands.entity(id).remove::<TranslateShape>();
-        let points = style::cube_boundaries(translate.to, 1., 0.95);
+        let points = style::cube_boundaries(translate.to, 0.95);
         let shape = shapes::Polygon {
             points,
             closed: true,
@@ -174,9 +174,9 @@ pub fn position_system(
     let locate = |o: &Point| (mapper.locate(o) + mapper.scale(&(0.5, 0.5)));
 
     for (id, mut translate, mut transform) in &mut query {
-        use Position::*;
         let z = transform.translation.z;
 
+        use Position::*;
         if translate.elapse.tick(delta).finished() {
             match translate.parameters {
                 Move(_, to) => {

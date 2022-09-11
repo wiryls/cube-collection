@@ -1,13 +1,11 @@
 [map]
 raw = '''
-W~~~~~~~~~~~~~~
-|             |
-|GG WRWRWRW x |
-|             |
-|~~~~~~~~~~~~~|'''
+
+GG WRWRWRW x
+             '''
 
 [[map.commands]]
-binding = [[5, 2], [7, 2], [9, 2]]
+binding = [[4, 1], [6, 1], [8, 1]]
 content = "UID2IU"
 looping = true
 
