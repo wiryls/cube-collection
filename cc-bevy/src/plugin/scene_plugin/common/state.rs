@@ -14,20 +14,40 @@ pub fn state_system(
     mut query: Query<(Entity, &mut Cubic, &mut AutoRescale)>,
     mut world: ResMut<World>,
     mut actions: Local<detail::ActionQueue>,
+    mut completed: Local<bool>,
     time: Res<Time>,
 ) {
     // update actions
     for action in input_action.iter() {
+        use MovementChanged::*;
         match action {
-            MovementChanged::Add(m) => actions.add(*m),
-            MovementChanged::Set(m) => actions.set(*m),
+            Add(m) => actions.add(*m),
+            Set(m) => actions.set(*m),
         };
     }
 
     // update world
     let step = world.step();
     let delta = time.delta();
-    let diffs = world.next(delta, || actions.pop());
+    let diffs = match world.next(delta, || actions.pop()) {
+        None => return, // skip
+        Some(diffs) => diffs,
+    };
+
+    if *completed {
+        // delay one round to move to next level
+        *completed = false;
+
+        // avoid current actions affecting next level
+        actions.reset();
+
+        // change to next level
+        change_world.send(WorldChanged::Next);
+
+        // avoid update completed again
+        return;
+    }
+
     if !diffs.is_empty() {
         let query = query.iter_mut().filter_map(|(id, cube, position)| {
             diffs.get(&cube.id).map(|diff| (id, cube, position, diff))
@@ -63,13 +83,8 @@ pub fn state_system(
             }
         }
 
-        // check progress
-        if world.done() {
-            // avoid current actions affecting next level.
-            actions.reset();
-            // change to next level.
-            change_world.send(WorldChanged::Next);
-        }
+        // check status
+        *completed = world.done();
     }
 }
 

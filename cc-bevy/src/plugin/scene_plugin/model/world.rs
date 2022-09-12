@@ -20,7 +20,7 @@ impl World {
         }
     }
 
-    pub fn next<T>(&mut self, delta: Duration, mut input: T) -> HashMap<usize, Diff>
+    pub fn next<T>(&mut self, delta: Duration, mut input: T) -> Option<HashMap<usize, Diff>>
     where
         T: FnMut() -> Option<Movement>,
     {
@@ -28,9 +28,10 @@ impl World {
             self.state
                 .commit(input())
                 .map(|diff| (diff.id, diff))
-                .collect()
+                .collect::<HashMap<_, _, _>>()
+                .into()
         } else {
-            HashMap::with_capacity(0)
+            None
         }
     }
 

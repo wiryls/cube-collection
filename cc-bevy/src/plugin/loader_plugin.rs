@@ -70,7 +70,7 @@ fn load_levels(
         }
 
         LoadLevelState::Finding(handle) => match server.get_load_state(&*handle) {
-            LoadState::Loading => {}
+            LoadState::Loading | LoadState::NotLoaded => {}
             LoadState::Loaded => {
                 status.0 = if let Some(index) = index_assets.get(&*handle) {
                     let dir = std::path::Path::new(&index.directory);

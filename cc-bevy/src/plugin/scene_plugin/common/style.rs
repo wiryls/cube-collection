@@ -6,11 +6,11 @@ pub const fn background_color() -> Color {
 }
 
 pub const fn floor_color() -> Color {
-    Color::BLACK
+    Color::DARK_GRAY
 }
 
 pub const fn destnation_color() -> Color {
-    Color::rgb(0.3, 0.3, 0.3)
+    Color::GRAY
 }
 
 pub const fn cube_color(kind: Kind) -> Color {

@@ -80,7 +80,7 @@ pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
                     },
                 ),
             })
-            .insert(TranslateAlpha::new(0.1, 0.3, Duration::from_secs(6)));
+            .insert(TranslateAlpha::new(0.1, 0.4, Duration::from_secs(4)));
     }
 
     // create cubes

@@ -199,6 +199,9 @@ pub fn position_system(
                     let target = locate(&to);
                     let current = source + (target - source) * percent;
                     transform.translation = current.extend(z);
+
+                    // There are some jitters when moving (waiting for fixes)
+                    // https://github.com/bevyengine/bevy/issues/4669
                 }
                 Spin(from, delta, limit) => {
                     let percent = translate.elapse.percent();
