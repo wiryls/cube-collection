@@ -105,6 +105,9 @@ impl LevelSource {
                     _ => ensure!(false, InvalidMovement { character: c }),
                 }
             }
+            if !n.is_empty() {
+                put(&mut p, &mut n);
+            }
 
             let c: seed::Command = p.into();
             for p in m.binding {

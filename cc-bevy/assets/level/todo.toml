@@ -1,0 +1,34 @@
+[map]
+raw = '''
+G~~~~~~~~~~
+| |                W
+|~~                |
+W~~~~~~~~~GW~WWWWWW|
+         |G|||||||||
+         |G|||||W||x
+         |G| W|W||W
+         |G| |W||W|
+         |~/ ||||||
+           |W||| ||
+           ||||  ||
+           ||     |
+           ||     |
+           ||     |
+           ||~~~~~/
+           |
+           |
+'''
+
+[[map.commands]]
+binding = [[13, 4], [14, 4], [15, 4], [16, 4], [17, 4], [18, 4]]
+content = "U2I2D2IU"
+looping = true
+
+[[map.commands]]
+binding = [[13, 8], [14, 8], [15, 7], [16, 8], [17, 8], [18, 8]]
+content = "U2RLD2IU"
+looping = true
+
+[info]
+author = "w"
+title = "Unlock"
