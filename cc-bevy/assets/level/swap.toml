@@ -1,8 +1,9 @@
 [map]
 raw = '''
 
-WxGxW     WGxGW
-               '''
+WxGxW   WGxGW
+
+'''
 
 [info]
 author = "w"

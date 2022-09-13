@@ -1,8 +1,9 @@
 directory = 'level'
 extension = 'toml'
 name_list = [
+  # 'debug',
   # 'experiment',
-  'todo',
+  # 'unlock',
   'introduction',
   'a_moth_to_flame',
   'detour',
@@ -13,5 +14,6 @@ name_list = [
   'printer',
   'centrosymmetry_and_axisymmetry',
   'sacrifice',
-  'unlock',
+  'reincarnation',
+  'now_or_never',
 ]
