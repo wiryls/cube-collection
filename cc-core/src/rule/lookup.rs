@@ -121,7 +121,11 @@ impl DisjointSet {
         }
     }
 
-    pub fn join<T: Into<usize>, U: Into<usize>>(&mut self, this: T, that: U) {
+    pub fn has(&self, which: impl Into<usize>) -> bool {
+        self.parents.get(which.into()).is_some()
+    }
+
+    pub fn join(&mut self, this: impl Into<usize>, that: impl Into<usize>) {
         let this = this.into();
         let that = that.into();
         if this < self.parents.len() && that < self.parents.len() && this != that {

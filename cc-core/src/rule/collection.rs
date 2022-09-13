@@ -163,22 +163,18 @@ impl Collection {
         let mut connection = DisjointSet::new(number_of_cubes);
 
         // connect all adjacent cubes.
-        let mut visit = vec![false; number_of_cubes];
         let mut queue = VecDeque::with_capacity(number_of_cubes);
-        for cube in unstable {
-            if !visit[cube.index] {
-                visit[cube.index] = true;
+        for kind in [Kind::Red, Kind::Green, Kind::Blue] {
+            for cube in unstable.clone().filter(|cube| cube.kind == kind) {
                 queue.push_back(cube);
-            }
-
-            while let Some(cube) = queue.pop_front() {
-                for other in territory.neighbors(cube) {
-                    if !visit[other.index] {
-                        visit[other.index] = true;
-                        queue.push_back(other);
-
-                        if cube.mergeable(other) {
+                while let Some(other) = queue.pop_front() {
+                    for other in territory.neighbors(other) {
+                        if cube.absorbable(other) {
+                            let push = !connection.has(other);
                             connection.join(cube, other);
+                            if push {
+                                queue.push_back(other);
+                            }
                         }
                     }
                 }
@@ -317,21 +313,20 @@ impl Collection {
         let mut visit = vec![false; number_of_cubes];
         let mut queue = VecDeque::with_capacity(number_of_cubes);
         for index in undetermined.iter().cloned() {
-            if !visit[index] {
-                visit[index] = true;
-                queue.push_back(index);
+            if visit[index] {
+                continue;
             }
 
+            queue.push_back(index);
             while let Some(index) = queue.pop_front() {
-                let cube = &self.cube[index];
-                for other in territory.neighbors(cube) {
-                    if !visit[other.index] {
-                        visit[other.index] = true;
-                        queue.push_back(other.index);
+                visit[index] = true;
 
-                        if cube.mergeable(other) {
-                            connection.join(cube, other);
-                        }
+                let cube = &self.cube[index];
+                for other in territory.neighbors(cube).filter(|o| !visit[o.index]) {
+                    queue.push_back(other.index);
+
+                    if cube.mergeable(other) {
+                        connection.join(cube, other);
                     }
                 }
             }

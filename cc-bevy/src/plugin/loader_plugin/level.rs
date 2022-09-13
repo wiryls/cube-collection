@@ -74,13 +74,13 @@ impl LevelSource {
         for line in self.map.raw.lines() {
             for c in line.chars() {
                 match c {
-                    'W' => parser.make_cube(cube::Kind::White),
-                    'R' => parser.make_cube(cube::Kind::Red),
-                    'B' => parser.make_cube(cube::Kind::Blue),
-                    'G' => parser.make_cube(cube::Kind::Green),
-                    'x' => parser.make_destination(),
+                    'W' | 'w' => parser.make_cube(cube::Kind::White),
+                    'R' | 'r' => parser.make_cube(cube::Kind::Red),
+                    'B' | 'b' => parser.make_cube(cube::Kind::Blue),
+                    'G' | 'g' => parser.make_cube(cube::Kind::Green),
+                    'X' | 'x' => parser.make_destination(),
                     ' ' => parser.make_empty(),
-                    '~' => parser.copy_left()?,
+                    '-' => parser.copy_left()?,
                     '|' => parser.copy_upper()?,
                     '/' => parser.copy_upper_and_left()?,
                     _ => ensure!(false, InvalidMarker { character: c }),

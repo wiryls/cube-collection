@@ -44,7 +44,7 @@ pub enum WorldChanged {
 }
 
 fn setup_world(mut change_world: EventWriter<WorldChanged>) {
-    change_world.send(WorldChanged::Reset)
+    change_world.send(WorldChanged::Restart)
 }
 
 fn switch_world(
