@@ -164,18 +164,18 @@ impl Collection {
 
         // connect all adjacent cubes.
         let mut queue = VecDeque::with_capacity(number_of_cubes);
-        for kind in [Kind::Red, Kind::Green, Kind::Blue] {
-            for cube in unstable.clone().filter(|cube| cube.kind == kind) {
-                queue.push_back(cube);
-                while let Some(other) = queue.pop_front() {
-                    for other in territory.neighbors(other) {
-                        if cube.absorbable(other) {
-                            let push = !connection.has(other);
-                            connection.join(cube, other);
-                            if push {
-                                queue.push_back(other);
-                            }
+        let mut visit = vec![false; number_of_cubes];
+
+        for cube in unstable.clone() {
+            queue.push_back(cube);
+            while let Some(other) = queue.pop_front() {
+                for other in territory.neighbors(other) {
+                    if cube.absorbable(other) {
+                        if !visit[other.index] {
+                            visit[other.index] = true;
+                            queue.push_back(other);
                         }
+                        connection.join(cube, other);
                     }
                 }
             }

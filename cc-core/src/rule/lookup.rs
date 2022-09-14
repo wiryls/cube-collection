@@ -121,10 +121,6 @@ impl DisjointSet {
         }
     }
 
-    pub fn has(&self, which: impl Into<usize>) -> bool {
-        self.parents.get(which.into()).is_some()
-    }
-
     pub fn join(&mut self, this: impl Into<usize>, that: impl Into<usize>) {
         let this = this.into();
         let that = that.into();
