@@ -1,5 +1,5 @@
 [workspace]
-members = ["cc-bevy", "cc-core"] 
+members = ["cube-collection", "cube-core"] 
 resolver = "2" # for wgpu/Bevy
 
 [profile.dev]

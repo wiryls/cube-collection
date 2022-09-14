@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy::window::WindowResized;
-use cc_core::cube::Point;
+use cube_core::cube::Point;
 use iyes_loopless::prelude::*;
 
 pub fn setup(appx: &mut App, stage: impl StageLabel) {

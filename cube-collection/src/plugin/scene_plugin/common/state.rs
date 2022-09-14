@@ -89,7 +89,7 @@ pub fn state_system(
 }
 
 mod detail {
-    use cc_core::cube::Movement;
+    use cube_core::cube::Movement;
     use std::collections::VecDeque;
 
     #[derive(Default)]
@@ -136,7 +136,7 @@ mod detail {
 #[cfg(test)]
 mod tests {
     use super::detail::*;
-    use cc_core::cube::Movement;
+    use cube_core::cube::Movement;
 
     #[test]
     fn action_queue() {

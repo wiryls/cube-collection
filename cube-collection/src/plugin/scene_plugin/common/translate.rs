@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
-use cc_core::{
+use cube_core::{
     cube::{Constraint, Kind, Neighborhood, Point},
     Diff,
 };

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use cc_core::cube::{Adjacence, Kind, Movement, Neighborhood, Point};
+use cube_core::cube::{Adjacence, Kind, Movement, Neighborhood, Point};
 
 pub const fn background_color() -> Color {
     Color::WHITE

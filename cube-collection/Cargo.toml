@@ -1,11 +1,11 @@
 [package]
 edition = "2021"
-name = "cc-bevy"
+name = "cube-collection"
 version = "0.1.0"
 
 [dependencies]
 # Local workspace
-cc-core = {path = "../cc-core"}
+cube-core = {path = "../cube-core"}
 
 # Bery and its plugins
 bevy = "0.8.1"

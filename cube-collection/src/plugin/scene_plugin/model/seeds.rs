@@ -1,4 +1,4 @@
-use cc_core::seed::Seed;
+use cube_core::seed::Seed;
 
 pub struct Seeds {
     list: Vec<Seed>,

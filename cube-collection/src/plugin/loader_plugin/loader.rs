@@ -2,7 +2,7 @@ use bevy::{
     asset::{AssetLoader, BoxedFuture, Error, LoadContext, LoadedAsset},
     reflect::TypeUuid,
 };
-use cc_core::seed::Seed;
+use cube_core::seed::Seed;
 use serde::Deserialize;
 
 /////////////////////////////////////////////////////////////////////////////

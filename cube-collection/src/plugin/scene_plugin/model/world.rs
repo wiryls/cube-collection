@@ -1,21 +1,21 @@
 use std::{collections::HashMap, time::Duration};
 
 use bevy::time::Timer;
-use cc_core::{
+use cube_core::{
     cube::{Movement, Point},
     seed::Seed,
     Diff, Unit,
 };
 
 pub struct World {
-    state: cc_core::State,
+    state: cube_core::State,
     timer: Timer,
 }
 
 impl World {
     pub fn new(seed: &Seed) -> Self {
         Self {
-            state: cc_core::State::new(&seed),
+            state: cube_core::State::new(&seed),
             timer: Timer::new(Duration::from_millis(200), true),
         }
     }

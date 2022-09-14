@@ -1,5 +1,5 @@
 use bevy::{asset::AssetPath, prelude::*};
-use cc_core::seed::Seed;
+use cube_core::seed::Seed;
 use iyes_loopless::prelude::*;
 
 mod level;

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use cc_core::cube::Point;
+use cube_core::cube::Point;
 
 use super::super::view::ViewUpdated;
 

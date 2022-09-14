@@ -1,4 +1,4 @@
-use cc_core::{cube, seed};
+use cube_core::{cube, seed};
 use serde::Deserialize;
 use snafu::{ensure, Snafu};
 

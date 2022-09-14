@@ -1,5 +1,5 @@
 use bevy::{input::keyboard::KeyboardInput, prelude::*};
-use cc_core::cube::Movement;
+use cube_core::cube::Movement;
 
 use super::scene_running::WorldChanged;
 
