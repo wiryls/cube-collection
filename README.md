@@ -1,4 +1,4 @@
-# Project Cube Collection
+# [Project Cube Collection](https://wiryls.github.io/cc/)
 
 This is a simple puzzle game based on [Bevy Engine](https://github.com/bevyengine/bevy).
 
