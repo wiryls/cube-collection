@@ -3,18 +3,19 @@ extension = 'toml'
 name_list = [
   # 'debug',
   # 'experiment',
-  # 'unlock',
-
   'introduction',
   'a_moth_to_flame',
   'detour',
   'tetris',
-  'swap',
-  'matrix',
+  'moving_forest',
   'haircut',
+  'matrix',
   'printer',
+  'swap',
   'centrosymmetry_and_axisymmetry',
   'sacrifice',
   'reincarnation',
+  'triangle_power',
   'now_or_never',
+  'unlock',
 ]

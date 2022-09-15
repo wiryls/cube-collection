@@ -1,32 +1,31 @@
 [map]
 raw = '''
-G----------
-| |        
-|-|        
-           
-           
-G          
- W--WWWWWWW
-G||||||||||
- |xW|||W||W
-G| |W|W||W|
- | ||W||W||
-G| ||||||||
- | ||||||||
-G|x|------/'''
+G---------
+
+ W      W
+ |      |G
+ |WWWWWW|
+ ||||||||G
+xW|||W||W
+ |W|W||W|G
+ ||W||W||
+ ||||||||G
+ ||||||||
+x|------/G
+'''
 
 [[map.commands]]
-binding = [[4, 6], [5, 6], [6, 6], [7, 6], [8, 6], [9, 6]]
+binding = [[2, 4], [3, 4], [4, 4], [5, 4], [6, 4], [7, 4]]
 content = "U2I2D2I4"
 looping = true
 
 [[map.commands]]
-binding = [[4, 12], [5, 12], [6, 12], [7, 12], [8, 12], [9, 12]]
+binding = [[2, 10], [3, 10], [4, 10], [5, 10], [6, 10], [7, 10]]
 content = "U2LRD2I4"
 looping = true
 
 [[map.commands]]
-binding = [[3, 12]]
+binding = [[1, 6]]
 content = "I2LRI6"
 looping = true
 
