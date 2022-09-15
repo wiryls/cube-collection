@@ -1,0 +1,18 @@
+[map]
+raw = '''
+                 
+                 
+  GGGGGGGGGGGGG  
+  G   GG GG   G  
+  G           G  
+  G   R   R   G  
+  G           G  
+  G           G  
+  G     x     G  
+  G           G  
+  W------------  
+                 '''
+
+[info]
+author = "w"
+title = "Haircut"

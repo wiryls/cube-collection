@@ -1,0 +1,23 @@
+[map]
+raw = '''
+   x           GW
+x             GW
+             GW
+    x       GW
+ x         GW
+          GW
+         GW
+        GW
+       GW
+      GW
+     GW
+    GW
+   GW
+  GW
+ GW
+GW
+W                '''
+
+[info]
+author = "w"
+title = "Printer"

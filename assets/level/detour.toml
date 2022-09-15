@@ -1,0 +1,12 @@
+[map]
+raw = '''
+   B
+ G   B WB
+   B
+W-----
+x  x
+           '''
+
+[info]
+author = "w"
+title = "Detour"

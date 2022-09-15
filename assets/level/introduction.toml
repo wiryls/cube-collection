@@ -1,0 +1,9 @@
+[map]
+raw = '''
+
+ G          x
+              '''
+
+[info]
+author = "w"
+title = "Introduction"

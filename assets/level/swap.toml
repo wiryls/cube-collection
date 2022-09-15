@@ -1,0 +1,10 @@
+[map]
+raw = '''
+
+WxGxW   WGxGW
+
+'''
+
+[info]
+author = "w"
+title = "Swap"

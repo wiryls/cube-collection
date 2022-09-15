@@ -1,0 +1,21 @@
+directory = 'level'
+extension = 'toml'
+name_list = [
+  # 'debug',
+  # 'experiment',
+  'introduction',
+  'a_moth_to_flame',
+  'detour',
+  'tetris',
+  'moving_forest',
+  'haircut',
+  'matrix',
+  'printer',
+  'swap',
+  'centrosymmetry_and_axisymmetry',
+  'sacrifice',
+  'reincarnation',
+  'triangle_power',
+  'now_or_never',
+  'unlock',
+]

@@ -1,0 +1,17 @@
+[map]
+raw = '''
+G         x
+  R
+     W
+  R       x
+G         B
+'''
+
+[[map.commands]]
+binding = [[2, 3], [2, 1]]
+content = "R6I2L6I2"
+looping = true
+
+[info]
+author = "w"
+title = "Reincarnation"
