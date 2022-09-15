@@ -8,14 +8,14 @@ use cube_core::{
 };
 
 pub struct World {
-    state: cube_core::State,
+    state: cube_core::CubeCore,
     timer: Timer,
 }
 
 impl World {
     pub fn new(seed: &Seed) -> Self {
         Self {
-            state: cube_core::State::new(&seed),
+            state: cube_core::CubeCore::new(&seed),
             timer: Timer::new(Duration::from_millis(200), true),
         }
     }

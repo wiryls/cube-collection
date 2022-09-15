@@ -50,7 +50,7 @@ mod tests {
             ],
             destnations: vec![Point::new(1, 0), Point::new(0, 2)],
         };
-        let mut game = State::new(&seed);
+        let mut game = CubeCore::new(&seed);
         let stat = [
             Unit {
                 id: 0,

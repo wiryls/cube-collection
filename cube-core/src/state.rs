@@ -4,13 +4,13 @@ use super::{
     seed::{Cube, Seed},
 };
 
-pub struct State {
+pub struct CubeCore {
     dest: Vec<Point>,
     last: Option<(Collection, Snapshot)>,
     base: (Collection, Snapshot),
 }
 
-impl State {
+impl CubeCore {
     pub fn new(seed: &Seed) -> Self {
         fn convert(cube: &Cube) -> (Kind, &[Point], Motion) {
             (
