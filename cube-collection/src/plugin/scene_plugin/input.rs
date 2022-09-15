@@ -1,7 +1,7 @@
 use bevy::{input::keyboard::KeyboardInput, prelude::*};
 use cube_core::cube::Movement;
 
-use super::scene_running::WorldChanged;
+use super::{scene_loading::HardReset, scene_running::WorldChanged};
 
 pub fn setup(appx: &mut App, stage: impl StageLabel) {
     appx.add_event::<MovementChanged>()
@@ -33,6 +33,7 @@ impl Default for MovementChanged {
 
 #[derive(Default)]
 enum Command {
+    Reset,
     Control(WorldChanged),
     Movement(MovementChanged),
     #[default]
@@ -40,9 +41,11 @@ enum Command {
 }
 
 fn keyboard(
+    keys: Res<Input<KeyCode>>,
     mut input: EventReader<KeyboardInput>,
     mut change_world: EventWriter<WorldChanged>,
     mut change_movement: EventWriter<MovementChanged>,
+    mut trgger_reload: EventWriter<HardReset>,
     mut actions: Local<ActionSequence>,
 ) {
     // try to calculate a command and send it to movement system.
@@ -50,9 +53,11 @@ fn keyboard(
         .iter()
         .filter_map(|key| key.key_code.map(|code| (code, key)))
     {
+        let control = keys.any_pressed([KeyCode::LShift, KeyCode::RShift]);
         let presse = key.state.is_pressed();
         let output = match code {
             // control
+            KeyCode::Escape if presse && control => Command::Reset,
             KeyCode::Escape if presse => Command::Control(WorldChanged::Reset),
             KeyCode::R if presse => Command::Control(WorldChanged::Restart),
             KeyCode::N if presse => Command::Control(WorldChanged::Next),
@@ -68,6 +73,7 @@ fn keyboard(
         };
 
         match output {
+            Command::Reset => trgger_reload.send(HardReset()),
             Command::Control(control) => change_world.send(control),
             Command::Movement(movement) => change_movement.send(movement),
             Command::DoNothing => {}

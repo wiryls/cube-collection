@@ -4,10 +4,23 @@ use iyes_loopless::prelude::*;
 use super::{model::Seeds, SceneState};
 use crate::plugin::loader_plugin::{LevelLoadingUpdated, LoadLevels, LoaderPlugin};
 
+#[derive(Clone)]
+pub struct HardReset();
+
 pub fn setup(appx: &mut App) {
     appx.add_plugin(LoaderPlugin)
         .add_enter_system(SceneState::Loading, loading_enter)
-        .add_system(loading_updated.run_in_state(SceneState::Loading));
+        .add_event::<HardReset>()
+        .add_system(
+            loading_updated
+                .run_in_state(SceneState::Loading)
+                .run_on_event::<LevelLoadingUpdated>(),
+        )
+        .add_system(
+            hard_reset
+                .run_not_in_state(SceneState::Loading)
+                .run_on_event::<HardReset>(),
+        );
 }
 
 fn loading_enter(mut commands: Commands) {
@@ -25,5 +38,12 @@ fn loading_updated(mut commands: Commands, mut events: EventReader<LevelLoadingU
                 commands.insert_resource(NextState(SceneState::Running));
             }
         }
+    }
+}
+
+fn hard_reset(mut commands: Commands, mut events: EventReader<HardReset>) {
+    for _ in events.iter().last() {
+        commands.insert_resource(NextState(SceneState::Loading));
+        commands.insert_resource(LoadLevels::new(r"level/index.toml"));
     }
 }
