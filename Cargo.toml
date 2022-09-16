@@ -5,10 +5,10 @@ resolver = "2" # for wgpu/Bevy
 [profile.wasm-release]
 # see:
 #https://github.com/bevyengine/bevy/blob/main/examples/README.md#optimizing
-inherits = "release"
-opt-level = 'z'
-lto = "fat"
 codegen-units = 1
+inherits = "release"
+lto = "fat"
+opt-level = 'z'
 
 [profile.dev]
 opt-level = 1

@@ -13,8 +13,6 @@ fn main() {
     App::new()
         .insert_resource(windows_settings())
         .add_plugins(DefaultPlugins)
-        // optional plugins
-        // .add_plugin(plugin::DebugPlugin)
         // scenes
         .add_plugin(plugin::ScenePlugin)
         // done
