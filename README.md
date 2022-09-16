@@ -1,8 +1,10 @@
-# [Project Cube Collection](https://wiryls.github.io/cc/)
+# [Project Cube Collection](https://wiryls.github.io/cube-collection/)
 
 This is a simple puzzle game based on [Bevy Engine](https://github.com/bevyengine/bevy).
 
 **Try to move cubes to all target points!**
+
+![level-preview](./docs/images/level-preview.gif)
 
 ## Tutorial
 
@@ -16,12 +18,12 @@ Use:
 ## Rules
 
 - You control all green cubes.
-- Move cubes to endpoints to enter the next level.
-- Cubes with higher priority will absorb lower.
-   - Red > Green
-   - Green > Blue
-   - Blue > Red
-- Cubes with the same color merged when hitted.
+- Move cubes to targets to enter the next level.
+- Cubes may absorb each others.
+   - Red + Green -> Red + Red
+   - Green + Blue -> Green + Green
+   - Blue + Red -> Blue + Blue
+- Cubes in the same color merge when hitting each other.
 
 ## Known issues
 
