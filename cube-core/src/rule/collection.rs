@@ -205,7 +205,7 @@ impl Collection {
         let mut successors = Digraph::with_capacity(number_of_cubes);
 
         // find blocked and marks them with Constraint::Stop.
-        let territory = Territory::new(self.cube.iter().filter(|cube| cube.alive()));
+        let territory = Territory::new(self.cube.iter());
         let mut stopped = Vec::new();
         for cube in self.cube.iter().filter_map(Moving::new) {
             let mut blocked = cube.frontlines().any(|o| self.area.blocked(o));
@@ -254,8 +254,8 @@ impl Collection {
         let mut conflict = Conflict::with_capacity(number_of_cubes);
         self.cube
             .iter()
-            .filter_map(Moving::new)
             .filter(|cube| cube.constraint <= Constraint::Lock)
+            .filter_map(Moving::new)
             .for_each(|cube| conflict.put(&cube, cube.movement, cube.frontlines()));
 
         let mut locked = HashSet::with_capacity(number_of_cubes);
@@ -308,24 +308,21 @@ impl Collection {
 
         let number_of_cubes = self.cube.len();
         let mut connection = DisjointSet::new(number_of_cubes);
-        let territory = QuarterTerritory::new(self.cube.iter().filter(|u| u.alive()));
+        let territory = QuarterTerritory::new(self.cube.iter());
 
-        let mut visit = vec![false; number_of_cubes];
         let mut queue = VecDeque::with_capacity(number_of_cubes);
-        for index in undetermined.iter().cloned() {
-            if visit[index] {
-                continue;
-            }
+        let mut visit = vec![false; number_of_cubes];
 
-            queue.push_back(index);
-            while let Some(index) = queue.pop_front() {
-                visit[index] = true;
-
-                let cube = &self.cube[index];
-                for other in territory.neighbors(cube).filter(|o| !visit[o.index]) {
-                    queue.push_back(other.index);
-
-                    if cube.mergeable(other) {
+        let moving = self.cube.iter().filter(|u| u.unstable() && u.moving());
+        for cube in moving {
+            queue.push_back(cube);
+            while let Some(other) = queue.pop_front() {
+                for other in territory.neighbors(other) {
+                    if cube.absorbable(other) {
+                        if !visit[other.index] {
+                            visit[other.index] = true;
+                            queue.push_back(other);
+                        }
                         connection.join(cube, other);
                     }
                 }
@@ -339,8 +336,18 @@ impl Collection {
                     break;
                 }
             }
-            if matches!(arena.output(), ArenaResult::Draw) {
-                group.into_iter().for_each(|i| self.cube[i].balanced = true);
+
+            use ArenaResult::*;
+            match arena.output() {
+                Draw => group.into_iter().for_each(|i| self.cube[i].balanced = true),
+                Have(kind) => {
+                    for index in group {
+                        if self.cube[index].kind != kind {
+                            impact.insert(index);
+                        }
+                    }
+                }
+                _ => {}
             }
         }
 
@@ -376,8 +383,9 @@ impl Collection {
         connection: &mut DisjointSet,
     ) -> HashSet<usize> {
         let number_of_cubes = self.cube.len();
-        let mut visit = HashSet::with_capacity(number_of_cubes);
         let mut queue = VecDeque::with_capacity(number_of_cubes);
+        let mut visit = HashSet::with_capacity(number_of_cubes);
+
         for index in determined.into_iter() {
             let cube = &self.cube[index];
             if cube.constraint <= constraint && visit.insert(index) {
@@ -497,8 +505,12 @@ impl Cube {
         !self.units.is_empty()
     }
 
-    const fn unstable(&self) -> bool {
-        !self.balanced && !matches!(self.kind, Kind::White)
+    fn unstable(&self) -> bool {
+        !self.balanced && !matches!(self.kind, Kind::White) && self.alive()
+    }
+
+    fn moving(&self) -> bool {
+        self.movement.is_some() && self.alive()
     }
 
     const fn linkable(&self, other: &Self) -> bool {
@@ -507,13 +519,6 @@ impl Cube {
 
     const fn absorbable(&self, other: &Self) -> bool {
         !self.balanced && !other.balanced && self.kind.absorbable(other.kind)
-    }
-
-    const fn mergeable(&self, other: &Self) -> bool {
-        self.kind.linkable(other.kind)
-            || ((self.kind.absorbable(other.kind) || other.kind.absorbable(self.kind))
-                && !self.balanced
-                && !other.balanced)
     }
 
     fn same_movement(&self, other: &Self) -> bool {
@@ -721,8 +726,7 @@ impl<'a> QuarterTerritory<'a> {
                     Movement::Left /* **/ => [Point::new(1, 0), Point::new(1, 1)],
                     Movement::Down /* **/ => [Point::new(0, 0), Point::new(1, 0)],
                     Movement::Up /*   **/ => [Point::new(0, 1), Point::new(1, 1)],
-                    Movement::Right /***/ => [Point::new(0, 0), Point::new(0, 1)],
-                }
+                    Movement::Right /***/ => [Point::new(0, 0), Point::new(0, 1)]}
                     .map(|x| point + x)
                     .into_iter()
                     .filter_map(|point| self.0.get(&point))
@@ -755,10 +759,10 @@ impl Conflict {
         let value = index.into();
         use Movement::*;
         let index = match movement {
-            Left => 0,
-            Down => 1,
-            Up => 3,
-            Right => 2,
+            Left /*  **/ => 0,
+            Down /*  **/ => 1,
+            Up /*    **/ => 3,
+            Right /* **/ => 2,
         };
         contours.for_each(|point| self.0.entry(point).or_default()[index] = Some(value));
     }
