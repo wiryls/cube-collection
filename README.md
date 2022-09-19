@@ -17,13 +17,13 @@ Use:
 
 ## Rules
 
-- You control all green cubes.
-- Move cubes to targets to enter the next level.
+- You could move all GREEN cubes.
+- Move cubes to translucent targets to enter the next level.
 - Cubes may absorb each others.
    - Red + Green -> Red + Red
    - Green + Blue -> Green + Green
    - Blue + Red -> Blue + Blue
-- Cubes in the same color merge when hitting each other.
+- Cubes with the same kind (except white) merge when hitting each other.
 
 ## Known issues
 
