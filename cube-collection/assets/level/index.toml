@@ -1,21 +1,22 @@
 directory = 'level'
 extension = 'toml'
 name_list = [
-  # 'debug',
+  # 'debug-slap',
+  # 'debug-general',
   # 'experiment',
   'introduction',
-  'a_moth_to_flame',
+  'a-moth-to-flame',
   'detour',
   'tetris',
-  'moving_forest',
+  'moving-forest',
   'haircut',
   'matrix',
   'printer',
   'swap',
-  'centrosymmetry_and_axisymmetry',
+  'centrosymmetry-and-axisymmetry',
   'sacrifice',
   'reincarnation',
-  'triangle_power',
-  'now_or_never',
+  'triangle-power',
+  'now-or-never',
   'unlock',
 ]

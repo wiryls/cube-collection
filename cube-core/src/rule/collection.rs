@@ -308,20 +308,28 @@ impl Collection {
 
         let number_of_cubes = self.cube.len();
         let mut connection = DisjointSet::new(number_of_cubes);
-        let territory = QuarterTerritory::new(self.cube.iter());
+        let territory = Territory::new(self.cube.iter());
+        let quartered = QuarterTerritory::new(self.cube.iter());
+        let mut before = BufferedNeighbors::new(|cube| territory.neighbors(cube));
+        let mut after = BufferedNeighbors::new(|cube| quartered.neighbors(cube));
+        let mut rolls = HashSet::new();
 
         let mut queue = VecDeque::with_capacity(number_of_cubes);
         let mut visit = vec![false; number_of_cubes];
 
-        let moving = self.cube.iter().filter(|u| u.unstable() && u.moving());
-        for cube in moving {
+        for cube in self.cube.iter().filter(|u| u.unstable() && u.moving()) {
             queue.push_back(cube);
             while let Some(other) = queue.pop_front() {
-                for other in territory.neighbors(other) {
+                let near = other == cube; // start
+                let source = before.neighbors(other);
+                for &other in after.neighbors(other) {
                     if cube.absorbable(other) {
                         if !visit[other.index] {
                             visit[other.index] = true;
                             queue.push_back(other);
+                        }
+                        if other.moving() && (near || source.contains(other)) {
+                            rolls.insert(other.index);
                         }
                         connection.join(cube, other);
                     }
@@ -342,7 +350,7 @@ impl Collection {
                 Draw => group.into_iter().for_each(|i| self.cube[i].balanced = true),
                 Have(kind) => {
                     for index in group {
-                        if self.cube[index].kind != kind {
+                        if self.cube[index].kind != kind && rolls.contains(&index) {
                             impact.insert(index);
                         }
                     }
@@ -510,7 +518,7 @@ impl Cube {
     }
 
     fn moving(&self) -> bool {
-        self.movement.is_some() && self.alive()
+        self.movement.is_some() && self.constraint == Constraint::Free && self.alive()
     }
 
     const fn linkable(&self, other: &Self) -> bool {
@@ -740,6 +748,35 @@ impl<'a> QuarterTerritory<'a> {
             Some(movement) if cube.constraint <= Constraint::Slap => movement.into(),
             _ => Point::new(0, 0),
         }
+    }
+}
+
+struct BufferedNeighbors<'a, T, I>
+where
+    T: Fn(&'a Cube) -> I,
+    I: Iterator<Item = &'a Cube> + Clone + 'a,
+{
+    source: T,
+    buffer: HashMap<&'a Cube, HashSet<&'a Cube>>,
+}
+
+impl<'a, T, I> BufferedNeighbors<'a, T, I>
+where
+    T: Fn(&'a Cube) -> I,
+    I: Iterator<Item = &'a Cube> + Clone + 'a,
+{
+    fn new(generator: T) -> Self {
+        Self {
+            source: generator,
+            buffer: HashMap::new(),
+        }
+    }
+
+    fn neighbors(&mut self, cube: &'a Cube) -> &HashSet<&'a Cube> {
+        let cube = cube.into();
+        self.buffer
+            .entry(cube)
+            .or_insert_with(|| (self.source)(cube).collect())
     }
 }
 

@@ -1,0 +1,41 @@
+[map]
+raw = '''
+xG       
+
+ R R
+  R    R
+ B
+R R---RRR
+  R  R
+  R   R
+ R
+'''
+
+[[map.commands]]
+binding = [[1, 2], [3, 2], [2, 3], [2, 6], [2, 7], [6, 7]]
+content = "L"
+looping = true
+
+[[map.commands]]
+binding = [[6, 5], [7, 5]]
+content = "U"
+looping = true
+
+[[map.commands]]
+binding = [[8, 5]]
+content = "D"
+looping = true
+
+[[map.commands]]
+binding = [[0, 5], [1, 4], [1, 8], [2, 6], [2, 7], [5, 6]]
+content = "R"
+looping = true
+
+[[map.commands]]
+binding = [[7, 3]]
+content = "U2D2"
+looping = true
+
+[info]
+author = "w"
+title = "Debug Slap"
