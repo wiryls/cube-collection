@@ -1,0 +1,11 @@
+[map]
+raw = '''
+        W
+  W     |
+  R  W G|G W  R
+        |     W
+ x      |      x '''
+
+[info]
+author = "w"
+title = "Centrosymmetry and Axisymmetry"

@@ -1,0 +1,13 @@
+[map]
+raw = '''
+
+     B   B
+     W   W
+ G          xRx
+     W   W
+     B   B
+               '''
+
+[info]
+author = "w"
+title = "A Moth to Flame"
