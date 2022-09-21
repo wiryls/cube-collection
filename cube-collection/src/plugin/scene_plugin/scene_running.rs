@@ -41,6 +41,7 @@ pub enum WorldChanged {
     Reset,
     Restart,
     Next,
+    Last,
 }
 
 fn setup_world(mut change_world: EventWriter<WorldChanged>) {
@@ -61,6 +62,7 @@ fn switch_world(
             Reset => world_seeds.reset(),
             Restart => {}
             Next => drop(world_seeds.next()),
+            Last => drop(world_seeds.last()),
         }
     }
 

@@ -23,6 +23,16 @@ impl Seeds {
             true
         }
     }
+
+    pub fn last(&mut self) -> bool {
+        if self.head == 0 {
+            self.head = self.list.len().max(1) - 1;
+            false
+        } else {
+            self.head -= 1;
+            true
+        }
+    }
 }
 
 impl From<Vec<Seed>> for Seeds {

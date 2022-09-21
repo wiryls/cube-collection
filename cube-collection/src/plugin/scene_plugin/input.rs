@@ -61,6 +61,7 @@ fn keyboard(
             KeyCode::Escape if presse => Command::Control(WorldChanged::Reset),
             KeyCode::R if presse => Command::Control(WorldChanged::Restart),
             KeyCode::N if presse => Command::Control(WorldChanged::Next),
+            KeyCode::L if presse => Command::Control(WorldChanged::Last),
 
             // movement
             KeyCode::W | KeyCode::Up => actions.input(Movement::Up, presse),
