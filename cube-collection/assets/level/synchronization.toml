@@ -1,0 +1,20 @@
+[map]
+raw = '''
+G-             x
+WWW-----------BW
+R|             x
+'''
+
+[[map.commands]]
+binding = [[0, 2]]
+content = "R"
+looping = true
+
+[[map.commands]]
+binding = [[1, 1]]
+content = "U"
+looping = true
+
+[info]
+author = "w"
+title = "Synchronization"

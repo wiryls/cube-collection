@@ -9,6 +9,7 @@ name_list = [
   'detour',
   'tetris',
   'moving-forest',
+  'moving-together',
   'haircut',
   'matrix',
   'printer',
@@ -17,6 +18,7 @@ name_list = [
   'sacrifice',
   'reincarnation',
   'triangle-power',
+  'synchronization',
   'now-or-never',
   'unlock',
 ]

@@ -10,9 +10,10 @@ This is a simple puzzle game based on [Bevy Engine](https://github.com/bevyengin
 
 Use:
 
-- `Arrow Keys` to move,
-- `R` as restart,
+- `Arrow Keys` or `W/A/S/D` to move,
+- `R` to restart,
 - `N` to skip this level,
+- `L` to return the previous level,
 - `ESC` to reset the game.
 
 ## Rules
@@ -23,6 +24,7 @@ Use:
    - Red + Green -> Red + Red
    - Green + Blue -> Green + Green
    - Blue + Red -> Blue + Blue
+   - Red + Green + Blue -> Red + Green + Blue
 - Cubes with the same kind (except white) merge when hitting each other.
 
 ## Known issues
