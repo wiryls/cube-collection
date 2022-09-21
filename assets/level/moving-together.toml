@@ -1,0 +1,21 @@
+[map]
+raw = '''
+
+ G----  G----
+ |   |  |   |
+ | W |  |W G/
+ | G |  |   |
+ |-/-|  |---|
+      xx      
+      xx
+ G----  G----
+ |- W|  |   |
+ |   |  | WG/
+ |   |  |   |
+ |---|  |---|
+
+'''
+
+[info]
+author = "w"
+title = "Moving Together"
