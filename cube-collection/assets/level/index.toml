@@ -1,6 +1,7 @@
 directory = 'level'
 extension = 'toml'
 name_list = [
+  # 'debug-circular-dependency',
   # 'debug-slap',
   # 'debug-general',
   # 'experiment',

@@ -27,11 +27,20 @@ fn loading_enter(mut commands: Commands) {
     commands.insert_resource(LoadLevels::new(r"level/index.toml"));
 }
 
-fn loading_updated(mut commands: Commands, mut events: EventReader<LevelLoadingUpdated>) {
+fn loading_updated(
+    mut commands: Commands,
+    mut events: EventReader<LevelLoadingUpdated>,
+    mut progress: Local<(usize, usize)>,
+) {
     for event in events.iter() {
         use LevelLoadingUpdated::*;
         match event {
-            Loading { total, done } => info!("Loading: {}/{}", done, total),
+            Loading { total, done } => {
+                if progress.0 != *total || progress.1 != *done {
+                    *progress = (*total, *done);
+                    info!("Loading: {}/{}", done, total);
+                }
+            }
             Failure { which } => error!("Failed to load: {}", which),
             Success { seeds } => {
                 commands.insert_resource(Seeds::from(seeds.clone()));

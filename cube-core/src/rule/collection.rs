@@ -323,7 +323,7 @@ impl Collection {
                 let near = other == cube; // start
                 let source = before.neighbors(other);
                 for &other in after.neighbors(other) {
-                    if cube.absorbable(other) {
+                    if cube.absorbable(other) || other.absorbable(cube) {
                         if !visit[other.index] {
                             visit[other.index] = true;
                             queue.push_back(other);
