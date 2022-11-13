@@ -100,27 +100,27 @@ impl Collection {
     }
 
     pub fn commit(&mut self, movement: Option<Movement>) {
-        // update and prepare next move
+        // clean and update movement.
         self.update_cube_status();
         self.update_cube_movement(movement);
 
-        // connect cube with different kinds.
-        self.process_different_kinds();
+        // try to connect cubes directly.
+        self.process_imbalanced_cubes();
 
         // find blocked cubes and mark them with Constraint::Stop, and
-        // also find out the movement dependencies between cubes.
-        let successors = self.process_stopped_cubes();
+        // also find out the movement dependencies between them.
+        let successors = self.process_blocked_cubes();
 
-        // find conflicts and marks them with Constraint::Lock.
-        let (impact, undetermined) = self.process_locked_cubes(&successors);
+        // find conflicts and mark them with Constraint::Lock.
+        let competed = self.process_conflicted_cubes(&successors);
 
-        // find impact position and marks them with Constraint::Slap.
-        self.process_slapped_cubes(&successors, impact, undetermined);
+        // solve competed positions and mark them with Constraint::Slap.
+        self.process_competed_cubes(competed);
 
-        // update to next positions.
+        // update cubes with next positions.
         self.update_cube_positions();
 
-        // do some cleaning
+        // do some cleaning.
         self.retain_alive_cube();
     }
 
@@ -154,7 +154,7 @@ impl Collection {
         }
     }
 
-    fn process_different_kinds(&mut self) {
+    fn process_imbalanced_cubes(&mut self) {
         // prepare to connect
         let number_of_cubes = self.cube.len();
         let unstable = self.cube.iter().filter(|u| u.alive() && u.unstable());
@@ -198,7 +198,7 @@ impl Collection {
         }
     }
 
-    fn process_stopped_cubes(&mut self) -> Digraph {
+    fn process_blocked_cubes(&mut self) -> Digraph {
         // preapre
         let number_of_cubes = self.cube.len();
         let mut connection = DisjointSet::new(number_of_cubes);
@@ -248,7 +248,7 @@ impl Collection {
         successors
     }
 
-    fn process_locked_cubes(&mut self, successors: &Digraph) -> (HashSet<usize>, HashSet<usize>) {
+    fn process_conflicted_cubes(&mut self, successors: &Digraph) -> HashSet<(usize, usize)> {
         let number_of_cubes = self.cube.len();
         let mut connection = DisjointSet::new(number_of_cubes);
         let mut conflict = Conflict::with_capacity(number_of_cubes);
@@ -259,21 +259,16 @@ impl Collection {
             .for_each(|cube| conflict.put(&cube, cube.movement, cube.frontlines()));
 
         let mut locked = HashSet::with_capacity(number_of_cubes);
-        let mut impact = HashSet::with_capacity(number_of_cubes);
-        let mut undetermined = HashSet::with_capacity(number_of_cubes);
+        let mut competed = HashSet::with_capacity(number_of_cubes);
         for race in conflict.overlaps() {
             let cube = &self.cube;
             let size = race.len();
             let half = size >> 1;
             for i in 0..race.len() {
                 let it = match race[i] {
-                    Some(index) => index,
-                    ___________ => continue,
+                    Some(index) if !locked.contains(&index) => index,
+                    _ => continue,
                 };
-
-                if cube[it].constraint > Constraint::Lock || locked.contains(&it) {
-                    continue;
-                }
 
                 let prev = race[(i + size - 1) % size];
                 let next = race[(i + /* **/ 1) % size];
@@ -282,11 +277,16 @@ impl Collection {
                     continue;
                 }
 
-                match race[(i + half) % size] {
-                    None => (),
-                    Some(that) if cube[it].absorbable(&cube[that]) => drop(undetermined.insert(it)),
-                    Some(____) => drop(impact.insert(it)),
-                };
+                if let Some(oppo) = race[(i + half) % size] {
+                    let (lhs, rhs) = if cube[it].absorbable(&cube[oppo]) {
+                        (it, oppo)
+                    } else if cube[oppo].absorbable(&cube[it]) {
+                        (oppo, it)
+                    } else {
+                        (it.min(oppo), it.max(oppo))
+                    };
+                    competed.insert((lhs, rhs));
+                }
             }
         }
 
@@ -295,41 +295,30 @@ impl Collection {
             .for_each(|index| self.cube[index].constraint = Constraint::Lock);
         self.link(&mut connection);
 
-        (impact, undetermined)
+        competed
     }
 
-    fn process_slapped_cubes(
-        &mut self,
-        successors: &Digraph,
-        mut impact: HashSet<usize>,
-        undetermined: HashSet<usize>,
-    ) {
+    fn process_competed_cubes(&mut self, competed: HashSet<(usize, usize)>) {
+        // clean balanced status
         self.cube.iter_mut().for_each(|cube| cube.balanced = false);
 
+        // prepare to rebalance
         let number_of_cubes = self.cube.len();
+        let unstable = self.cube.iter().filter(|u| u.alive() && u.unstable());
+        let territory = QuarterTerritory::new(unstable.clone());
         let mut connection = DisjointSet::new(number_of_cubes);
-        let territory = Territory::new(self.cube.iter());
-        let quartered = QuarterTerritory::new(self.cube.iter());
-        let mut before = BufferedNeighbors::new(|cube| territory.neighbors(cube));
-        let mut after = BufferedNeighbors::new(|cube| quartered.neighbors(cube));
-        let mut rolls = HashSet::new();
 
         let mut queue = VecDeque::with_capacity(number_of_cubes);
         let mut visit = vec![false; number_of_cubes];
 
-        for cube in self.cube.iter().filter(|u| u.unstable() && u.moving()) {
+        for cube in unstable.clone() {
             queue.push_back(cube);
             while let Some(other) = queue.pop_front() {
-                let near = other == cube; // start
-                let source = before.neighbors(other);
-                for &other in after.neighbors(other) {
-                    if cube.absorbable(other) || other.absorbable(cube) {
+                for other in territory.neighbors(other) {
+                    if cube.absorbable(other) {
                         if !visit[other.index] {
                             visit[other.index] = true;
                             queue.push_back(other);
-                        }
-                        if other.moving() && (near || source.contains(other)) {
-                            rolls.insert(other.index);
                         }
                         connection.join(cube, other);
                     }
@@ -337,6 +326,7 @@ impl Collection {
             }
         }
 
+        // absorbable testes
         for group in connection.groups() {
             let mut arena = Arena::new();
             for &index in group.iter() {
@@ -347,27 +337,39 @@ impl Collection {
 
             use ArenaResult::*;
             match arena.output() {
-                Draw => group.into_iter().for_each(|i| self.cube[i].balanced = true),
                 Have(kind) => {
-                    for index in group {
-                        if self.cube[index].kind != kind && rolls.contains(&index) {
-                            impact.insert(index);
+                    let iter = group
+                        .iter()
+                        .filter(|&&i| self.cube[i].kind == kind)
+                        .map(|&i| self.cube[i].movement);
+                    let movement = Agreement::vote(iter);
+
+                    if let Some(movement) = movement {
+                        for index in group {
+                            let cube = &mut self.cube[index];
+                            if cube.kind != kind
+                                && cube.constraint < Constraint::Slap
+                                && cube.movement != Some(movement)
+                            {
+                                cube.constraint = Constraint::Slap;
+                            }
                         }
                     }
                 }
+                Draw => group.into_iter().for_each(|i| self.cube[i].balanced = true),
                 _ => {}
-            }
+            };
         }
 
-        for index in undetermined {
-            if self.cube[index].balanced {
-                impact.insert(index);
+        for (l, r) in competed {
+            let c = &mut self.cube;
+            if c[l].constraint < Constraint::Slap && c[r].constraint < Constraint::Slap {
+                c[r].constraint = Constraint::Slap;
+                if !c[l].absorbable(&c[r]) {
+                    c[l].constraint = Constraint::Slap;
+                }
             }
         }
-
-        self.connect(impact, &successors, Constraint::Slap, &mut connection)
-            .into_iter()
-            .for_each(|index| self.cube[index].constraint = Constraint::Slap);
     }
 
     fn retain_alive_cube(&mut self) {
@@ -456,18 +458,11 @@ impl Collection {
             Motion::from_iter(others.into_iter())
         };
         let contours = Contours::new(&units).into();
-        let movement = {
-            let mut agreement = Agreement::new();
-            for &i in from.iter() {
-                if cube[i].kind == kind {
-                    agreement.submit(cube[i].movement);
-                    if agreement.fail() {
-                        break;
-                    }
-                }
-            }
-            agreement.result().unwrap_or_default()
-        };
+        let movement = Agreement::vote(
+            from.iter()
+                .filter(|&&i| cube[i].kind == kind)
+                .map(|&i| cube[i].movement),
+        );
         let constraint = {
             let mut constraint = Constraint::Free;
             for &i in from.iter() {
@@ -515,10 +510,6 @@ impl Cube {
 
     fn unstable(&self) -> bool {
         !self.balanced && !matches!(self.kind, Kind::White) && self.alive()
-    }
-
-    fn moving(&self) -> bool {
-        self.movement.is_some() && self.constraint == Constraint::Free && self.alive()
     }
 
     const fn linkable(&self, other: &Self) -> bool {
@@ -748,35 +739,6 @@ impl<'a> QuarterTerritory<'a> {
             Some(movement) if cube.constraint <= Constraint::Slap => movement.into(),
             _ => Point::new(0, 0),
         }
-    }
-}
-
-struct BufferedNeighbors<'a, T, I>
-where
-    T: Fn(&'a Cube) -> I,
-    I: Iterator<Item = &'a Cube> + Clone + 'a,
-{
-    source: T,
-    buffer: HashMap<&'a Cube, HashSet<&'a Cube>>,
-}
-
-impl<'a, T, I> BufferedNeighbors<'a, T, I>
-where
-    T: Fn(&'a Cube) -> I,
-    I: Iterator<Item = &'a Cube> + Clone + 'a,
-{
-    fn new(generator: T) -> Self {
-        Self {
-            source: generator,
-            buffer: HashMap::new(),
-        }
-    }
-
-    fn neighbors(&mut self, cube: &'a Cube) -> &HashSet<&'a Cube> {
-        let cube = cube.into();
-        self.buffer
-            .entry(cube)
-            .or_insert_with(|| (self.source)(cube).collect())
     }
 }
 

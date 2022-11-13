@@ -16,7 +16,7 @@ impl World {
     pub fn new(seed: &Seed) -> Self {
         Self {
             state: cube_core::CubeCore::new(&seed),
-            timer: Timer::new(Duration::from_millis(200), true),
+            timer: Timer::new(Duration::from_millis(1000), true),
         }
     }
 

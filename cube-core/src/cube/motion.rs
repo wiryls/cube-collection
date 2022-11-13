@@ -9,7 +9,18 @@ use super::Movement;
 pub struct Agreement(Option<Option<Option<Movement>>>);
 
 impl Agreement {
-    pub fn new() -> Self {
+    pub fn vote(iter: impl Iterator<Item = Option<Movement>>) -> Option<Movement> {
+        let mut it = Self::new();
+        for choice in iter {
+            it.submit(choice);
+            if it.fail() {
+                break;
+            }
+        }
+        it.result().unwrap_or_default()
+    }
+
+    pub const fn new() -> Self {
         Self(Some(None))
     }
 
