@@ -1,0 +1,17 @@
+[map]
+raw = '''
+x
+ BRB
+ |-/
+ G 
+
+'''
+
+[[map.commands]]
+binding = [[1, 1], [2, 1]]
+content = "LR"
+looping = true
+
+[info]
+author = "w"
+title = "Debug Circular Dependency"

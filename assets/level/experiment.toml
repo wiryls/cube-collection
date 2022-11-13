@@ -1,15 +1,19 @@
 [map]
 raw = '''
 
- B  x  B 
-  B   B
-   B B
- x  G  x
-   B B
-  B   B
- B  x  B
-
+ RBG 
+x
 '''
+
+[[map.commands]]
+binding = [[1, 1]]
+content = "UD"
+looping = true
+
+[[map.commands]]
+binding = [[2, 1]]
+content = "DU"
+looping = true
 
 [info]
 author = "w"
