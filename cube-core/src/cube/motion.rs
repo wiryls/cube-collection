@@ -9,7 +9,7 @@ use super::Movement;
 pub struct Agreement(Option<Option<Option<Movement>>>);
 
 impl Agreement {
-    pub fn vote(iter: impl Iterator<Item = Option<Movement>>) -> Option<Movement> {
+    pub fn vote(iter: impl Iterator<Item = Option<Movement>>) -> Option<Option<Movement>> {
         let mut it = Self::new();
         for choice in iter {
             it.submit(choice);
@@ -17,7 +17,7 @@ impl Agreement {
                 break;
             }
         }
-        it.result().unwrap_or_default()
+        it.result()
     }
 
     pub const fn new() -> Self {

@@ -1,18 +1,19 @@
 directory = 'level'
 extension = 'toml'
 name_list = [
-  # 'debug-circular-dependency',
   # 'debug-slap',
+  # 'debug-slap-2',
+  # 'debug-circular-dependency',
   # 'debug-general',
   # 'experiment',
   'introduction',
   'a-moth-to-flame',
   'detour',
   'tetris',
-  'moving-forest',
   'moving-together',
   'haircut',
   'matrix',
+  'moving-forest',
   'printer',
   'swap',
   'centrosymmetry-and-axisymmetry',

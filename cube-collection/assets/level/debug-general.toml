@@ -3,7 +3,7 @@ raw = '''
    W
  R R
         R      B
- W B B    B B R R
+WW B B    B B R R
       B R  B   B  W
   R
  B B  R G B- B
@@ -28,7 +28,7 @@ content = "L"
 looping = true
 
 [[map.commands]]
-binding = [[1, 1], [1, 3], [5, 3], [10, 3], [14, 3], [1, 6], [6, 6], [10, 6]]
+binding = [[1, 1], [0, 3], [1, 3], [5, 3], [10, 3], [14, 3], [1, 6], [6, 6], [10, 6]]
 content = "R"
 looping = true
 

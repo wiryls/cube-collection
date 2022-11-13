@@ -115,7 +115,7 @@ impl Collection {
         let competed = self.process_conflicted_cubes(&successors);
 
         // solve competed positions and mark them with Constraint::Slap.
-        self.process_competed_cubes(competed);
+        self.process_competed_cubes(&successors, competed);
 
         // update cubes with next positions.
         self.update_cube_positions();
@@ -240,9 +240,14 @@ impl Collection {
             }
         }
 
-        self.connect(stopped, &successors, Constraint::Stop, &mut connection)
-            .into_iter()
-            .for_each(|index| self.cube[index].constraint = Constraint::Stop);
+        self.conduct(
+            stopped,
+            &successors,
+            Constraint::Stop,
+            Some(&mut connection),
+        )
+        .into_iter()
+        .for_each(|index| self.cube[index].constraint = Constraint::Stop);
         self.link(&mut connection);
 
         successors
@@ -290,7 +295,7 @@ impl Collection {
             }
         }
 
-        self.connect(locked, &successors, Constraint::Lock, &mut connection)
+        self.conduct(locked, &successors, Constraint::Lock, Some(&mut connection))
             .into_iter()
             .for_each(|index| self.cube[index].constraint = Constraint::Lock);
         self.link(&mut connection);
@@ -298,7 +303,7 @@ impl Collection {
         competed
     }
 
-    fn process_competed_cubes(&mut self, competed: HashSet<(usize, usize)>) {
+    fn process_competed_cubes(&mut self, successors: &Digraph, competed: HashSet<(usize, usize)>) {
         // clean balanced status
         self.cube.iter_mut().for_each(|cube| cube.balanced = false);
 
@@ -327,6 +332,7 @@ impl Collection {
         }
 
         // absorbable testes
+        let mut loser = HashSet::new();
         for group in connection.groups() {
             let mut arena = Arena::new();
             for &index in group.iter() {
@@ -342,7 +348,7 @@ impl Collection {
                         .iter()
                         .filter(|&&i| self.cube[i].kind == kind)
                         .map(|&i| self.cube[i].movement);
-                    let movement = Agreement::vote(iter);
+                    let movement = Agreement::vote(iter).unwrap_or_default();
 
                     if let Some(movement) = movement {
                         for index in group {
@@ -351,7 +357,7 @@ impl Collection {
                                 && cube.constraint < Constraint::Slap
                                 && cube.movement != Some(movement)
                             {
-                                cube.constraint = Constraint::Slap;
+                                loser.insert(index);
                             }
                         }
                     }
@@ -364,12 +370,16 @@ impl Collection {
         for (l, r) in competed {
             let c = &mut self.cube;
             if c[l].constraint < Constraint::Slap && c[r].constraint < Constraint::Slap {
-                c[r].constraint = Constraint::Slap;
+                loser.insert(r);
                 if !c[l].absorbable(&c[r]) {
-                    c[l].constraint = Constraint::Slap;
+                    loser.insert(l);
                 }
             }
         }
+
+        self.conduct(loser, &successors, Constraint::Lock, None)
+            .into_iter()
+            .for_each(|index| self.cube[index].constraint = Constraint::Slap);
     }
 
     fn retain_alive_cube(&mut self) {
@@ -385,12 +395,12 @@ impl Collection {
         }
     }
 
-    fn connect(
+    fn conduct(
         &self,
         determined: impl IntoIterator<Item = usize>,
         successors: &Digraph,
         constraint: Constraint,
-        connection: &mut DisjointSet,
+        connection: Option<&mut DisjointSet>,
     ) -> HashSet<usize> {
         let number_of_cubes = self.cube.len();
         let mut queue = VecDeque::with_capacity(number_of_cubes);
@@ -411,8 +421,11 @@ impl Collection {
                     if visit.insert(successor.index) {
                         queue.push_back(successor);
                     }
-                    if precursor.linkable(successor) {
-                        connection.join(precursor, successor);
+
+                    if let Some(&mut ref mut connection) = connection {
+                        if precursor.linkable(successor) {
+                            connection.join(precursor, successor);
+                        }
                     }
                 }
             }
@@ -462,7 +475,8 @@ impl Collection {
             from.iter()
                 .filter(|&&i| cube[i].kind == kind)
                 .map(|&i| cube[i].movement),
-        );
+        )
+        .unwrap_or_default();
         let constraint = {
             let mut constraint = Constraint::Free;
             for &i in from.iter() {
