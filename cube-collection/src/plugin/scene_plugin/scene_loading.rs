@@ -51,7 +51,7 @@ fn loading_updated(
 }
 
 fn hard_reset(mut commands: Commands, mut events: EventReader<HardReset>) {
-    for _ in events.iter().last() {
+    while let Some(_) = events.iter().last() {
         commands.insert_resource(NextState(SceneState::Loading));
         commands.insert_resource(LoadLevels::new(r"level/index.toml"));
     }

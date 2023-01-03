@@ -25,7 +25,7 @@ pub struct TranslateColor {
 impl TranslateColor {
     pub fn new(from: Kind, to: Kind, duration: Duration) -> Self {
         Self {
-            elapse: Timer::new(duration, false),
+            elapse: Timer::new(duration, TimerMode::Repeating),
             source: Self::from_kind_to_vec3(from),
             target: Self::from_kind_to_vec3(to),
         }
@@ -128,7 +128,7 @@ impl TranslatePosition {
     pub fn make(cube: &Cubic, position: Point, diff: &Diff, duration: Duration) -> Option<Self> {
         if let Some(target) = diff.position {
             return Some(TranslatePosition {
-                elapse: Timer::new(duration, false),
+                elapse: Timer::new(duration, TimerMode::Once),
                 parameters: Position::Move(position, target),
             });
         }
@@ -137,7 +137,7 @@ impl TranslatePosition {
         let constraint = diff.constraint.unwrap_or(cube.constraint);
         if constraint == Constraint::Stop || movement.is_none() {
             return Some(TranslatePosition {
-                elapse: Timer::new(Duration::from_secs(0), false),
+                elapse: Timer::new(Duration::from_secs(0), TimerMode::Once),
                 parameters: Position::Stop(position),
             });
         }
@@ -150,7 +150,7 @@ impl TranslatePosition {
         };
 
         Some(TranslatePosition {
-            elapse: Timer::new(duration, true),
+            elapse: Timer::new(duration, TimerMode::Repeating),
             parameters: Position::Spin(position, movement.into(), limit),
         })
     }
@@ -233,7 +233,7 @@ pub struct TranslateAlpha {
 impl TranslateAlpha {
     pub fn new(from: f32, to: f32, cycle: Duration) -> Self {
         Self {
-            elapse: Timer::new(cycle, true),
+            elapse: Timer::new(cycle, TimerMode::Repeating),
             source: from,
             target: to,
         }

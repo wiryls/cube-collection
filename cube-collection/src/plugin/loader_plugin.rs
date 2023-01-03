@@ -33,6 +33,7 @@ pub enum LevelLoadingUpdated {
     Success { seeds: Vec<Seed> },
 }
 
+#[derive(Resource)]
 pub struct LoadLevels(LoadLevelState);
 
 impl LoadLevels {

@@ -1,6 +1,6 @@
 # [Project Cube Collection](https://wiryls.github.io/cube-collection/)
 
-A dead simple puzzle game based on [Bevy Engine](https://github.com/bevyengine/bevy), move cubes to **cover all targets** as shown in the picture below.
+A dead simple puzzle game based on [Bevy Engine 0.9.1](https://github.com/bevyengine/bevy), move cubes to **cover all targets** as shown in the picture below.
 
 ![level-preview](./docs/images/level-preview.gif)
 

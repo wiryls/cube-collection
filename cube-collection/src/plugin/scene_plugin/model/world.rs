@@ -1,5 +1,6 @@
 use std::{collections::HashMap, time::Duration};
 
+use bevy::prelude::*;
 use bevy::time::Timer;
 use cube_core::{
     cube::{Movement, Point},
@@ -7,6 +8,7 @@ use cube_core::{
     Diff, Unit,
 };
 
+#[derive(Resource)]
 pub struct World {
     state: cube_core::CubeCore,
     timer: Timer,
@@ -16,7 +18,7 @@ impl World {
     pub fn new(seed: &Seed) -> Self {
         Self {
             state: cube_core::CubeCore::new(&seed),
-            timer: Timer::new(Duration::from_millis(200), true),
+            timer: Timer::new(Duration::from_millis(200), TimerMode::Repeating),
         }
     }
 

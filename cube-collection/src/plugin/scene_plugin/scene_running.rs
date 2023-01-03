@@ -4,7 +4,7 @@ use iyes_loopless::prelude::*;
 use super::{
     common::{bundle, component, system},
     model,
-    view::{GridView, ViewUpdated},
+    view::{GridView, ViewRect, ViewUpdated},
     SceneState,
 };
 
@@ -71,11 +71,11 @@ fn switch_world(
         entities.for_each(|i| commands.entity(i).despawn_recursive());
 
         // [1] update grid
-        view.set_source(UiRect {
-            left: 0,
-            right: seed.size.width,
+        view.set_source(ViewRect {
             top: 0,
             bottom: seed.size.height,
+            left: 0,
+            right: seed.size.width,
         });
         let mapper = view.mapping();
 

@@ -61,7 +61,7 @@ pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
         let translation = (mapper.locate(&goal) + delta).extend(2.);
 
         commands
-            .spawn_bundle(DestinationBundle {
+            .spawn(DestinationBundle {
                 bound: Earthbound,
                 scale: AutoRescale {
                     point: goal,
@@ -92,7 +92,7 @@ pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
         let points = style::cube_boundaries(item.neighborhood, 0.95);
         let translation = (mapper.locate(&item.position) + delta).extend(1.);
 
-        commands.spawn_bundle(CubeBundle {
+        commands.spawn(CubeBundle {
             cubic: Cubic {
                 id: item.id,
                 kind: item.kind,
@@ -123,7 +123,7 @@ pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
     // create floor
     let bottom_left = Point::new(0, 0);
     let points = boundary_builder.build(0.05);
-    commands.spawn_bundle(FloorBundle {
+    commands.spawn(FloorBundle {
         bound: Earthbound,
         scale: AutoRescale {
             point: bottom_left,

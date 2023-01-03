@@ -14,8 +14,16 @@ pub struct ViewUpdated {
     pub mapper: ViewMapper,
 }
 
+#[derive(Clone, Copy, PartialEq)]
+pub struct ViewRect<T> {
+    pub top: T,
+    pub bottom: T,
+    pub left: T,
+    pub right: T,
+}
+
 fn setup_camera(mut commands: Commands) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
 }
 
 fn update_gridview(
@@ -30,16 +38,16 @@ fn update_gridview(
         // multiple windows are not supported, we just watch the primary one.
         let id = window.id();
 
-        for event in window_resized.iter().filter(|x| x.id == id).last() {
+        while let Some(event) = window_resized.iter().filter(|x| x.id == id).last() {
             // rect is defined by camera's ScalingMode::WindowSize
             let p = event.width.min(event.height) * PADDING_RATE;
             let w = event.width * 0.5 - p;
             let h = event.height * 0.5 - p;
-            let r = UiRect {
-                left: -w,
-                right: w,
+            let r = ViewRect {
                 top: h,
                 bottom: -h,
+                left: -w,
+                right: w,
             };
 
             if view.set_target(r) && view.available() {
@@ -50,17 +58,17 @@ fn update_gridview(
     }
 }
 
-#[derive(Default)]
+#[derive(Default, Resource)]
 pub struct GridView {
     // input
-    source: Option<UiRect<i32>>,
-    target: Option<UiRect<f32>>,
+    source: Option<ViewRect<i32>>,
+    target: Option<ViewRect<f32>>,
     // output
     mapper: ViewMapper,
 }
 
 impl GridView {
-    pub fn set_source(&mut self, source: UiRect<i32>) -> bool {
+    pub fn set_source(&mut self, source: ViewRect<i32>) -> bool {
         let update = match self.source {
             None => true,
             Some(rect) => rect != source,
@@ -72,7 +80,7 @@ impl GridView {
         update
     }
 
-    pub fn set_target(&mut self, target: UiRect<f32>) -> bool {
+    pub fn set_target(&mut self, target: ViewRect<f32>) -> bool {
         let update = match self.target {
             None => true,
             Some(rect) => rect != target,
@@ -101,7 +109,7 @@ impl GridView {
             let unit = f32::min(tw / sw, th / sh);
 
             self.mapper = ViewMapper {
-                source: (source.left, source.top),
+                source: (source.left as i32, source.top as i32),
                 target: Vec2 {
                     x: target.left + (tw - sw * unit) / 2.,
                     y: target.top - (th - sh * unit) / 2.,

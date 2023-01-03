@@ -346,11 +346,11 @@ impl Collection {
                 Have(kind) => {
                     let iter = group
                         .iter()
-                        .filter(|&&i| self.cube[i].kind == kind)
-                        .map(|&i| self.cube[i].movement);
-                    let movement = Agreement::vote(iter).unwrap_or_default();
+                        .map(|i| &self.cube[*i])
+                        .filter(|c| c.kind == kind && c.constraint < Constraint::Slap)
+                        .map(|c| c.movement);
 
-                    if let Some(movement) = movement {
+                    if let Some(movement) = Agreement::vote(iter).unwrap_or_default() {
                         for index in group {
                             let cube = &mut self.cube[index];
                             if cube.kind != kind
@@ -702,12 +702,11 @@ impl<'a> QuarterTerritory<'a> {
         I: Iterator<Item = C> + Clone,
         C: Into<&'a Cube>,
     {
-        let mut capacity = 0;
-        for cube in it.clone().map(Into::into) {
-            for _ in cube.units.iter().filter(|unit| unit.is_border()) {
-                capacity += 4;
-            }
-        }
+        let capacity = 4 * it
+            .clone()
+            .map(Into::into)
+            .map(|cube| cube.units.iter().filter(|unit| unit.is_border()).count())
+            .sum::<usize>();
 
         let mut map = HashMap::with_capacity(capacity);
         for cube in it.clone().map(Into::into) {

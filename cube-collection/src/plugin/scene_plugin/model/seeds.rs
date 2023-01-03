@@ -1,5 +1,7 @@
+use bevy::prelude::*;
 use cube_core::seed::Seed;
 
+#[derive(Resource)]
 pub struct Seeds {
     list: Vec<Seed>,
     head: usize,
