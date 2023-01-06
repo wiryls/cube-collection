@@ -2,7 +2,9 @@
 
 A dead simple puzzle game based on [Bevy Engine 0.9.1](https://github.com/bevyengine/bevy), move cubes to **cover all targets** as shown in the picture below.
 
-![level-preview](./docs/images/level-preview.gif)
+![a-moth-to-flame](./docs/images/level-preview-a-moth-to-flame.gif)
+
+![sacrifice](./docs/images/level-preview-sacrifice.gif)
 
 Try the online version at my [GitHub Pages](https://wiryls.github.io/cube-collection/)!
 
