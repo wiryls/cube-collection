@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use iyes_loopless::prelude::*;
 
 use super::{model::Seeds, SceneState};
 use crate::plugin::loader_plugin::{LevelLoadingUpdated, LoadLevels, LoaderPlugin};
@@ -7,19 +6,19 @@ use crate::plugin::loader_plugin::{LevelLoadingUpdated, LoadLevels, LoaderPlugin
 #[derive(Clone)]
 pub struct HardReset();
 
-pub fn setup(appx: &mut App) {
-    appx.add_plugin(LoaderPlugin)
-        .add_enter_system(SceneState::Loading, loading_enter)
+pub fn setup(app: &mut App) {
+    app.add_plugin(LoaderPlugin)
         .add_event::<HardReset>()
+        .add_system(loading_enter.in_schedule(OnEnter(SceneState::Loading)))
         .add_system(
             loading_updated
-                .run_in_state(SceneState::Loading)
-                .run_on_event::<LevelLoadingUpdated>(),
+                .run_if(in_state(SceneState::Loading))
+                .run_if(on_event::<LevelLoadingUpdated>()),
         )
         .add_system(
             hard_reset
-                .run_not_in_state(SceneState::Loading)
-                .run_on_event::<HardReset>(),
+                .run_if(in_state(SceneState::Running))
+                .run_if(on_event::<HardReset>()),
         );
 }
 
@@ -31,6 +30,7 @@ fn loading_updated(
     mut commands: Commands,
     mut events: EventReader<LevelLoadingUpdated>,
     mut progress: Local<(usize, usize)>,
+    mut next_state: ResMut<NextState<SceneState>>,
 ) {
     for event in events.iter() {
         use LevelLoadingUpdated::*;
@@ -44,15 +44,19 @@ fn loading_updated(
             Failure { which } => error!("Failed to load: {}", which),
             Success { seeds } => {
                 commands.insert_resource(Seeds::from(seeds.clone()));
-                commands.insert_resource(NextState(SceneState::Running));
+                next_state.set(SceneState::Running);
             }
         }
     }
 }
 
-fn hard_reset(mut commands: Commands, mut events: EventReader<HardReset>) {
+fn hard_reset(
+    mut commands: Commands,
+    mut events: EventReader<HardReset>,
+    mut next_state: ResMut<NextState<SceneState>>,
+) {
     while let Some(_) = events.iter().last() {
-        commands.insert_resource(NextState(SceneState::Loading));
+        next_state.set(SceneState::Loading);
         commands.insert_resource(LoadLevels::new(r"level/index.toml"));
     }
 }

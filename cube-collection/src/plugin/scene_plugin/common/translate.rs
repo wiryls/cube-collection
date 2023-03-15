@@ -53,7 +53,7 @@ impl TranslateColor {
 
 pub fn recolor_system(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut TranslateColor, &mut DrawMode)>,
+    mut query: Query<(Entity, &mut TranslateColor, &mut Fill)>,
     time: Res<Time>,
 ) {
     let delta = time.delta();
@@ -72,17 +72,9 @@ pub fn recolor_system(
         };
 
         let target = Color::hsl(h, s, l);
-        let source = match draw.as_mut() {
-            DrawMode::Fill(mode) => &mut mode.color,
-            DrawMode::Stroke(mode) => &mut mode.color,
-            DrawMode::Outlined {
-                fill_mode,
-                outline_mode: _,
-            } => &mut fill_mode.color,
-        };
-        source.set_r(target.r());
-        source.set_g(target.g());
-        source.set_b(target.b());
+        draw.color.set_r(target.r());
+        draw.color.set_g(target.g());
+        draw.color.set_b(target.b());
     }
 }
 
@@ -199,9 +191,6 @@ pub fn position_system(
                     let target = locate(&to);
                     let current = source + (target - source) * percent;
                     transform.translation = current.extend(z);
-
-                    // There are some jitters when moving (waiting for fixes)
-                    // https://github.com/bevyengine/bevy/issues/4669
                 }
                 Spin(from, delta, limit) => {
                     let percent = translate.elapse.percent();
@@ -240,7 +229,7 @@ impl TranslateAlpha {
     }
 }
 
-pub fn realpha_system(mut query: Query<(&mut TranslateAlpha, &mut DrawMode)>, time: Res<Time>) {
+pub fn realpha_system(mut query: Query<(&mut TranslateAlpha, &mut Fill)>, time: Res<Time>) {
     let delta = time.delta();
     for (mut translate, mut draw) in &mut query {
         let alpha = if translate.elapse.tick(delta).finished() {
@@ -252,16 +241,6 @@ pub fn realpha_system(mut query: Query<(&mut TranslateAlpha, &mut DrawMode)>, ti
             from + (to - from) * percent
         };
 
-        match draw.as_mut() {
-            DrawMode::Fill(mode) => mode.color.set_a(alpha),
-            DrawMode::Stroke(mode) => mode.color.set_a(alpha),
-            DrawMode::Outlined {
-                fill_mode,
-                outline_mode,
-            } => {
-                fill_mode.color.set_a(alpha);
-                outline_mode.color.set_a(alpha)
-            }
-        };
+        draw.color.set_a(alpha);
     }
 }

@@ -1,6 +1,5 @@
 use bevy::{asset::AssetPath, prelude::*};
 use cube_core::seed::Seed;
-use iyes_loopless::prelude::*;
 
 mod level;
 mod loader;
@@ -22,7 +21,7 @@ impl Plugin for LoaderPlugin {
             .add_asset_loader(loader::TOMLAssetLoader::default())
             .add_asset::<LevelList>()
             .add_asset::<LevelSeed>()
-            .add_system(load_levels.run_if_resource_exists::<LoadLevels>());
+            .add_system(load_levels.run_if(resource_exists::<LoadLevels>()));
     }
 }
 

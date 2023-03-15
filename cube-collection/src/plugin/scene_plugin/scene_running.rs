@@ -1,5 +1,5 @@
+use bevy::ecs::schedule::BaseSystemSet;
 use bevy::prelude::*;
-use iyes_loopless::prelude::*;
 
 use super::{
     common::{bundle, component, system},
@@ -8,33 +8,31 @@ use super::{
     SceneState,
 };
 
-pub fn setup(appx: &mut App, prepare: impl StageLabel, calculate: impl StageLabel) {
-    appx.add_event::<WorldChanged>()
-        .add_enter_system(SceneState::Running, setup_world)
-        .add_system_set_to_stage(
-            prepare,
-            ConditionSet::new()
-                .run_in_state(SceneState::Running)
-                .with_system(switch_world.run_on_event::<WorldChanged>())
-                .with_system(system::self_adaption.run_on_event::<ViewUpdated>())
-                .into(),
+pub fn setup(
+    app: &mut App,
+    first: impl BaseSystemSet + Clone,
+    second: impl BaseSystemSet,
+    third: impl BaseSystemSet,
+) {
+    app.add_event::<WorldChanged>()
+        .add_system(setup_world.in_schedule(OnEnter(SceneState::Running)))
+        .add_systems(
+            (
+                switch_world.run_if(on_event::<WorldChanged>()),
+                system::self_adaption.run_if(on_event::<ViewUpdated>()),
+            )
+                .in_base_set(first.clone()),
         )
-        .add_system_to_stage(
-            calculate,
-            system::state
-                .run_in_state(SceneState::Running)
-                .run_if_resource_exists::<model::World>(),
+        .add_systems(
+            (
+                system::position.run_if(resource_exists::<model::World>()),
+                system::realpha.run_if(resource_exists::<model::World>()),
+                system::recolor.run_if(resource_exists::<model::World>()),
+                system::reshape.run_if(resource_exists::<model::World>()),
+            )
+                .in_base_set(second),
         )
-        .add_system_set(
-            ConditionSet::new()
-                .run_in_state(SceneState::Running)
-                .run_if_resource_exists::<model::World>()
-                .with_system(system::position)
-                .with_system(system::realpha)
-                .with_system(system::recolor)
-                .with_system(system::reshape)
-                .into(),
-        );
+        .add_systems((system::state.run_if(resource_exists::<model::World>()),).in_base_set(third));
 }
 
 pub enum WorldChanged {

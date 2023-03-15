@@ -8,9 +8,8 @@ version = "0.2.9"
 cube-core = {path = "../cube-core"}
 
 # Bery and its plugins
-bevy = "0.9.1"
-bevy_prototype_lyon = "0.7"
-iyes_loopless = "0.9"
+bevy = "0.10.0"
+bevy_prototype_lyon = "0.8"
 
 # Extra utilities
 serde = {version = "1.0", features = ["derive"]}

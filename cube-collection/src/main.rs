@@ -4,10 +4,10 @@ mod plugin;
 
 fn windows_settings() -> WindowPlugin {
     WindowPlugin {
-        window: WindowDescriptor {
+        primary_window: Some(Window {
             title: "Cube Collection".to_owned(),
             ..Default::default()
-        },
+        }),
         ..default()
     }
 }

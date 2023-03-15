@@ -1,11 +1,13 @@
-use bevy::{input::keyboard::KeyboardInput, prelude::*};
+use bevy::ecs::schedule::BaseSystemSet;
+use bevy::input::keyboard::KeyboardInput;
+use bevy::prelude::*;
 use cube_core::cube::Movement;
 
 use super::{scene_loading::HardReset, scene_running::WorldChanged};
 
-pub fn setup(appx: &mut App, stage: impl StageLabel) {
-    appx.add_event::<MovementChanged>()
-        .add_system_to_stage(stage, keyboard);
+pub fn setup(app: &mut App, set: impl BaseSystemSet, state: impl States) {
+    app.add_event::<MovementChanged>()
+        .add_system(keyboard.run_if(in_state(state)).in_base_set(set));
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

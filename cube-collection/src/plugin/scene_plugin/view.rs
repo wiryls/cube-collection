@@ -1,13 +1,17 @@
+use bevy::ecs::schedule::BaseSystemSet;
 use bevy::prelude::*;
-use bevy::window::WindowResized;
+use bevy::window::{PrimaryWindow, WindowResized};
 use cube_core::cube::Point;
-use iyes_loopless::prelude::*;
 
-pub fn setup(appx: &mut App, stage: impl StageLabel) {
-    appx.init_resource::<GridView>()
+pub fn setup(app: &mut App, set: impl BaseSystemSet) {
+    app.init_resource::<GridView>()
         .add_event::<ViewUpdated>()
         .add_startup_system(setup_camera)
-        .add_system_to_stage(stage, update_gridview.run_on_event::<WindowResized>());
+        .add_system(
+            update_gridview
+                .in_base_set(set)
+                .run_if(on_event::<WindowResized>()),
+        );
 }
 
 pub struct ViewUpdated {
@@ -27,18 +31,20 @@ fn setup_camera(mut commands: Commands) {
 }
 
 fn update_gridview(
-    windows: ResMut<Windows>,
+    windows: Query<Entity, With<PrimaryWindow>>,
     mut view: ResMut<GridView>,
     mut window_resized: EventReader<WindowResized>,
     mut mapper_updated: EventWriter<ViewUpdated>,
 ) {
     const PADDING_RATE: f32 = 0.04;
 
-    if let Some(window) = windows.get_primary() {
-        // multiple windows are not supported, we just watch the primary one.
-        let id = window.id();
-
-        while let Some(event) = window_resized.iter().filter(|x| x.id == id).last() {
+    // multiple windows are not supported, we just watch the primary one.
+    if let Ok(window) = windows.get_single() {
+        while let Some(event) = window_resized
+            .iter()
+            .filter(|x| x.window.index() == window.index())
+            .last()
+        {
             // rect is defined by camera's ScalingMode::WindowSize
             let p = event.width.min(event.height) * PADDING_RATE;
             let w = event.width * 0.5 - p;
