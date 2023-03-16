@@ -1,6 +1,6 @@
 # [Project Cube Collection](https://wiryls.github.io/cube-collection/)
 
-A dead simple puzzle game based on [Bevy Engine 0.9.1](https://github.com/bevyengine/bevy), move cubes to **cover all targets** as shown in the picture below.
+A dead simple puzzle game based on [Bevy Engine 0.10.0](https://github.com/bevyengine/bevy), move cubes to **cover all targets** as shown in the picture below.
 
 ![a-moth-to-flame](./docs/images/level-preview-a-moth-to-flame.gif)
 
@@ -12,7 +12,7 @@ Try the online version at my [GitHub Pages](https://wiryls.github.io/cube-collec
 
 Use:
 
-- `Arrow Keys` or `W/A/S/D` to move,
+- `Arrow Keys` or `W`/`A`/`S`/`D` to move,
 - `R` to restart,
 - `N` to skip current level,
 - `L` to return to the previous level,
@@ -23,9 +23,9 @@ Use:
 - You could move all GREEN cubes.
 - Move cubes to translucent targets to enter the next level.
 - Cubes may absorb each others.
-  - Red + Green -> Red + Red
-  - Green + Blue -> Green + Green
-  - Blue + Red -> Blue + Blue
+  - Red + Green -> Red + **Red**
+  - Green + Blue -> Green + **Green**
+  - Blue + Red -> Blue + **Blue**
   - Red + Green + Blue -> Red + Green + Blue
 - Cubes with the same kind (except white) merge when hitting each other.
 
