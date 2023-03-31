@@ -10,7 +10,7 @@ use super::{
 
 pub fn setup(
     app: &mut App,
-    first: impl BaseSystemSet + Clone,
+    first: impl BaseSystemSet,
     second: impl BaseSystemSet,
     third: impl BaseSystemSet,
 ) {
@@ -18,21 +18,21 @@ pub fn setup(
         .add_system(setup_world.in_schedule(OnEnter(SceneState::Running)))
         .add_systems(
             (
-                switch_world.run_if(on_event::<WorldChanged>()),
-                system::self_adaption.run_if(on_event::<ViewUpdated>()),
-            )
-                .in_base_set(first.clone()),
-        )
-        .add_systems(
-            (
                 system::position.run_if(resource_exists::<model::World>()),
                 system::realpha.run_if(resource_exists::<model::World>()),
                 system::recolor.run_if(resource_exists::<model::World>()),
                 system::reshape.run_if(resource_exists::<model::World>()),
             )
-                .in_base_set(second),
+                .in_base_set(first),
         )
-        .add_systems((system::state.run_if(resource_exists::<model::World>()),).in_base_set(third));
+        .add_systems((system::state.run_if(resource_exists::<model::World>()),).in_base_set(second))
+        .add_systems(
+            (
+                switch_world.run_if(on_event::<WorldChanged>()),
+                system::self_adaption.run_if(on_event::<ViewUpdated>()),
+            )
+                .in_base_set(third),
+        );
 }
 
 pub enum WorldChanged {

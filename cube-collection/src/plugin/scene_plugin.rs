@@ -16,9 +16,9 @@ impl Plugin for ScenePlugin {
             .add_state::<SceneState>()
             .configure_sets(
                 (
-                    RunningSet::Prepare,
                     RunningSet::Input,
                     RunningSet::Calculate,
+                    RunningSet::Transform,
                 )
                     .chain(),
             );
@@ -29,9 +29,9 @@ impl Plugin for ScenePlugin {
         scene_loading::setup(app);
         scene_running::setup(
             app,
-            RunningSet::Prepare,
             RunningSet::Input,
             RunningSet::Calculate,
+            RunningSet::Transform,
         );
     }
 }
@@ -39,9 +39,9 @@ impl Plugin for ScenePlugin {
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
 #[system_set(base)]
 enum RunningSet {
-    Prepare,
     Input,
     Calculate,
+    Transform,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, States)]
