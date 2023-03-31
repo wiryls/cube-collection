@@ -1,7 +1,7 @@
 [map]
 raw = '''
        R
- G  B  x
+ B  G  x
        x '''
 
 [info]

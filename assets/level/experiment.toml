@@ -1,20 +1,11 @@
 [map]
 raw = '''
 
- RBG 
-x
-'''
-
-[[map.commands]]
-binding = [[1, 1]]
-content = "UD"
-looping = true
-
-[[map.commands]]
-binding = [[2, 1]]
-content = "DU"
-looping = true
+   BB
+ G W  R
+      x
+      x'''
 
 [info]
 author = "w"
-title = "Experiment"
+title = "Rotation"

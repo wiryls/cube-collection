@@ -1,0 +1,11 @@
+[map]
+raw = '''
+
+   BB
+ G W  R
+      x
+      x'''
+
+[info]
+author = "w"
+title = "Rotation"
