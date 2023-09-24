@@ -2,7 +2,7 @@
 
 # [Project Cube Collection](https://wiryls.github.io/cube-collection/)
 
-A dead simple puzzle game based on [Bevy Engine 0.10.0](https://github.com/bevyengine/bevy), move cubes to **cover all targets** as shown in the picture below.
+A dead simple puzzle game based on [Bevy Engine 0.11.2](https://github.com/bevyengine/bevy), move cubes to **cover all targets** as shown in the picture below.
 
 ![a-moth-to-flame](./docs/images/level-preview-a-moth-to-flame.gif)
 
@@ -29,7 +29,7 @@ Try the online version at my [GitHub Pages](https://wiryls.github.io/cube-collec
 
 ## Known issues
 
-- [Jitters](https://github.com/bevyengine/bevy/issues/4669) happend while moving cubes.
+- [Jitters](https://github.com/bevyengine/bevy/issues/4669) happen while moving cubes.
 - Color pattern may not friendly to some color blindness.
 
 ## About this repository
@@ -39,9 +39,9 @@ Try the online version at my [GitHub Pages](https://wiryls.github.io/cube-collec
 1. Clone this repository: `git clone https://github.com/wiryls/cube-collection.git`
 2. Compile and run: `cargo run --release cube-collection`
 
-### Add custom level
+### Add custom levels
 
 Levels are saved as TOML files:
 
-1. Add you custom level file to `.\cube-collection\assets\level\`.
+1. Add you custom level files to `.\cube-collection\assets\level\`.
 2. Add the file name into `name_list` of `.\cube-collection\assets\level\index.toml`.

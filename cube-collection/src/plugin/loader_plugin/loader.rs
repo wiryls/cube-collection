@@ -1,6 +1,6 @@
 use bevy::{
     asset::{AssetLoader, BoxedFuture, Error, LoadContext, LoadedAsset},
-    reflect::TypeUuid,
+    reflect::{TypePath, TypeUuid},
 };
 use cube_core::seed::Seed;
 use serde::Deserialize;
@@ -8,7 +8,7 @@ use serde::Deserialize;
 /////////////////////////////////////////////////////////////////////////////
 // LevelSeed
 
-#[derive(Clone, TypeUuid)]
+#[derive(Clone, TypeUuid, TypePath)]
 #[uuid = "c99b1333-8ad3-4b26-a54c-7de542f43c51"]
 pub struct LevelSeed(Seed);
 
@@ -27,7 +27,7 @@ impl From<LevelSeed> for Seed {
 /////////////////////////////////////////////////////////////////////////////
 // LevelIndex
 
-#[derive(Deserialize, TypeUuid)]
+#[derive(Deserialize, TypeUuid, TypePath)]
 #[uuid = "664b2720-dcbe-11ec-9d64-0242ac120002"]
 pub struct LevelList {
     pub directory: String,
@@ -53,12 +53,12 @@ impl AssetLoader for TOMLAssetLoader {
             let value = toml::from_slice::<Value>(bytes)?;
             if let Value::Table(table) = &value {
                 if table.contains_key("map") {
-                    // level souce file
+                    // source files
                     let source = value.try_into::<LevelSource>()?;
                     let target = source.into_seed()?;
                     context.set_default_asset(LoadedAsset::new(target));
                 } else {
-                    // level index file
+                    // level index
                     let source = value.try_into::<LevelList>()?;
                     context.set_default_asset(LoadedAsset::new(source));
                 }

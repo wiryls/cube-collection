@@ -17,7 +17,6 @@ use super::{
 struct DestinationBundle {
     bound: Earthbound,
     scale: AutoRescale,
-    #[bundle]
     shape: ShapeBundle,
     color: Fill,
 }
@@ -36,7 +35,6 @@ struct CubeBundle {
     cubic: Cubic,
     bound: Earthbound,
     scale: AutoRescale,
-    #[bundle]
     shape: ShapeBundle,
     color: Fill,
 }
@@ -45,7 +43,6 @@ struct CubeBundle {
 pub struct FloorBundle {
     bound: Earthbound,
     scale: AutoRescale,
-    #[bundle]
     shape: ShapeBundle,
     color: Fill,
 }
@@ -53,10 +50,10 @@ pub struct FloorBundle {
 pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) {
     let scale = mapper.unit();
 
-    // background color
+    // draw background color
     commands.insert_resource(ClearColor(style::background_color()));
 
-    // create destnations
+    // create destinations
     let delta = mapper.scale(&(0.5, 0.5));
     for goal in state.goals() {
         let color = style::destnation_color();

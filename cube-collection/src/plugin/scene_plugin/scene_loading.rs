@@ -3,27 +3,40 @@ use bevy::prelude::*;
 use super::{model::Seeds, SceneState};
 use crate::plugin::loader_plugin::{LevelLoadingUpdated, LoadLevels, LoaderPlugin};
 
-#[derive(Clone)]
-pub struct HardReset();
+#[derive(Clone, Event)]
+pub struct HardReset;
 
 pub fn setup(app: &mut App) {
-    app.add_plugin(LoaderPlugin)
+    app.add_plugins(LoaderPlugin)
         .add_event::<HardReset>()
-        .add_system(loading_enter.in_schedule(OnEnter(SceneState::Loading)))
-        .add_system(
-            loading_updated
-                .run_if(in_state(SceneState::Loading))
-                .run_if(on_event::<LevelLoadingUpdated>()),
-        )
-        .add_system(
+        .add_systems(OnEnter(SceneState::Loading), start_loading)
+        .add_systems(
+            PreUpdate,
             hard_reset
                 .run_if(in_state(SceneState::Running))
                 .run_if(on_event::<HardReset>()),
+        )
+        .add_systems(
+            Update,
+            loading_updated
+                .run_if(in_state(SceneState::Loading))
+                .run_if(on_event::<LevelLoadingUpdated>()),
         );
 }
 
-fn loading_enter(mut commands: Commands) {
+fn start_loading(mut commands: Commands) {
     commands.insert_resource(LoadLevels::new(r"level/index.toml"));
+}
+
+fn hard_reset(
+    mut commands: Commands,
+    mut events: EventReader<HardReset>,
+    mut next_state: ResMut<NextState<SceneState>>,
+) {
+    while let Some(_) = events.iter().last() {
+        next_state.set(SceneState::Loading);
+        commands.insert_resource(LoadLevels::new(r"level/index.toml"));
+    }
 }
 
 fn loading_updated(
@@ -47,16 +60,5 @@ fn loading_updated(
                 next_state.set(SceneState::Running);
             }
         }
-    }
-}
-
-fn hard_reset(
-    mut commands: Commands,
-    mut events: EventReader<HardReset>,
-    mut next_state: ResMut<NextState<SceneState>>,
-) {
-    while let Some(_) = events.iter().last() {
-        next_state.set(SceneState::Loading);
-        commands.insert_resource(LoadLevels::new(r"level/index.toml"));
     }
 }

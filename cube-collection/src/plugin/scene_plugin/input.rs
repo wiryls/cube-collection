@@ -1,16 +1,15 @@
-use bevy::ecs::schedule::BaseSystemSet;
 use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
 use cube_core::cube::Movement;
 
 use super::{scene_loading::HardReset, scene_running::WorldChanged};
 
-pub fn setup(app: &mut App, set: impl BaseSystemSet, state: impl States) {
+pub fn setup(app: &mut App, state: impl States) {
     app.add_event::<MovementChanged>()
-        .add_system(keyboard.run_if(in_state(state)).in_base_set(set));
+        .add_systems(PreUpdate, keyboard.run_if(in_state(state)));
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Event, PartialEq, Eq)]
 pub enum MovementChanged {
     Add(Movement),
     Set(Option<Movement>),
@@ -55,11 +54,11 @@ fn keyboard(
         .iter()
         .filter_map(|key| key.key_code.map(|code| (code, key)))
     {
-        let control = keys.any_pressed([KeyCode::LShift, KeyCode::RShift]);
+        let shift = keys.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
         let presse = key.state.is_pressed();
         let output = match code {
             // control
-            KeyCode::Escape if presse && control => Command::Reset,
+            KeyCode::Escape if presse && shift => Command::Reset,
             KeyCode::Escape if presse => Command::Control(WorldChanged::Reset),
             KeyCode::R if presse => Command::Control(WorldChanged::Restart),
             KeyCode::N if presse => Command::Control(WorldChanged::Next),
@@ -76,7 +75,7 @@ fn keyboard(
         };
 
         match output {
-            Command::Reset => trgger_reload.send(HardReset()),
+            Command::Reset => trgger_reload.send(HardReset),
             Command::Control(control) => change_world.send(control),
             Command::Movement(movement) => change_movement.send(movement),
             Command::DoNothing => {}

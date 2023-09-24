@@ -22,19 +22,12 @@ impl World {
         }
     }
 
-    pub fn next<T>(&mut self, delta: Duration, mut input: T) -> Option<HashMap<usize, Diff>>
-    where
-        T: FnMut() -> Option<Movement>,
-    {
-        if self.timer.tick(delta).finished() {
-            self.state
-                .commit(input())
-                .map(|diff| (diff.id, diff))
-                .collect::<HashMap<_, _, _>>()
-                .into()
-        } else {
-            None
-        }
+    pub fn next(&mut self, movement: Option<Movement>) -> HashMap<usize, Diff> {
+        self.state
+            .commit(movement)
+            .map(|diff| (diff.id, diff))
+            .collect::<HashMap<_, _, _>>()
+            .into()
     }
 
     pub fn cubes(&self) -> impl Iterator<Item = Unit> + '_ {

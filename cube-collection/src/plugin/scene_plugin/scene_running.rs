@@ -1,4 +1,3 @@
-use bevy::ecs::schedule::BaseSystemSet;
 use bevy::prelude::*;
 
 use super::{
@@ -8,33 +7,34 @@ use super::{
     SceneState,
 };
 
-pub fn setup(
-    app: &mut App,
-    first: impl BaseSystemSet,
-    second: impl BaseSystemSet,
-    third: impl BaseSystemSet,
-) {
+pub fn setup(app: &mut App) {
     app.add_event::<WorldChanged>()
-        .add_system(setup_world.in_schedule(OnEnter(SceneState::Running)))
+        .add_systems(OnEnter(SceneState::Running), setup_world)
         .add_systems(
+            Update,
             (
-                system::position.run_if(resource_exists::<model::World>()),
-                system::realpha.run_if(resource_exists::<model::World>()),
-                system::recolor.run_if(resource_exists::<model::World>()),
-                system::reshape.run_if(resource_exists::<model::World>()),
+                system::position,
+                system::realpha,
+                system::recolor,
+                system::reshape,
             )
-                .in_base_set(first),
+                .run_if(resource_exists::<model::World>())
+                .before(system::state),
         )
-        .add_systems((system::state.run_if(resource_exists::<model::World>()),).in_base_set(second))
         .add_systems(
+            Update,
+            system::state.run_if(resource_exists::<model::World>()),
+        )
+        .add_systems(
+            PostUpdate,
             (
                 switch_world.run_if(on_event::<WorldChanged>()),
                 system::self_adaption.run_if(on_event::<ViewUpdated>()),
-            )
-                .in_base_set(third),
+            ),
         );
 }
 
+#[derive(Event)]
 pub enum WorldChanged {
     Reset,
     Restart,

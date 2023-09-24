@@ -13,6 +13,7 @@ pub fn state_system(
     mut change_world: EventWriter<WorldChanged>,
     mut query: Query<(Entity, &mut Cubic, &mut AutoRescale)>,
     mut world: ResMut<World>,
+    mut ticker: Local<detail::Ticker>,
     mut actions: Local<detail::ActionQueue>,
     mut completed: Local<bool>,
     time: Res<Time>,
@@ -29,19 +30,20 @@ pub fn state_system(
     // update world
     let step = world.step();
     let delta = time.delta();
-    let diffs = match world.next(delta, || actions.pop()) {
-        None => return, // skip
-        Some(diffs) => diffs,
+    let diffs = match ticker.tick(delta) {
+        false => return, // skip
+        true => world.next(actions.pop()),
     };
 
     if *completed {
         // delay one round to move to next level
         *completed = false;
 
-        // avoid current actions affecting next level
+        // avoid current states affecting next level
         actions.reset();
+        ticker.reset();
 
-        // change to next level
+        // report level change event
         change_world.send(WorldChanged::Next);
 
         // avoid update completed again
@@ -89,8 +91,12 @@ pub fn state_system(
 }
 
 mod detail {
+    use bevy::{
+        prelude::Resource,
+        time::{Timer, TimerMode},
+    };
     use cube_core::cube::Movement;
-    use std::collections::VecDeque;
+    use std::{collections::VecDeque, time::Duration};
 
     #[derive(Default)]
     pub struct ActionQueue {
@@ -116,16 +122,34 @@ mod detail {
         }
 
         pub fn pop(&mut self) -> Option<Movement> {
-            let output = match self.once.pop_front() {
+            match self.once.pop_front() {
                 None => self.repeat,
                 Some(movement) => Some(movement),
-            };
-            output
+            }
         }
 
         pub fn reset(&mut self) {
             self.once.clear();
             self.repeat = None;
+        }
+    }
+
+    #[derive(Resource)]
+    pub struct Ticker(Timer);
+
+    impl Ticker {
+        pub fn tick(&mut self, delta: Duration) -> bool {
+            self.0.tick(delta).finished()
+        }
+
+        pub fn reset(&mut self) {
+            self.0.reset()
+        }
+    }
+
+    impl Default for Ticker {
+        fn default() -> Self {
+            Self(Timer::new(Duration::from_millis(200), TimerMode::Repeating))
         }
     }
 }

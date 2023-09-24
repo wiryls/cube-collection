@@ -4,7 +4,7 @@ use cube_core::cube::Point;
 use super::super::view::ViewUpdated;
 
 /// AutoRescale marks that the current object fixed at a grid point and scales
-/// with grid size. Relocating happends when windows resized.
+/// with grid size. Relocating happens when windows get resized.
 #[derive(Component)]
 pub struct AutoRescale {
     pub point: Point,

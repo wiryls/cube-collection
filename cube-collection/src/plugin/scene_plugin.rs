@@ -12,36 +12,13 @@ mod view;
 pub struct ScenePlugin;
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(ShapePlugin)
-            .add_state::<SceneState>()
-            .configure_sets(
-                (
-                    RunningSet::Input,
-                    RunningSet::Calculate,
-                    RunningSet::Transform,
-                )
-                    .chain(),
-            );
+        app.add_plugins(ShapePlugin).add_state::<SceneState>();
 
-        view::setup(app, RunningSet::Input);
-        input::setup(app, RunningSet::Input, SceneState::Running);
-
+        view::setup(app);
+        input::setup(app, SceneState::Running);
         scene_loading::setup(app);
-        scene_running::setup(
-            app,
-            RunningSet::Input,
-            RunningSet::Calculate,
-            RunningSet::Transform,
-        );
+        scene_running::setup(app);
     }
-}
-
-#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone)]
-#[system_set(base)]
-enum RunningSet {
-    Input,
-    Calculate,
-    Transform,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, States)]

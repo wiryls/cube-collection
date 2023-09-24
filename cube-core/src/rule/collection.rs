@@ -100,7 +100,7 @@ impl Collection {
     }
 
     pub fn commit(&mut self, movement: Option<Movement>) {
-        // clean and update movement.
+        // clean and update movements.
         self.update_cube_status();
         self.update_cube_movement(movement);
 
@@ -199,7 +199,7 @@ impl Collection {
     }
 
     fn process_blocked_cubes(&mut self) -> Digraph {
-        // preapre
+        // prepare
         let number_of_cubes = self.cube.len();
         let mut connection = DisjointSet::new(number_of_cubes);
         let mut successors = Digraph::with_capacity(number_of_cubes);

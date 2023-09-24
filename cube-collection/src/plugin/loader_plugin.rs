@@ -9,7 +9,7 @@ use loader::{LevelList, LevelSeed};
 /// Use
 ///
 /// ```
-/// commands.insert_resource(LoadSeeds::new("INDEX_PATH"))
+/// commands.insert_resource(LoadSeeds::new("INDEX_FILE_PATH"))
 /// ```
 ///
 /// to start loading.
@@ -21,11 +21,11 @@ impl Plugin for LoaderPlugin {
             .add_asset_loader(loader::TOMLAssetLoader::default())
             .add_asset::<LevelList>()
             .add_asset::<LevelSeed>()
-            .add_system(load_levels.run_if(resource_exists::<LoadLevels>()));
+            .add_systems(Update, load_levels.run_if(resource_exists::<LoadLevels>()));
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Event)]
 pub enum LevelLoadingUpdated {
     Loading { total: usize, done: usize },
     Failure { which: String },

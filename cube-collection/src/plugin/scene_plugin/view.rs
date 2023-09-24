@@ -1,19 +1,18 @@
-use bevy::ecs::schedule::BaseSystemSet;
 use bevy::prelude::*;
 use bevy::window::{PrimaryWindow, WindowResized};
 use cube_core::cube::Point;
 
-pub fn setup(app: &mut App, set: impl BaseSystemSet) {
+pub fn setup(app: &mut App) {
     app.init_resource::<GridView>()
         .add_event::<ViewUpdated>()
-        .add_startup_system(setup_camera)
-        .add_system(
-            update_gridview
-                .in_base_set(set)
-                .run_if(on_event::<WindowResized>()),
+        .add_systems(Startup, setup_camera)
+        .add_systems(
+            PreUpdate,
+            update_gridview.run_if(on_event::<WindowResized>()),
         );
 }
 
+#[derive(Event)]
 pub struct ViewUpdated {
     pub mapper: ViewMapper,
 }

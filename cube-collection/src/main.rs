@@ -13,8 +13,6 @@ fn windows_settings() -> WindowPlugin {
 }
 
 fn main() {
-    App::new()
-        .add_plugins(DefaultPlugins.set(windows_settings()))
-        .add_plugin(plugin::ScenePlugin)
-        .run();
+    let plugins = (DefaultPlugins.set(windows_settings()), plugin::ScenePlugin);
+    App::new().add_plugins(plugins).run();
 }

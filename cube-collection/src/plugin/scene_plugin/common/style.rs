@@ -64,8 +64,8 @@ pub fn cube_boundaries(pattern: Neighborhood, scale: f32) -> Vec<Vec2> {
         }
 
         match (
-            is_occupied[(2 * i + 0)],
-            is_occupied[(2 * i + 1)],
+            is_occupied[2 * i + 0],
+            is_occupied[2 * i + 1],
             is_occupied[(2 * i + 2) % is_occupied.len()],
         ) {
             (true, true, true) => {

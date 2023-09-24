@@ -1,15 +1,15 @@
 [package]
 edition = "2021"
 name = "cube-collection"
-version = "0.3.0"
+version = "0.3.11"
 
 [dependencies]
 # Local workspace
 cube-core = {path = "../cube-core"}
 
 # Bery and its plugins
-bevy = "0.10.0"
-bevy_prototype_lyon = "0.8"
+bevy = "0.11.2"
+bevy_prototype_lyon = "0.9"
 
 # Extra utilities
 serde = {version = "1.0", features = ["derive"]}
