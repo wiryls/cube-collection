@@ -50,7 +50,8 @@ impl AssetLoader for TOMLAssetLoader {
             use super::LevelSource;
             use toml::Value;
 
-            let value = toml::from_slice::<Value>(bytes)?;
+            let texts = String::from_utf8_lossy(&bytes);
+            let value = toml::from_str::<Value>(&texts)?;
             if let Value::Table(table) = &value {
                 if table.contains_key("map") {
                     // source files
