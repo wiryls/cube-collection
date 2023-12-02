@@ -24,7 +24,7 @@ Try the online version at my [GitHub Pages](https://wiryls.github.io/cube-collec
   - Red + Green -> **Red**
   - Green + Blue -> **Green**
   - Blue + Red -> **Blue**
-  - Red + Green + Blue -> Nothing happends
+  - Red + Green + Blue -> nothing happens
 - Cubes with the same kind (except white) merge when hitting each other.
 
 ## About this repository
@@ -59,16 +59,16 @@ author = "w"
 title = "Haircut"
 ```
 
-- `map` is an ASCII drawing of grid containing the following characters:
+- `map` is an ASCII drawing containing the following characters:
   - cube (place a cube here):
     - `W`: white cube.
     - `R`: red cube.
     - `G`: green cube.
     - `B`: blue cube.
   - link (expand the left or upper cube):
-    - `|`: link to the cube above.
-    - `-`: link to the left cube.
-    - `/`: link to the upper block and left block.
+    - `|`: expand the cube above.
+    - `-`: expand the left cube.
+    - `/`: expand the upper cube and left cube.
   - other:
     - ` `: nothing here.
     - `x`: target point.
@@ -78,11 +78,14 @@ If you want to add custom levels:
 
 1. Create a TOML file like the one above.
 2. Add you custom level files into `./cube-collection/assets/level/`.
-3. Add the file name into `name_list` of `./cube-collection/assets/level/index.toml`.
+3. Add file name into `name_list` of `./cube-collection/assets/level/index.toml`.
 
 ## License
 
-The repository use two licenses, `./cube-core` is under LGPL 3.0 and `./cube-collection` is under MIT license.
+The repository use two licenses:
+
+- `./cube-core` is under LGPL 3.0, and 
+- `./cube-collection` is under MIT license.
 
 ## Known issues
 
