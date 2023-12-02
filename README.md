@@ -2,7 +2,7 @@
 
 # [Project Cube Collection](https://wiryls.github.io/cube-collection/)
 
-A dead simple puzzle game based on [Bevy Engine 0.11.2](https://github.com/bevyengine/bevy), move cubes to **cover all targets** as shown in the picture below.
+A dead simple puzzle game based on [Bevy Engine 0.12.1](https://github.com/bevyengine/bevy), move cubes to **cover all targets** as shown in the picture below.
 
 ![a-moth-to-flame](./docs/images/level-preview-a-moth-to-flame.gif)
 
@@ -27,10 +27,6 @@ Try the online version at my [GitHub Pages](https://wiryls.github.io/cube-collec
   - Red + Green + Blue -> Nothing happends
 - Cubes with the same kind (except white) merge when hitting each other.
 
-## Known issues
-
-- Color pattern may not friendly to some color blindness.
-
 ## About this repository
 
 ### Run
@@ -40,7 +36,54 @@ Try the online version at my [GitHub Pages](https://wiryls.github.io/cube-collec
 
 ### Add custom levels
 
-Levels are saved as TOML files:
+Levels are represented by TOML files. e.g.
 
-1. Add you custom level files to `.\cube-collection\assets\level\`.
-2. Add the file name into `name_list` of `.\cube-collection\assets\level\index.toml`.
+```toml
+[map]
+raw = '''
+                 
+                 
+  GGGGGGGGGGGGG  
+  G   GG GG   G  
+  G           G  
+  G   R   R   G  
+  G           G  
+  G           G  
+  G     x     G  
+  G           G  
+  W------------  
+                 '''
+
+[info]
+author = "w"
+title = "Haircut"
+```
+
+- `map` is an ASCII drawing of grid containing the following characters:
+  - cube (place a cube here):
+    - `W`: white cube.
+    - `R`: red cube.
+    - `G`: green cube.
+    - `B`: blue cube.
+  - link (expand the left or upper cube):
+    - `|`: link to the cube above.
+    - `-`: link to the left cube.
+    - `/`: link to the upper block and left block.
+  - other:
+    - ` `: nothing here.
+    - `x`: target point.
+- `info` is some meta data.
+
+If you want to add custom levels:
+
+1. Create a TOML file like the one above.
+2. Add you custom level files into `./cube-collection/assets/level/`.
+3. Add the file name into `name_list` of `./cube-collection/assets/level/index.toml`.
+
+## License
+
+The repository use two licenses, `./cube-core` is under LGPL 3.0 and `./cube-collection` is under MIT license.
+
+## Known issues
+
+- Color pattern may not friendly to some color blindness.
