@@ -19,7 +19,7 @@ pub fn state_system(
     time: Res<Time>,
 ) {
     // update actions
-    for action in input_action.iter() {
+    for action in input_action.read() {
         use MovementChanged::*;
         match action {
             Add(m) => actions.add(*m),

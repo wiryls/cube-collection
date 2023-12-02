@@ -54,7 +54,7 @@ fn switch_world(
     mut world_changed: EventReader<WorldChanged>,
 ) {
     let got = !world_changed.is_empty();
-    for event in world_changed.iter() {
+    for event in world_changed.read() {
         use WorldChanged::*;
         match event {
             Reset => world_seeds.reset(),
@@ -79,7 +79,7 @@ fn switch_world(
 
         // [2] create new world
         let world = model::World::new(&seed);
-        bundle::build_world(&mut commands, &world, &mapper);
+        bundle::hello_world(&mut commands, &world, &mapper);
         commands.insert_resource(world);
     }
 }

@@ -16,7 +16,7 @@ pub fn self_adaption_system(
     mut query: Query<(&mut Transform, &AutoRescale)>,
     mut view_updated: EventReader<ViewUpdated>,
 ) {
-    let event = match view_updated.iter().last() {
+    let event = match view_updated.read().last() {
         None => return,
         Some(event) => event,
     };

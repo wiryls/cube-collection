@@ -40,7 +40,7 @@ fn update_gridview(
     // multiple windows are not supported, we just watch the primary one.
     if let Ok(window) = windows.get_single() {
         while let Some(event) = window_resized
-            .iter()
+            .read()
             .filter(|x| x.window.index() == window.index())
             .last()
         {

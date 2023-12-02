@@ -47,7 +47,22 @@ pub struct FloorBundle {
     color: Fill,
 }
 
-pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) {
+pub fn hello_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) {
+    fn make_shape(points: &shapes::Polygon, translation: Vec3, scale: Vec3) -> ShapeBundle {
+        ShapeBundle {
+            path: GeometryBuilder::build_as(points),
+            spatial: SpatialBundle {
+                transform: Transform {
+                    translation,
+                    scale,
+                    ..default()
+                },
+                ..default()
+            },
+            ..default()
+        }
+    }
+
     let scale = mapper.unit();
 
     // draw background color
@@ -56,13 +71,6 @@ pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
     // create destinations
     let delta = mapper.scale(&(0.5, 0.5));
     for goal in state.goals() {
-        let color = style::destnation_color();
-        let points = shapes::Polygon {
-            points: style::cube_boundaries(Neighborhood::new(), 0.95),
-            closed: true,
-        };
-        let translation = (mapper.locate(&goal) + delta).extend(2.);
-
         commands
             .spawn(DestinationBundle {
                 bound: Earthbound,
@@ -70,16 +78,15 @@ pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
                     point: goal,
                     offset: 0.5,
                 },
-                shape: ShapeBundle {
-                    path: GeometryBuilder::build_as(&points),
-                    transform: Transform {
-                        translation,
-                        scale: Vec3::new(scale, scale, 0.),
-                        ..default()
+                shape: make_shape(
+                    &shapes::Polygon {
+                        points: style::cube_boundaries(Neighborhood::new(), 0.95),
+                        closed: true,
                     },
-                    ..default()
-                },
-                color: Fill::color(color),
+                    (mapper.locate(&goal) + delta).extend(2.),
+                    Vec3::new(scale, scale, 0.),
+                ),
+                color: Fill::color(style::destnation_color()),
             })
             .insert(TranslateAlpha::new(0.1, 0.4, Duration::from_secs(4)));
     }
@@ -88,14 +95,6 @@ pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
     let mut boundary_builder = BoundaryBuilder::new(state.width(), state.height());
     for item in state.cubes() {
         boundary_builder.put(item.position, item.neighborhood);
-
-        let color = style::cube_color(item.kind);
-        let points = shapes::Polygon {
-            points: style::cube_boundaries(item.neighborhood, 0.95),
-            closed: true,
-        };
-        let translation = (mapper.locate(&item.position) + delta).extend(1.);
-
         commands.spawn(CubeBundle {
             cubic: Cubic {
                 id: item.id,
@@ -109,40 +108,34 @@ pub fn build_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
                 point: item.position,
                 offset: 0.5,
             },
-            shape: ShapeBundle {
-                path: GeometryBuilder::build_as(&points),
-                transform: Transform {
-                    translation,
-                    scale: Vec3::new(scale, scale, 1.),
-                    ..default()
+            shape: make_shape(
+                &shapes::Polygon {
+                    points: style::cube_boundaries(item.neighborhood, 0.95),
+                    closed: true,
                 },
-                ..default()
-            },
-            color: Fill::color(color),
+                (mapper.locate(&item.position) + delta).extend(1.),
+                Vec3::new(scale, scale, 1.),
+            ),
+            color: Fill::color(style::cube_color(item.kind)),
         });
     }
 
     // create floor
     let bottom_left = Point::new(0, 0);
-    let points = shapes::Polygon {
-        points: boundary_builder.build(0.05),
-        closed: true,
-    };
     commands.spawn(FloorBundle {
         bound: Earthbound,
         scale: AutoRescale {
             point: bottom_left,
             offset: 0.,
         },
-        shape: ShapeBundle {
-            path: GeometryBuilder::build_as(&points),
-            transform: Transform {
-                translation: mapper.locate(&bottom_left).extend(0.),
-                scale: Vec3::new(scale, scale, 0.),
-                ..default()
+        shape: make_shape(
+            &shapes::Polygon {
+                points: boundary_builder.build(0.05),
+                closed: true,
             },
-            ..default()
-        },
+            mapper.locate(&bottom_left).extend(0.),
+            Vec3::new(scale, scale, 0.),
+        ),
         color: Fill::color(style::floor_color()),
     });
 }

@@ -18,18 +18,17 @@ Try the online version at my [GitHub Pages](https://wiryls.github.io/cube-collec
 
 ## Rules
 
-- You could move all GREEN cubes.
-- Move cubes to translucent targets to enter the next level.
+- You move ALL green cubes.
+- Make cubes to cover all target points to enter the next level.
 - Cubes may absorb each others.
-  - Red + Green -> Red + **Red**
-  - Green + Blue -> Green + **Green**
-  - Blue + Red -> Blue + **Blue**
-  - Red + Green + Blue -> Red + Green + Blue
+  - Red + Green -> **Red**
+  - Green + Blue -> **Green**
+  - Blue + Red -> **Blue**
+  - Red + Green + Blue -> Nothing happends
 - Cubes with the same kind (except white) merge when hitting each other.
 
 ## Known issues
 
-- [Jitters](https://github.com/bevyengine/bevy/issues/4669) happen while moving cubes.
 - Color pattern may not friendly to some color blindness.
 
 ## About this repository

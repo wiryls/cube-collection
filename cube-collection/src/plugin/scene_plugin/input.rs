@@ -51,7 +51,7 @@ fn keyboard(
 ) {
     // try to calculate a command and send it to movement system.
     for (code, key) in input
-        .iter()
+        .read()
         .filter_map(|key| key.key_code.map(|code| (code, key)))
     {
         let shift = keys.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);

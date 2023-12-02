@@ -2,8 +2,6 @@ use cube_core::{cube, seed};
 use serde::Deserialize;
 use snafu::{ensure, Snafu};
 
-use super::LevelSeed;
-
 /////////////////////////////////////////////////////////////////////////////
 // Source and Error
 
@@ -55,7 +53,7 @@ struct Command {
 }
 
 impl LevelSource {
-    pub fn into_seed(self) -> Result<LevelSeed, LevelError> {
+    pub fn into_seed(self) -> Result<seed::Seed, LevelError> {
         ensure!(
             !self.info.title.is_empty(),
             MissingField {
@@ -124,7 +122,7 @@ impl LevelSource {
             parser
         }
 
-        Ok(LevelSeed::new(parser.into()))
+        Ok(parser.into())
     }
 }
 

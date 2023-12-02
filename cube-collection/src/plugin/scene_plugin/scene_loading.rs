@@ -33,7 +33,7 @@ fn hard_reset(
     mut events: EventReader<HardReset>,
     mut next_state: ResMut<NextState<SceneState>>,
 ) {
-    while let Some(_) = events.iter().last() {
+    while let Some(_) = events.read().last() {
         next_state.set(SceneState::Loading);
         commands.insert_resource(LoadLevels::new(r"level/index.toml"));
     }
@@ -42,23 +42,17 @@ fn hard_reset(
 fn loading_updated(
     mut commands: Commands,
     mut events: EventReader<LevelLoadingUpdated>,
-    mut progress: Local<(usize, usize)>,
     mut next_state: ResMut<NextState<SceneState>>,
 ) {
-    for event in events.iter() {
+    for event in events.read() {
         use LevelLoadingUpdated::*;
         match event {
-            Loading { total, done } => {
-                if progress.0 != *total || progress.1 != *done {
-                    *progress = (*total, *done);
-                    info!("Loading: {}/{}", done, total);
-                }
-            }
-            Failure { which } => error!("Failed to load: {}", which),
             Success { seeds } => {
+                info!("Levels all loaded");
                 commands.insert_resource(Seeds::from(seeds.clone()));
                 next_state.set(SceneState::Running);
             }
+            Failure => error!("Failed to load levels"),
         }
     }
 }
