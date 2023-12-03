@@ -8,7 +8,9 @@ A dead simple puzzle game based on [Bevy Engine 0.12.1](https://github.com/bevye
 
 Try the online version at my [GitHub Pages](https://wiryls.github.io/cube-collection/)!
 
-## Tutorial
+## How to Play
+
+### Control
 
 - Move: `Arrow Keys` or `W`/`A`/`S`/`D`.
 - Restart: `R`
@@ -16,7 +18,7 @@ Try the online version at my [GitHub Pages](https://wiryls.github.io/cube-collec
 - Return to the previous level: `L`.
 - Reset the game: `ESC`.
 
-## Rules
+### Rules
 
 - You move ALL green cubes.
 - Make cubes to cover all target points to enter the next level.
@@ -59,20 +61,22 @@ author = "w"
 title = "Haircut"
 ```
 
-- `map` is an ASCII drawing containing the following characters:
+- `map.raw` is an ASCII drawing containing the following characters:
   - cube (place a cube here):
-    - `W`: white cube.
-    - `R`: red cube.
-    - `G`: green cube.
-    - `B`: blue cube.
-  - link (expand the left or upper cube):
-    - `|`: expand the cube above.
-    - `-`: expand the left cube.
-    - `/`: expand the upper cube and left cube.
+    - `W`: a white cube.
+    - `R`: a red cube.
+    - `G`: a green cube.
+    - `B`: a blue cube.
+  - link (place a cube and link it to):
+    - `|`: the upper cube.
+    - `-`: the left cube.
+    - `/`: both the upper and left cubes.
   - other:
     - ` `: nothing here.
     - `x`: target point.
-- `info` is some meta data.
+- `info` contains some metadata.
+
+> Note: if any level file is invalid, game will stop loading and log the error.
 
 If you want to add custom levels:
 
@@ -82,10 +86,10 @@ If you want to add custom levels:
 
 ## License
 
-The repository use two licenses:
+This repository use two licenses:
 
-- `./cube-core` is under LGPL 3.0, and 
-- `./cube-collection` is under MIT license.
+- `./cube-core` is under **LGPL 3.0**, and 
+- `./cube-collection` uses **MIT** license.
 
 ## Known issues
 
