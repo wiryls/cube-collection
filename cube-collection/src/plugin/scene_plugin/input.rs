@@ -42,7 +42,7 @@ enum Command {
 }
 
 fn keyboard(
-    keys: Res<Input<KeyCode>>,
+    keys: Res<ButtonInput<KeyCode>>,
     mut input: EventReader<KeyboardInput>,
     mut change_world: EventWriter<WorldChanged>,
     mut change_movement: EventWriter<MovementChanged>,
@@ -50,34 +50,37 @@ fn keyboard(
     mut actions: Local<ActionSequence>,
 ) {
     // try to calculate a command and send it to movement system.
-    for (code, key) in input
-        .read()
-        .filter_map(|key| key.key_code.map(|code| (code, key)))
-    {
+    for key in input.read() {
         let shift = keys.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
         let presse = key.state.is_pressed();
-        let output = match code {
+        let output = match key.key_code {
             // control
             KeyCode::Escape if presse && shift => Command::Reset,
             KeyCode::Escape if presse => Command::Control(WorldChanged::Reset),
-            KeyCode::R if presse => Command::Control(WorldChanged::Restart),
-            KeyCode::N if presse => Command::Control(WorldChanged::Next),
-            KeyCode::L if presse => Command::Control(WorldChanged::Last),
+            KeyCode::KeyR if presse => Command::Control(WorldChanged::Restart),
+            KeyCode::KeyN if presse => Command::Control(WorldChanged::Next),
+            KeyCode::KeyL if presse => Command::Control(WorldChanged::Last),
 
             // movement
-            KeyCode::W | KeyCode::Up => actions.input(Movement::Up, presse),
-            KeyCode::A | KeyCode::Left => actions.input(Movement::Left, presse),
-            KeyCode::S | KeyCode::Down => actions.input(Movement::Down, presse),
-            KeyCode::D | KeyCode::Right => actions.input(Movement::Right, presse),
+            KeyCode::KeyW | KeyCode::ArrowUp => actions.input(Movement::Up, presse),
+            KeyCode::KeyA | KeyCode::ArrowLeft => actions.input(Movement::Left, presse),
+            KeyCode::KeyS | KeyCode::ArrowDown => actions.input(Movement::Down, presse),
+            KeyCode::KeyD | KeyCode::ArrowRight => actions.input(Movement::Right, presse),
 
             // ignore
             _ => Command::DoNothing,
         };
 
         match output {
-            Command::Reset => trgger_reload.send(HardReset),
-            Command::Control(control) => change_world.send(control),
-            Command::Movement(movement) => change_movement.send(movement),
+            Command::Reset => {
+                trgger_reload.send(HardReset);
+            }
+            Command::Control(control) => {
+                change_world.send(control);
+            }
+            Command::Movement(movement) => {
+                change_movement.send(movement);
+            }
             Command::DoNothing => {}
         }
     }

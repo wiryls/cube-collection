@@ -12,7 +12,7 @@ mod view;
 pub struct ScenePlugin;
 impl Plugin for ScenePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(ShapePlugin).add_state::<SceneState>();
+        app.add_plugins(ShapePlugin).init_state::<SceneState>();
 
         view::setup(app);
         input::setup(app, SceneState::Running);

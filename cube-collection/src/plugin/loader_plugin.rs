@@ -18,7 +18,7 @@ impl Plugin for LoaderPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ClearColor(Color::BLACK))
             .add_event::<LevelLoadingUpdated>()
-            .add_systems(Update, load_levels.run_if(resource_exists::<LoadLevels>()))
+            .add_systems(Update, load_levels.run_if(resource_exists::<LoadLevels>))
             .register_asset_loader(loader::SeedsAssetLoader::default())
             .init_asset::<LevelSeeds>();
     }

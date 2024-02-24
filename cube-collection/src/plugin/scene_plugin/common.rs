@@ -19,5 +19,4 @@ pub mod system {
 pub mod component {
     use super::*;
     pub use marker::Earthbound;
-    pub use translate::{TranslateAlpha, TranslateColor, TranslatePosition, TranslateShape};
 }

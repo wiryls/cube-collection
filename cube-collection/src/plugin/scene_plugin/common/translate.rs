@@ -65,7 +65,7 @@ pub fn recolor_system(
         } else {
             let source = translate.source;
             let target = translate.target;
-            let percent = translate.elapse.percent();
+            let percent = translate.elapse.fraction();
             let sl = source.1 + (target.1 - source.1) * percent;
             let h = TranslateColor::rotate_to(source.0, target.0, 360., percent);
             [h, sl.x, sl.y]
@@ -186,14 +186,14 @@ pub fn position_system(
         } else {
             match translate.parameters {
                 Move(from, to) => {
-                    let percent = translate.elapse.percent();
+                    let percent = translate.elapse.fraction();
                     let source = locate(&from);
                     let target = locate(&to);
                     let current = source + (target - source) * percent;
                     transform.translation = current.extend(z);
                 }
                 Spin(from, delta, limit) => {
-                    let percent = translate.elapse.percent();
+                    let percent = translate.elapse.fraction();
                     let percent = (1.0 - percent).min(percent).min(limit);
                     let source = locate(&from);
                     let delta = mapper.scale(&delta);
@@ -235,7 +235,7 @@ pub fn realpha_system(mut query: Query<(&mut TranslateAlpha, &mut Fill)>, time: 
         let alpha = if translate.elapse.tick(delta).finished() {
             translate.source
         } else {
-            let percent = (std::f32::consts::PI * translate.elapse.percent()).sin();
+            let percent = (std::f32::consts::PI * translate.elapse.fraction()).sin();
             let from = translate.source;
             let to = translate.target;
             from + (to - from) * percent

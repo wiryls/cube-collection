@@ -18,12 +18,12 @@ pub fn setup(app: &mut App) {
                 system::recolor,
                 system::reshape,
             )
-                .run_if(resource_exists::<model::World>())
+                .run_if(resource_exists::<model::World>)
                 .before(system::state),
         )
         .add_systems(
             Update,
-            system::state.run_if(resource_exists::<model::World>()),
+            system::state.run_if(resource_exists::<model::World>),
         )
         .add_systems(
             PostUpdate,
@@ -43,7 +43,7 @@ pub enum WorldChanged {
 }
 
 fn setup_world(mut change_world: EventWriter<WorldChanged>) {
-    change_world.send(WorldChanged::Restart)
+    change_world.send(WorldChanged::Restart);
 }
 
 fn switch_world(
@@ -66,7 +66,9 @@ fn switch_world(
 
     if let Some(seed) = got.then(|| world_seeds.current()).flatten() {
         // [0] remove all old objects
-        entities.for_each(|i| commands.entity(i).despawn_recursive());
+        entities
+            .iter()
+            .for_each(|i| commands.entity(i).despawn_recursive());
 
         // [1] update grid
         view.set_source(ViewRect {
