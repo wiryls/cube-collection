@@ -1,7 +1,6 @@
-use std::{collections::HashMap, time::Duration};
+use std::collections::HashMap;
 
 use bevy::prelude::*;
-use bevy::time::Timer;
 use cube_core::{
     cube::{Movement, Point},
     seed::Seed,
@@ -9,21 +8,15 @@ use cube_core::{
 };
 
 #[derive(Resource)]
-pub struct World {
-    state: cube_core::CubeCore,
-    timer: Timer,
-}
+pub struct World(cube_core::CubeCore);
 
 impl World {
     pub fn new(seed: &Seed) -> Self {
-        Self {
-            state: cube_core::CubeCore::new(&seed),
-            timer: Timer::new(Duration::from_millis(200), TimerMode::Repeating),
-        }
+        Self(cube_core::CubeCore::new(&seed))
     }
 
     pub fn next(&mut self, movement: Option<Movement>) -> HashMap<usize, Diff> {
-        self.state
+        self.0
             .commit(movement)
             .map(|diff| (diff.id, diff))
             .collect::<HashMap<_, _, _>>()
@@ -31,26 +24,22 @@ impl World {
     }
 
     pub fn cubes(&self) -> impl Iterator<Item = Unit> + '_ {
-        self.state.iter()
+        self.0.iter()
     }
 
     pub fn goals(&self) -> impl Iterator<Item = Point> + '_ {
-        self.state.goals().map(|(point, _)| point)
-    }
-
-    pub fn step(&self) -> Duration {
-        self.timer.duration()
+        self.0.goals().map(|(point, _)| point)
     }
 
     pub fn done(&self) -> bool {
-        self.state.goals().all(|(_, ok)| ok)
+        self.0.goals().all(|(_, ok)| ok)
     }
 
     pub fn width(&self) -> usize {
-        self.state.width()
+        self.0.width()
     }
 
     pub fn height(&self) -> usize {
-        self.state.height()
+        self.0.height()
     }
 }

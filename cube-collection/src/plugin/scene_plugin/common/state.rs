@@ -15,10 +15,12 @@ pub fn state_system(
     mut world: ResMut<World>,
     mut ticker: Local<detail::Ticker>,
     mut actions: Local<detail::ActionQueue>,
+    mut unchanged: Local<bool>,
     mut completed: Local<bool>,
     time: Res<Time>,
 ) {
     // update actions
+    let any_input = !input_action.is_empty();
     for action in input_action.read() {
         use MovementChanged::*;
         match action {
@@ -27,14 +29,7 @@ pub fn state_system(
         };
     }
 
-    // update world
-    let step = world.step();
-    let delta = time.delta();
-    let diffs = match ticker.tick(delta) {
-        false => return, // skip
-        true => world.next(actions.pop()),
-    };
-
+    // ready to change the world!
     if *completed {
         // delay one round to move to next level
         *completed = false;
@@ -50,7 +45,15 @@ pub fn state_system(
         return;
     }
 
-    if !diffs.is_empty() {
+    // try to update world
+    let force = any_input && *unchanged;
+    let (diffs, delta) = match ticker.tick(time.delta(), force) {
+        false => return, // skip
+        true => (world.next(actions.pop()), ticker.remaining()),
+    };
+
+    *unchanged = diffs.is_empty();
+    if !*unchanged {
         let query = query.iter_mut().filter_map(|(id, cube, position)| {
             diffs.get(&cube.id).map(|diff| (id, cube, position, diff))
         });
@@ -58,7 +61,7 @@ pub fn state_system(
         for (id, mut cube, mut position, diff) in query {
             // color
             if let Some(value) = diff.kind {
-                let component = TranslateColor::new(cube.kind, value, step);
+                let component = TranslateColor::new(cube.kind, value, delta);
                 commands.entity(id).insert(component);
                 cube.kind = value;
             }
@@ -71,7 +74,7 @@ pub fn state_system(
             }
 
             // translation
-            if let Some(component) = TranslatePosition::make(&*cube, position.point, diff, step) {
+            if let Some(component) = TranslatePosition::make(&*cube, position.point, diff, delta) {
                 commands.entity(id).insert(component);
             }
             if let Some(value) = diff.position {
@@ -138,8 +141,17 @@ mod detail {
     pub struct Ticker(Timer);
 
     impl Ticker {
-        pub fn tick(&mut self, delta: Duration) -> bool {
-            self.0.tick(delta).finished()
+        pub fn remaining(&self) -> Duration {
+            self.0.remaining()
+        }
+
+        pub fn tick(&mut self, delta: Duration, force: bool) -> bool {
+            if !force {
+                self.0.tick(delta).finished()
+            } else {
+                self.0.reset();
+                true
+            }
         }
 
         pub fn reset(&mut self) {
