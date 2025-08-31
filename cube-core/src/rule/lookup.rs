@@ -220,7 +220,7 @@ impl Digraph {
             .insert(to.into());
     }
 
-    pub fn children<T: Into<usize>>(&self, index: T) -> DigraphNodeIter {
+    pub fn children<T: Into<usize>>(&'_ self, index: T) -> DigraphNodeIter<'_> {
         match self.0.get(&index.into()) {
             Some(set) => set,
             _fallback => &self.1,

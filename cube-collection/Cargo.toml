@@ -8,8 +8,8 @@ version = "0.5.15"
 cube-core = { path = "../cube-core" }
 
 # Bevy and its plugins
-bevy = "0.15.3"
-bevy_prototype_lyon = "0.13"
+bevy = "0.16.1"
+bevy_prototype_lyon = { git = "https://github.com/rparrett/bevy_prototype_lyon", branch = "fix-dynamic-examples" }
 
 # Extra utilities
 anyhow = "1.0"

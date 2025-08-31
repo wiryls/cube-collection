@@ -61,11 +61,11 @@ fn load_levels(
             LoadState::NotLoaded | LoadState::Loading => {}
             LoadState::Loaded if matches!(seeds.get(&*handle), Some(_)) => {
                 let seeds = seeds.get(&*handle).cloned().unwrap().0;
-                load_updated.send(LevelLoadingUpdated::Success { seeds });
+                load_updated.write(LevelLoadingUpdated::Success { seeds });
                 commands.remove_resource::<LoadLevels>();
             }
             _ => {
-                load_updated.send(LevelLoadingUpdated::Failure);
+                load_updated.write(LevelLoadingUpdated::Failure);
                 commands.remove_resource::<LoadLevels>();
             }
         },

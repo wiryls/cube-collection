@@ -73,13 +73,13 @@ fn keyboard(
 
         match output {
             Command::Reset => {
-                trgger_reload.send(HardReset);
+                trgger_reload.write(HardReset);
             }
             Command::Control(control) => {
-                change_world.send(control);
+                change_world.write(control);
             }
             Command::Movement(movement) => {
-                change_movement.send(movement);
+                change_movement.write(movement);
             }
             Command::DoNothing => {}
         }

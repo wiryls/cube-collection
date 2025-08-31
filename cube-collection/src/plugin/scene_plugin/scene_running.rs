@@ -43,7 +43,7 @@ pub enum WorldChanged {
 }
 
 fn setup_world(mut change_world: EventWriter<WorldChanged>) {
-    change_world.send(WorldChanged::Restart);
+    change_world.write(WorldChanged::Restart);
 }
 
 fn switch_world(
@@ -66,9 +66,7 @@ fn switch_world(
 
     if let Some(seed) = got.then(|| world_seeds.current()).flatten() {
         // [0] remove all old objects
-        entities
-            .iter()
-            .for_each(|i| commands.entity(i).despawn_recursive());
+        entities.iter().for_each(|i| commands.entity(i).despawn());
 
         // [1] update grid
         view.set_source(ViewRect {

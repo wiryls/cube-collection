@@ -35,7 +35,7 @@ fn update_gridview(
     const PADDING_RATE: f32 = 0.04;
 
     // multiple windows are not supported, we just watch the primary one.
-    if let Ok(window) = windows.get_single() {
+    if let Ok(window) = windows.single() {
         while let Some(event) = window_resized
             .read()
             .filter(|x| x.window.index() == window.index())
@@ -54,7 +54,7 @@ fn update_gridview(
 
             if view.set_target(r) && view.available() {
                 let mapper = view.mapping().clone();
-                mapper_updated.send(ViewUpdated { mapper });
+                mapper_updated.write(ViewUpdated { mapper });
             }
         }
     }

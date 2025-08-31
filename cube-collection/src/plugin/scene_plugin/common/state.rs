@@ -39,7 +39,7 @@ pub fn state_system(
         ticker.reset();
 
         // report level change event
-        change_world.send(WorldChanged::Next);
+        change_world.write(WorldChanged::Next);
 
         // avoid update completed again
         return;
