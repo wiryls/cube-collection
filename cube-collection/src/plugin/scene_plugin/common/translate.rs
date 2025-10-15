@@ -39,7 +39,7 @@ pub fn recolor_system(
 ) {
     let delta = time.delta();
     for (id, mut translate, mut shape) in &mut query {
-        let next = if translate.elapse.tick(delta).finished() {
+        let next = if translate.elapse.tick(delta).is_finished() {
             commands.entity(id).remove::<TranslateColor>();
             translate.target
         } else {
@@ -148,13 +148,13 @@ pub fn position_system(
 ) {
     let delta = time.delta();
     let mapper = view.mapping();
-    let locate = |o: &Point| (mapper.locate(o) + mapper.scale(&(0.5, 0.5)));
+    let locate = |o: &Point| mapper.locate(o) + mapper.scale(&(0.5, 0.5));
 
     for (id, mut translate, mut transform) in &mut query {
         let z = transform.translation.z;
 
         use Position::*;
-        if translate.elapse.tick(delta).finished() {
+        if translate.elapse.tick(delta).is_finished() {
             match translate.parameters {
                 Move(_, to) => {
                     transform.translation = locate(&to).extend(z);
@@ -217,7 +217,7 @@ impl TranslateAlpha {
 pub fn realpha_system(mut query: Query<(&mut TranslateAlpha, &mut Shape)>, time: Res<Time>) {
     let delta = time.delta();
     for (mut translate, mut shape) in &mut query {
-        let alpha = if translate.elapse.tick(delta).finished() {
+        let alpha = if translate.elapse.tick(delta).is_finished() {
             translate.source
         } else {
             let percent = (std::f32::consts::PI * translate.elapse.fraction()).sin();

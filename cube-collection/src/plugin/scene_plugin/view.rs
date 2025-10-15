@@ -4,12 +4,15 @@ use cube_core::cube::Point;
 
 pub fn setup(app: &mut App) {
     app.init_resource::<GridView>()
-        .add_event::<ViewUpdated>()
+        .add_message::<ViewUpdated>()
         .add_systems(Startup, setup_camera)
-        .add_systems(PreUpdate, update_gridview.run_if(on_event::<WindowResized>));
+        .add_systems(
+            PreUpdate,
+            update_gridview.run_if(on_message::<WindowResized>),
+        );
 }
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct ViewUpdated {
     pub mapper: ViewMapper,
 }
@@ -29,8 +32,8 @@ fn setup_camera(mut commands: Commands) {
 fn update_gridview(
     windows: Query<Entity, With<PrimaryWindow>>,
     mut view: ResMut<GridView>,
-    mut window_resized: EventReader<WindowResized>,
-    mut mapper_updated: EventWriter<ViewUpdated>,
+    mut window_resized: MessageReader<WindowResized>,
+    mut mapper_updated: MessageWriter<ViewUpdated>,
 ) {
     const PADDING_RATE: f32 = 0.04;
 

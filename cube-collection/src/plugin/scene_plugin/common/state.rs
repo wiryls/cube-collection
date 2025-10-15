@@ -9,8 +9,8 @@ use super::{
 
 pub fn state_system(
     mut commands: Commands,
-    mut input_action: EventReader<MovementChanged>,
-    mut change_world: EventWriter<WorldChanged>,
+    mut input_action: MessageReader<MovementChanged>,
+    mut change_world: MessageWriter<WorldChanged>,
     mut query: Query<(Entity, &mut Cubic, &mut AutoRescale)>,
     mut world: ResMut<World>,
     mut ticker: Local<detail::Ticker>,
@@ -147,7 +147,7 @@ mod detail {
 
         pub fn tick(&mut self, delta: Duration, force: bool) -> bool {
             if !force {
-                self.0.tick(delta).finished()
+                self.0.tick(delta).is_finished()
             } else {
                 self.0.reset();
                 true

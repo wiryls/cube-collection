@@ -17,14 +17,14 @@ pub struct LoaderPlugin;
 impl Plugin for LoaderPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(ClearColor(Color::BLACK))
-            .add_event::<LevelLoadingUpdated>()
+            .add_message::<LevelLoadingUpdated>()
             .add_systems(Update, load_levels.run_if(resource_exists::<LoadLevels>))
             .register_asset_loader(loader::SeedsAssetLoader::default())
             .init_asset::<LevelSeeds>();
     }
 }
 
-#[derive(Clone, Event)]
+#[derive(Clone, Message)]
 pub enum LevelLoadingUpdated {
     Success { seeds: Vec<Seed> },
     Failure,
@@ -47,7 +47,7 @@ enum LoadLevelState {
 fn load_levels(
     mut commands: Commands,
     mut status: ResMut<LoadLevels>,
-    mut load_updated: EventWriter<LevelLoadingUpdated>,
+    mut load_updated: MessageWriter<LevelLoadingUpdated>,
     server: Res<AssetServer>,
     seeds: Res<Assets<LevelSeeds>>,
 ) {

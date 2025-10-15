@@ -14,7 +14,7 @@ pub struct AutoRescale {
 /// Rescale and relocate entities when windows resized.
 pub fn self_adaption_system(
     mut query: Query<(&mut Transform, &AutoRescale)>,
-    mut view_updated: EventReader<ViewUpdated>,
+    mut view_updated: MessageReader<ViewUpdated>,
 ) {
     let event = match view_updated.read().last() {
         None => return,

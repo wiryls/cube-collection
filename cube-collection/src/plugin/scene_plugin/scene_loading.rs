@@ -3,24 +3,24 @@ use bevy::prelude::*;
 use super::{model::Seeds, SceneState};
 use crate::plugin::loader_plugin::{LevelLoadingUpdated, LoadLevels, LoaderPlugin};
 
-#[derive(Clone, Event)]
+#[derive(Clone, Message)]
 pub struct HardReset;
 
 pub fn setup(app: &mut App) {
     app.add_plugins(LoaderPlugin)
-        .add_event::<HardReset>()
+        .add_message::<HardReset>()
         .add_systems(OnEnter(SceneState::Loading), start_loading)
         .add_systems(
             PreUpdate,
             hard_reset
                 .run_if(in_state(SceneState::Running))
-                .run_if(on_event::<HardReset>),
+                .run_if(on_message::<HardReset>),
         )
         .add_systems(
             Update,
             loading_updated
                 .run_if(in_state(SceneState::Loading))
-                .run_if(on_event::<LevelLoadingUpdated>),
+                .run_if(on_message::<LevelLoadingUpdated>),
         );
 }
 
@@ -30,7 +30,7 @@ fn start_loading(mut commands: Commands) {
 
 fn hard_reset(
     mut commands: Commands,
-    mut events: EventReader<HardReset>,
+    mut events: MessageReader<HardReset>,
     mut next_state: ResMut<NextState<SceneState>>,
 ) {
     while let Some(_) = events.read().last() {
@@ -41,7 +41,7 @@ fn hard_reset(
 
 fn loading_updated(
     mut commands: Commands,
-    mut events: EventReader<LevelLoadingUpdated>,
+    mut events: MessageReader<LevelLoadingUpdated>,
     mut next_state: ResMut<NextState<SceneState>>,
 ) {
     for event in events.read() {

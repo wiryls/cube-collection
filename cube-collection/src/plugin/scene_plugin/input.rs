@@ -5,11 +5,11 @@ use cube_core::cube::Movement;
 use super::{scene_loading::HardReset, scene_running::WorldChanged};
 
 pub fn setup(app: &mut App, state: impl States) {
-    app.add_event::<MovementChanged>()
+    app.add_message::<MovementChanged>()
         .add_systems(PreUpdate, keyboard.run_if(in_state(state)));
 }
 
-#[derive(Clone, Debug, Event, PartialEq, Eq)]
+#[derive(Clone, Debug, Message, PartialEq, Eq)]
 pub enum MovementChanged {
     Add(Movement),
     Set(Option<Movement>),
@@ -43,10 +43,10 @@ enum Command {
 
 fn keyboard(
     keys: Res<ButtonInput<KeyCode>>,
-    mut input: EventReader<KeyboardInput>,
-    mut change_world: EventWriter<WorldChanged>,
-    mut change_movement: EventWriter<MovementChanged>,
-    mut trgger_reload: EventWriter<HardReset>,
+    mut input: MessageReader<KeyboardInput>,
+    mut change_world: MessageWriter<WorldChanged>,
+    mut change_movement: MessageWriter<MovementChanged>,
+    mut trgger_reload: MessageWriter<HardReset>,
     mut actions: Local<ActionSequence>,
 ) {
     // try to calculate a command and send it to movement system.

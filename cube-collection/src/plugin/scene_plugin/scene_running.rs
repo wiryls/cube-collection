@@ -8,7 +8,7 @@ use super::{
 };
 
 pub fn setup(app: &mut App) {
-    app.add_event::<WorldChanged>()
+    app.add_message::<WorldChanged>()
         .add_systems(OnEnter(SceneState::Running), setup_world)
         .add_systems(
             Update,
@@ -28,13 +28,13 @@ pub fn setup(app: &mut App) {
         .add_systems(
             PostUpdate,
             (
-                switch_world.run_if(on_event::<WorldChanged>),
-                system::self_adaption.run_if(on_event::<ViewUpdated>),
+                switch_world.run_if(on_message::<WorldChanged>),
+                system::self_adaption.run_if(on_message::<ViewUpdated>),
             ),
         );
 }
 
-#[derive(Event)]
+#[derive(Message)]
 pub enum WorldChanged {
     Reset,
     Restart,
@@ -42,7 +42,7 @@ pub enum WorldChanged {
     Last,
 }
 
-fn setup_world(mut change_world: EventWriter<WorldChanged>) {
+fn setup_world(mut change_world: MessageWriter<WorldChanged>) {
     change_world.write(WorldChanged::Restart);
 }
 
@@ -51,7 +51,7 @@ fn switch_world(
     entities: Query<Entity, With<component::Earthbound>>,
     mut view: ResMut<GridView>,
     mut world_seeds: ResMut<model::Seeds>,
-    mut world_changed: EventReader<WorldChanged>,
+    mut world_changed: MessageReader<WorldChanged>,
 ) {
     let got = !world_changed.is_empty();
     for event in world_changed.read() {
