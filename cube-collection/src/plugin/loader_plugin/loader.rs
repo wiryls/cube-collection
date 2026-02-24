@@ -22,7 +22,7 @@ struct LevelIndex {
     pub name_list: Vec<String>,
 }
 
-#[derive(Default)]
+#[derive(Default, TypePath)]
 pub struct SeedsAssetLoader;
 impl AssetLoader for SeedsAssetLoader {
     type Asset = LevelSeeds;
@@ -64,10 +64,7 @@ impl AssetLoader for SeedsAssetLoader {
                 return Ok(output);
             }
         }
-        anyhow::bail!(
-            "invalid toml file {}",
-            load_context.path().to_string_lossy()
-        );
+        anyhow::bail!("invalid toml file {}", load_context.path().to_string());
     }
 
     fn extensions(&self) -> &[&str] {
