@@ -7,20 +7,19 @@ use cube_core::{
     Diff, Unit,
 };
 
-#[derive(Resource)]
+#[derive(Resource, Debug)]
 pub struct World(cube_core::CubeCore);
 
 impl World {
     pub fn new(seed: &Seed) -> Self {
-        Self(cube_core::CubeCore::new(&seed))
+        Self(cube_core::CubeCore::new(seed))
     }
 
     pub fn next(&mut self, movement: Option<Movement>) -> HashMap<usize, Diff> {
         self.0
             .commit(movement)
             .map(|diff| (diff.id, diff))
-            .collect::<HashMap<_, _, _>>()
-            .into()
+            .collect()
     }
 
     pub fn cubes(&self) -> impl Iterator<Item = Unit> + '_ {

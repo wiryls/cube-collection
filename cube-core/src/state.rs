@@ -4,6 +4,7 @@ use super::{
     seed::{Cube, Seed},
 };
 
+#[derive(Debug)]
 pub struct CubeCore {
     dest: Vec<Point>,
     last: Option<(Collection, Snapshot)>,
@@ -25,7 +26,7 @@ impl CubeCore {
             )
         }
 
-        let dest = seed.destnations.clone();
+        let dest = seed.destinations.clone();
         let collection = Collection::new(
             seed.size.width.max(1) as usize,
             seed.size.height.max(1) as usize,
@@ -74,7 +75,7 @@ impl CubeCore {
             }
         };
 
-        pair.0.differ(&pair.1)
+        pair.0.differ(pair.1)
     }
 
     pub fn width(&self) -> usize {

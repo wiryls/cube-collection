@@ -48,7 +48,7 @@ mod tests {
                     command: None,
                 },
             ],
-            destnations: vec![Point::new(1, 0), Point::new(0, 2)],
+            destinations: vec![Point::new(1, 0), Point::new(0, 2)],
         };
         let mut game = CubeCore::new(&seed);
         let stat = [
@@ -74,7 +74,9 @@ mod tests {
                 position: Point::new(1, 0),
                 movement: None,
                 constraint: Constraint::Free,
-                neighborhood: Neighborhood::new(),
+                neighborhood: Neighborhood::from(
+                    [Adjacence::LEFT_TOP, Adjacence::TOP, Adjacence::RIGHT_TOP].into_iter(),
+                ),
             },
         ];
         assert_eq!(game.iter().collect::<Vec<_>>(), stat);
@@ -142,7 +144,9 @@ mod tests {
                 position: Point::new(1, 0),
                 movement: None,
                 constraint: Constraint::Free,
-                neighborhood: Neighborhood::new(),
+                neighborhood: Neighborhood::from(
+                    [Adjacence::LEFT_TOP, Adjacence::TOP, Adjacence::RIGHT_TOP].into_iter(),
+                ),
             },
         ];
         assert_eq!(game.iter().collect::<Vec<_>>(), stat);

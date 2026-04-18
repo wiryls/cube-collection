@@ -51,20 +51,11 @@ impl From<Movement> for Point {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Constraint {
-    /// free to move
+    #[default]
     Free,
-    /// knocking on other cubes
     Slap,
-    /// blocked as competing on the same point
     Lock,
-    /// obstacles on the path
     Stop,
-}
-
-impl Default for Constraint {
-    fn default() -> Self {
-        Self::Free
-    }
 }

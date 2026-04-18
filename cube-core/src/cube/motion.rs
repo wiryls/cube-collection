@@ -5,6 +5,12 @@ use super::Movement;
 /////////////////////////////////////////////////////////////////////////////
 // export
 
+/// A consensus tracker that resolves votes from multiple participants.
+///
+/// Internally uses a triple-nested `Option` to represent three states:
+/// - `Some(Some(choice))` — All voters agree on the same `choice` (including `None` for "stay still").
+/// - `Some(None)`         — No votes have been submitted yet (pending).
+/// - `None`               — Voters disagree; consensus has failed.
 #[derive(Clone, Debug)]
 pub struct Agreement(Option<Option<Option<Movement>>>);
 
@@ -33,7 +39,7 @@ impl Agreement {
     }
 
     pub fn fail(&self) -> bool {
-        self.0 == None
+        self.0.is_none()
     }
 
     pub fn result(&self) -> Option<Option<Movement>> {
@@ -73,7 +79,7 @@ impl Motion {
         matches!(self.0, Any::Stop)
     }
 
-    pub fn r#take(&mut self) -> Self {
+    pub fn take(&mut self) -> Self {
         Motion(self.take_inner())
     }
 
@@ -157,7 +163,7 @@ impl Iterator for Move {
             }
         }
 
-        return Some(movement);
+        Some(movement)
     }
 }
 

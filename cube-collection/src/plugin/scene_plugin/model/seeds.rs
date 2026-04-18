@@ -1,7 +1,8 @@
 use bevy::prelude::*;
-use cube_core::seed::Seed;
+use cube_core::cube::{Kind, Point};
+use cube_core::seed::{Cube, Info, Seed, Size};
 
-#[derive(Resource)]
+#[derive(Resource, Debug)]
 pub struct Seeds {
     list: Vec<Seed>,
     head: usize,
@@ -34,6 +35,45 @@ impl Seeds {
             self.head -= 1;
             true
         }
+    }
+
+    pub fn error() -> Self {
+        const ART: &str = "
+.###.##..##..###.##..
+.#...#.#.#.#.#.#.#.#.
+.##..##..##..#.#.##..
+.#...#.#.#.#.#.#.#.#.
+.###.#.#.#.#.###.#.#.
+
+";
+
+        let mut cubes = Vec::new();
+        for (y, row) in ART.lines().enumerate() {
+            for (x, ch) in row.chars().enumerate() {
+                if ch == '#' {
+                    cubes.push(Cube {
+                        kind: Kind::Red,
+                        body: vec![Point::new(x as i32, y as i32)],
+                        command: None,
+                    });
+                }
+            }
+        }
+
+        let seed = Seed {
+            info: Info {
+                title: "ERROR".into(),
+                author: String::new(),
+            },
+            size: Size {
+                width: ART.lines().map(|x| x.len() as i32).max().unwrap_or(1),
+                height: ART.lines().count() as i32,
+            },
+            cubes,
+            destinations: vec![],
+        };
+
+        Self::from(vec![seed])
     }
 }
 

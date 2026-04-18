@@ -1,4 +1,4 @@
-use anyhow::Ok;
+use anyhow;
 use bevy::{
     asset::{io::Reader, Asset, AssetLoader, AsyncReadExt, LoadContext, LoadedAsset},
     reflect::TypePath,
@@ -49,7 +49,7 @@ impl AssetLoader for SeedsAssetLoader {
                 // level
                 let source = value.try_into::<LevelSource>()?;
                 let target = source.into_seed()?;
-                return Ok(LevelSeeds(vec![target]));
+                return anyhow::Ok(LevelSeeds(vec![target]));
             } else if table.contains_key(INDEX_MARK) {
                 // index
                 let source = value.try_into::<LevelIndex>()?;
@@ -61,10 +61,10 @@ impl AssetLoader for SeedsAssetLoader {
                         load_context.loader().immediate().load(path).await?;
                     output.0.append(&mut load.take().0);
                 }
-                return Ok(output);
+                return anyhow::Ok(output);
             }
         }
-        anyhow::bail!("invalid toml file {}", load_context.path().to_string());
+        anyhow::bail!("invalid toml file {}", load_context.path());
     }
 
     fn extensions(&self) -> &[&str] {

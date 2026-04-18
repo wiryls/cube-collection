@@ -295,7 +295,7 @@ impl Collection {
             }
         }
 
-        self.conduct(locked, &successors, Constraint::Lock, Some(&mut connection))
+        self.conduct(locked, successors, Constraint::Lock, Some(&mut connection))
             .into_iter()
             .for_each(|index| self.cube[index].constraint = Constraint::Lock);
         self.link(&mut connection);
@@ -377,7 +377,7 @@ impl Collection {
             }
         }
 
-        self.conduct(loser, &successors, Constraint::Lock, None)
+        self.conduct(loser, successors, Constraint::Lock, None)
             .into_iter()
             .for_each(|index| self.cube[index].constraint = Constraint::Slap);
     }
@@ -608,7 +608,7 @@ impl Contours {
             vec![first; total]
         };
         let mut index = {
-            let mut index = count.clone();
+            let mut index = count;
             index.rotate_right(1);
             index[0] = 0;
             index
@@ -643,7 +643,7 @@ impl Contours {
     }
 
     fn all(&self, anchor: Point) -> impl Iterator<Item = Point> + Clone + '_ {
-        (&self.slice[..]).iter().map(move |o| anchor - *o)
+        self.slice[..].iter().map(move |o| anchor - *o)
     }
 
     fn anchor(units: &[Unit]) -> Point {
@@ -821,7 +821,7 @@ impl Arena {
         use Kind::*;
         match ((self.0[0] as usize) << 2) // R
             | ((self.0[1] as usize) << 1) // B
-            | ((self.0[2] as usize) << 0) // G
+            | (self.0[2] as usize) // G
         { //  RGB
             0b111 => Draw,
             0b101 => Have(Red),
@@ -858,10 +858,8 @@ impl<'a> Moving<'a> {
     fn new(cube: &'a Cube) -> Option<Self> {
         if !cube.alive() {
             None
-        } else if let Some(movement) = cube.movement {
-            Some(Self { cube, movement })
         } else {
-            None
+            cube.movement.map(|movement| Self { cube, movement })
         }
     }
 

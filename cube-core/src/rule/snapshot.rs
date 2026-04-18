@@ -9,22 +9,22 @@ use crate::cube::{Constraint, Kind, Neighborhood, Point};
 #[derive(Clone, Debug)]
 pub struct Snapshot {
     active: Vec<Unit>,
-    forzen: Arc<Frozen>,
+    frozen: Arc<Frozen>,
 }
 
 impl Snapshot {
-    pub(crate) fn new(active: Vec<Unit>, forzen: Arc<Frozen>) -> Self {
-        Self { active, forzen }
+    pub(crate) fn new(active: Vec<Unit>, frozen: Arc<Frozen>) -> Self {
+        Self { active, frozen }
     }
 
     pub fn contains(&self, position: Point) -> bool {
-        self.active.iter().any(|unit| unit.position == position) || self.forzen.blocked(position)
+        self.active.iter().any(|unit| unit.position == position) || self.frozen.blocked(position)
     }
 
     pub fn differ<'a>(&'a self, that: &'a Self) -> impl Iterator<Item = Diff> + 'a {
         use std::ptr::eq;
         let same = eq(self, that);
-        let same_source = eq(self.forzen.as_ref(), that.forzen.as_ref());
+        let same_source = eq(self.frozen.as_ref(), that.frozen.as_ref());
         let comparable = same_source && self.active.len() == that.active.len();
         let maximum = (!same && comparable) as usize * self.active.len();
 
@@ -39,11 +39,11 @@ impl Snapshot {
             })
             .map(|(l, r)| Diff {
                 id: r.id,
-                kind: (l.kind != r.kind).then(|| r.kind),
-                position: (l.position != r.position).then(|| r.position),
-                movement: (l.movement != r.movement).then(|| r.movement),
-                constraint: (l.constraint != r.constraint).then(|| r.constraint),
-                neighborhood: (l.neighborhood != r.neighborhood).then(|| r.neighborhood),
+                kind: (l.kind != r.kind).then_some(r.kind),
+                position: (l.position != r.position).then_some(r.position),
+                movement: (l.movement != r.movement).then_some(r.movement),
+                constraint: (l.constraint != r.constraint).then_some(r.constraint),
+                neighborhood: (l.neighborhood != r.neighborhood).then_some(r.neighborhood),
             })
     }
 
@@ -51,7 +51,7 @@ impl Snapshot {
         SnapshotIter {
             source: self,
             primary: Some(self.active.iter()),
-            secondary: Some(self.forzen.iter().enumerate()),
+            secondary: Some(self.frozen.iter().enumerate()),
         }
     }
 }
@@ -66,7 +66,7 @@ impl<'a> Iterator for SnapshotIter<'a> {
     type Item = Unit;
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let x = self.source.active.len() + self.source.forzen.len();
+        let x = self.source.active.len() + self.source.frozen.len();
         (x, Some(x))
     }
 
@@ -83,10 +83,10 @@ impl<'a> Iterator for SnapshotIter<'a> {
                 return Some(Unit {
                     id: index + self.source.active.len(),
                     kind: Kind::White,
-                    position: point.clone(),
+                    position: *point,
                     movement: None,
                     constraint: Constraint::Free,
-                    neighborhood: neighborhood.clone(),
+                    neighborhood: *neighborhood,
                 });
             }
             self.secondary = None

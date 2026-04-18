@@ -52,20 +52,20 @@ fn keyboard(
     // try to calculate a command and send it to movement system.
     for key in input.read() {
         let shift = keys.any_pressed([KeyCode::ShiftLeft, KeyCode::ShiftRight]);
-        let presse = key.state.is_pressed();
+        let pressed = key.state.is_pressed();
         let output = match key.key_code {
             // control
-            KeyCode::Escape if presse && shift => Command::Reset,
-            KeyCode::Escape if presse => Command::Control(WorldChanged::Reset),
-            KeyCode::KeyR if presse => Command::Control(WorldChanged::Restart),
-            KeyCode::KeyN if presse => Command::Control(WorldChanged::Next),
-            KeyCode::KeyL if presse => Command::Control(WorldChanged::Last),
+            KeyCode::Escape if pressed && shift => Command::Reset,
+            KeyCode::Escape if pressed => Command::Control(WorldChanged::Reset),
+            KeyCode::KeyR if pressed => Command::Control(WorldChanged::Restart),
+            KeyCode::KeyN if pressed => Command::Control(WorldChanged::Next),
+            KeyCode::KeyL if pressed => Command::Control(WorldChanged::Last),
 
             // movement
-            KeyCode::KeyW | KeyCode::ArrowUp => actions.input(Movement::Up, presse),
-            KeyCode::KeyA | KeyCode::ArrowLeft => actions.input(Movement::Left, presse),
-            KeyCode::KeyS | KeyCode::ArrowDown => actions.input(Movement::Down, presse),
-            KeyCode::KeyD | KeyCode::ArrowRight => actions.input(Movement::Right, presse),
+            KeyCode::KeyW | KeyCode::ArrowUp => actions.input(Movement::Up, pressed),
+            KeyCode::KeyA | KeyCode::ArrowLeft => actions.input(Movement::Left, pressed),
+            KeyCode::KeyS | KeyCode::ArrowDown => actions.input(Movement::Down, pressed),
+            KeyCode::KeyD | KeyCode::ArrowRight => actions.input(Movement::Right, pressed),
 
             // ignore
             _ => Command::DoNothing,

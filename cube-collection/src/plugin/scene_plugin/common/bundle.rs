@@ -50,7 +50,7 @@ pub struct FloorBundle {
 pub fn hello_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) {
     fn make_polygon(points: Vec<Vec2>, color: Color) -> Shape {
         ShapeBuilder::with(&shapes::Polygon {
-            points: points,
+            points,
             closed: true,
         })
         .fill(color)
@@ -74,7 +74,7 @@ pub fn hello_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
                 },
                 shape: make_polygon(
                     style::cube_boundaries(Neighborhood::new(), 0.95),
-                    style::destnation_color(),
+                    style::destination_color(),
                 ),
                 transform: Transform {
                     translation: (mapper.locate(&goal) + delta).extend(2.),

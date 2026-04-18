@@ -19,18 +19,18 @@ impl Plugin for LoaderPlugin {
         app.insert_resource(ClearColor(Color::BLACK))
             .add_message::<LevelLoadingUpdated>()
             .add_systems(Update, load_levels.run_if(resource_exists::<LoadLevels>))
-            .register_asset_loader(loader::SeedsAssetLoader::default())
+            .register_asset_loader(loader::SeedsAssetLoader)
             .init_asset::<LevelSeeds>();
     }
 }
 
-#[derive(Clone, Message)]
+#[derive(Clone, Debug, Message)]
 pub enum LevelLoadingUpdated {
     Success { seeds: Vec<Seed> },
     Failure,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Debug)]
 pub struct LoadLevels(LoadLevelState);
 
 impl LoadLevels {
@@ -39,6 +39,7 @@ impl LoadLevels {
     }
 }
 
+#[derive(Debug)]
 enum LoadLevelState {
     Pending(String),
     Loading(Handle<LevelSeeds>),
@@ -59,10 +60,12 @@ fn load_levels(
         }
         LoadLevelState::Loading(handle) => match server.load_state(&*handle) {
             LoadState::NotLoaded | LoadState::Loading => {}
-            LoadState::Loaded if matches!(seeds.get(&*handle), Some(_)) => {
-                let seeds = seeds.get(&*handle).cloned().unwrap().0;
-                load_updated.write(LevelLoadingUpdated::Success { seeds });
-                commands.remove_resource::<LoadLevels>();
+            LoadState::Loaded => {
+                if let Some(data) = seeds.get(&*handle).cloned() {
+                    let seeds = data.0;
+                    load_updated.write(LevelLoadingUpdated::Success { seeds });
+                    commands.remove_resource::<LoadLevels>();
+                }
             }
             _ => {
                 load_updated.write(LevelLoadingUpdated::Failure);

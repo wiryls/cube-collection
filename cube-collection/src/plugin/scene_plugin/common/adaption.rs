@@ -5,7 +5,7 @@ use super::super::view::ViewUpdated;
 
 /// AutoRescale marks that the current object fixed at a grid point and scales
 /// with grid size. Relocating happens when windows get resized.
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct AutoRescale {
     pub point: Point,
     pub offset: f32,

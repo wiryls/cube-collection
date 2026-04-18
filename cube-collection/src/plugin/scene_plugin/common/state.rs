@@ -7,6 +7,7 @@ use super::{
     translate::{TranslateColor, TranslatePosition, TranslateShape},
 };
 
+#[allow(clippy::too_many_arguments)]
 pub fn state_system(
     mut commands: Commands,
     mut input_action: MessageReader<MovementChanged>,
@@ -74,7 +75,7 @@ pub fn state_system(
             }
 
             // translation
-            if let Some(component) = TranslatePosition::make(&*cube, position.point, diff, delta) {
+            if let Some(component) = TranslatePosition::make(&cube, position.point, diff, delta) {
                 commands.entity(id).insert(component);
             }
             if let Some(value) = diff.position {

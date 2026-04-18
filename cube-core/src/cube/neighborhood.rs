@@ -1,6 +1,6 @@
 use super::Point;
 
-#[derive(Clone, Copy, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Adjacence(u8);
 
 impl Adjacence {
@@ -14,8 +14,8 @@ impl Adjacence {
     pub const LEFT_BOTTOM /*  **/: Adjacence = Adjacence(0b_00000001);
 }
 
-impl Into<Point> for Adjacence {
-    fn into(self) -> Point {
+impl From<Adjacence> for Point {
+    fn from(val: Adjacence) -> Point {
         const POINT_LEFT /*         **/: Point = Point::new(-1, 0);
         const POINT_LEFT_TOP /*     **/: Point = Point::new(-1, -1);
         const POINT_TOP /*          **/: Point = Point::new(0, -1);
@@ -26,7 +26,7 @@ impl Into<Point> for Adjacence {
         const POINT_LEFT_BOTTOM /*  **/: Point = Point::new(-1, 1);
         const POINT_NONE /*         **/: Point = Point::new(0, 0);
 
-        match self {
+        match val {
             Adjacence::LEFT => POINT_LEFT,
             Adjacence::LEFT_TOP => POINT_LEFT_TOP,
             Adjacence::TOP => POINT_TOP,
@@ -40,13 +40,13 @@ impl Into<Point> for Adjacence {
     }
 }
 
-impl Into<Point> for &Adjacence {
-    fn into(self) -> Point {
-        self.to_owned().into()
+impl From<&Adjacence> for Point {
+    fn from(val: &Adjacence) -> Point {
+        (*val).into()
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Neighborhood(u8);
 
 impl Neighborhood {

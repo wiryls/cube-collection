@@ -10,7 +10,7 @@ pub const fn floor_color() -> Color {
     Color::srgb(0.2, 0.2, 0.2)
 }
 
-pub const fn destnation_color() -> Color {
+pub const fn destination_color() -> Color {
     Color::Srgba(css::GRAY)
 }
 

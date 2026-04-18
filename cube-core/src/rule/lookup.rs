@@ -18,7 +18,7 @@ pub struct HashSetCollision(HashSet<Point>);
 
 impl HashSetCollision {
     pub fn new<T: Borrow<Point>, I: Iterator<Item = T>>(it: I) -> Self {
-        Self(it.map(|x| x.borrow().clone()).collect())
+        Self(it.map(|x| *x.borrow()).collect())
     }
 }
 
@@ -47,7 +47,7 @@ impl BitmapCollision {
     const UNIT: usize = 64;
 
     pub fn new(width: usize, height: usize) -> Self {
-        let size = (width.max(1) * height.max(1) + Self::UNIT - 1) / Self::UNIT;
+        let size = (width.max(1) * height.max(1)).div_ceil(Self::UNIT);
         Self {
             width: width as i32,
             height: height as i32,
@@ -116,7 +116,7 @@ pub type DisjointSetGroups = std::collections::hash_map::IntoValues<usize, Vec<u
 impl DisjointSet {
     pub fn new(size: usize) -> Self {
         Self {
-            parents: vec![None; size].into(),
+            parents: vec![None; size],
             existed: Vec::with_capacity(size / 2),
         }
     }
@@ -135,28 +135,17 @@ impl DisjointSet {
 
     pub fn groups(&mut self) -> DisjointSetGroups {
         let hint = self.existed.len();
+        let values: Vec<usize> = self.existed.clone();
+        let roots: Vec<usize> = values.iter().map(|&v| *self.root_mut(v)).collect();
         let mut pair = HashMap::with_capacity(hint);
-        for &value in self.existed.iter() {
-            pair.entry(Self::root(&self.parents, value))
+        for (value, root) in values.into_iter().zip(roots) {
+            pair.entry(root)
                 .or_insert_with(|| Vec::with_capacity(hint))
                 .push(value);
         }
         self.parents.clear();
         self.existed.clear();
         pair.into_values()
-    }
-
-    fn root(this: &[Option<usize>], mut index: usize) -> usize {
-        loop {
-            if let Some(upper) = this[index] {
-                if upper != index {
-                    index = upper;
-                    continue;
-                }
-            }
-            break;
-        }
-        index
     }
 
     fn root_mut(&mut self, mut index: usize) -> &mut usize {
@@ -291,5 +280,57 @@ mod tests {
 
             assert_eq!(case.2, out, "case {}", i);
         }
+    }
+
+    #[test]
+    fn disjoint_set_deep_chain() {
+        const LINKS: [(usize, usize); 7] = [(0, 1), (1, 2), (2, 3), (3, 4), (5, 6), (6, 7), (7, 3)];
+        let mut ds = DisjointSet::new(10);
+        for (a, b) in LINKS {
+            ds.join(a, b);
+        }
+
+        let mut groups: Vec<Vec<usize>> = ds
+            .groups()
+            .map(|mut g| {
+                g.sort();
+                g
+            })
+            .collect();
+        groups.sort_by_key(|g| g[0]);
+
+        assert_eq!(groups, vec![vec![0, 1, 2, 3, 4, 5, 6, 7]]);
+    }
+
+    #[test]
+    fn disjoint_set_path_compression_consistency() {
+        #[rustfmt::skip]
+        const LINKS: [(usize, usize); 16] = [
+            (0, 1), (2, 3), (1, 3), (4, 5), (5, 6), (6, 7), (8, 9), (3, 7),
+            (10, 11), (12, 13), (14, 15), (15, 13), (16, 17), (18, 19), (9, 19), (7, 11),
+        ];
+        let mut ds = DisjointSet::new(20);
+        for (a, b) in LINKS {
+            ds.join(a, b);
+        }
+
+        let mut groups: Vec<Vec<usize>> = ds
+            .groups()
+            .map(|mut g| {
+                g.sort();
+                g
+            })
+            .collect();
+        groups.sort_by_key(|g| g[0]);
+
+        assert_eq!(
+            groups,
+            vec![
+                vec![0, 1, 2, 3, 4, 5, 6, 7, 10, 11],
+                vec![8, 9, 18, 19],
+                vec![12, 13, 14, 15],
+                vec![16, 17],
+            ]
+        );
     }
 }

@@ -142,24 +142,24 @@ struct LevelParser {
     m: LevelMapBuilder,
 }
 
-impl Into<LevelParser> for Info {
-    fn into(self) -> LevelParser {
-        let (title, author) = (self.title, self.author);
+impl From<Info> for LevelParser {
+    fn from(val: Info) -> LevelParser {
+        let (title, author) = (val.title, val.author);
         LevelParser::new(seed::Info { title, author })
     }
 }
 
-impl Into<seed::Seed> for LevelParser {
-    fn into(mut self) -> seed::Seed {
-        self.cs.retain(|c| !c.body.is_empty());
+impl From<LevelParser> for seed::Seed {
+    fn from(mut val: LevelParser) -> seed::Seed {
+        val.cs.retain(|c| !c.body.is_empty());
         seed::Seed {
-            info: self.i,
+            info: val.i,
             size: seed::Size {
-                width: self.w,
-                height: self.h,
+                width: val.w,
+                height: val.h,
             },
-            cubes: self.cs,
-            destnations: self.ds,
+            cubes: val.cs,
+            destinations: val.ds,
         }
     }
 }
@@ -328,7 +328,7 @@ impl LevelMapBuilder {
             None => None,
             Some(v) => match v.get(x as usize) {
                 None => None,
-                Some(i) => i.to_owned(),
+                Some(i) => *i,
             },
         }
     }
@@ -346,10 +346,10 @@ impl LevelMapBuilder {
 
 struct CommandParser(seed::Command);
 
-impl Into<seed::Command> for CommandParser {
-    fn into(mut self) -> seed::Command {
-        self.0.movements.retain(|m| m.1 > 0);
-        self.0
+impl From<CommandParser> for seed::Command {
+    fn from(mut val: CommandParser) -> seed::Command {
+        val.0.movements.retain(|m| m.1 > 0);
+        val.0
     }
 }
 

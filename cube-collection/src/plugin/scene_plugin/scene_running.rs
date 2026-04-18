@@ -78,8 +78,8 @@ fn switch_world(
         let mapper = view.mapping();
 
         // [2] create new world
-        let world = model::World::new(&seed);
-        bundle::hello_world(&mut commands, &world, &mapper);
+        let world = model::World::new(seed);
+        bundle::hello_world(&mut commands, &world, mapper);
         commands.insert_resource(world);
     }
 }

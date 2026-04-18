@@ -17,7 +17,7 @@ pub struct ViewUpdated {
     pub mapper: ViewMapper,
 }
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ViewRect<T> {
     pub top: T,
     pub bottom: T,
@@ -26,7 +26,7 @@ pub struct ViewRect<T> {
 }
 
 fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2d::default());
+    commands.spawn(Camera2d);
 }
 
 fn update_gridview(
@@ -56,14 +56,14 @@ fn update_gridview(
             };
 
             if view.set_target(r) && view.available() {
-                let mapper = view.mapping().clone();
+                let mapper = *view.mapping();
                 mapper_updated.write(ViewUpdated { mapper });
             }
         }
     }
 }
 
-#[derive(Default, Resource)]
+#[derive(Default, Debug, Resource)]
 pub struct GridView {
     // input
     source: Option<ViewRect<i32>>,
@@ -114,7 +114,7 @@ impl GridView {
             let unit = f32::min(tw / sw, th / sh);
 
             self.mapper = ViewMapper {
-                source: (source.left as i32, source.top as i32),
+                source: (source.left, source.top),
                 target: Vec2 {
                     x: target.left + (tw - sw * unit) / 2.,
                     y: target.top - (th - sh * unit) / 2.,
@@ -125,7 +125,7 @@ impl GridView {
     }
 }
 
-#[derive(Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct ViewMapper {
     source: (i32, i32),
     target: Vec2,
@@ -204,7 +204,7 @@ impl Mappable for Point {
 
 impl Mappable for Vec2 {
     fn scale(&self, factor: f32) -> (f32, f32) {
-        (self.x as f32 * factor, self.y as f32 * -factor)
+        (self.x * factor, self.y * -factor)
     }
 
     fn delta(&self, source: (i32, i32)) -> (f32, f32) {
