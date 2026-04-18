@@ -12,7 +12,7 @@ R R---RRR
 '''
 
 [[map.commands]]
-binding = [[1, 2], [3, 2], [2, 3], [2, 6], [2, 7], [6, 7]]
+binding = [[1, 2], [3, 2], [2, 3], [6, 7]]
 content = "L"
 looping = true
 

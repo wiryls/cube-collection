@@ -2,7 +2,7 @@
 
 # [Project Cube Collection](https://wiryls.github.io/cube-collection/)
 
-A dead simple puzzle game based on [Bevy Engine 0.18.0](https://github.com/bevyengine/bevy), move cubes to **cover all targets** as shown in the picture below.
+A dead simple puzzle game based on [Bevy Engine](https://github.com/bevyengine/bevy), move cubes to **cover all targets** as shown in the picture below.
 
 ![a-moth-to-flame](./docs/images/level-preview-a-moth-to-flame.gif)
 
@@ -13,16 +13,17 @@ Try the **online version** at my [GitHub Pages](https://wiryls.github.io/cube-co
 ### Control
 
 - Move: `Arrow Keys` or `W`/`A`/`S`/`D`.
-- Restart: `R`
+- Restart: `R`.
 - Skip current level: `N`.
 - Return to the previous level: `L`.
 - Reset the game: `ESC`.
+- Reload the game: `Shift` + `ESC`.
 
 ### Rules
 
 - You move ALL green cubes.
-- Make cubes to cover all target points to enter the next level.
-- Cubes may absorb each others.
+- Make cubes cover all target points to enter the next level.
+- Cubes may absorb each other.
   - Red + Green -> **Red**
   - Green + Blue -> **Green**
   - Blue + Red -> **Blue**
@@ -33,8 +34,9 @@ Try the **online version** at my [GitHub Pages](https://wiryls.github.io/cube-co
 
 ### Run
 
-1. Clone this repository: `git clone https://github.com/wiryls/cube-collection.git`
-2. Compile and run: `cargo run --release cube-collection`
+1. Make sure you have [Rust](https://www.rust-lang.org/tools/install) installed (edition 2021+).
+2. Clone this repository: `git clone https://github.com/wiryls/cube-collection.git`
+3. Compile and run: `cargo run --release -p cube-collection`
 
 ### Add custom levels
 
@@ -81,14 +83,14 @@ title = "Haircut"
 If you want to add custom levels:
 
 1. Create a TOML file like the one above.
-2. Add you custom level files into `./cube-collection/assets/level/`.
+2. Add your custom level files into `./cube-collection/assets/level/`.
 3. Add file name into `name_list` of `./cube-collection/assets/level/index.toml`.
 
 ## License
 
-This repository use two licenses:
+This repository uses two licenses:
 
-- `./cube-core` is under **LGPL 3.0**, and 
+- `./cube-core` is under **LGPL 3.0**, and
 - `./cube-collection` uses **MIT** license.
 
 ## Known issues

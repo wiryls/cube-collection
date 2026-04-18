@@ -379,3 +379,47 @@ impl CommandParser {
         self.0.movements.is_empty()
     }
 }
+
+#[cfg(test)]
+#[rustfmt::skip]
+mod tests {
+    use cube_core::{cube::Movement, state::CubeCore};
+    use std::fs;
+
+    fn load_seed(name: &str) -> cube_core::seed::Seed {
+        let path = format!("assets/level/{}.toml", name);
+        let text = fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("failed to read {}: {}", path, e));
+        let source: super::LevelSource = toml::from_str(&text)
+            .unwrap_or_else(|e| panic!("failed to parse {}: {}", path, e));
+        source.into_seed()
+            .unwrap_or_else(|e| panic!("failed to convert {}: {}", path, e))
+    }
+
+    fn step(game: &mut CubeCore, movement: Option<Movement>) {
+        let _: Vec<_> = game.commit(movement).collect();
+    }
+
+    fn is_won(game: &CubeCore) -> bool {
+        game.goals().all(|(_, o)| o)
+    }
+
+    #[test]
+    fn play_introduction() {
+        let seed = load_seed("introduction");
+        let mut game = CubeCore::new(&seed);
+
+        assert!(!is_won(&game));
+
+        const SOLUTION: [Movement; 10] = [
+            Movement::Left, Movement::Down, Movement::Left, Movement::Left,
+            Movement::Right, Movement::Right, Movement::Right, Movement::Right,
+            Movement::Right, Movement::Right,
+        ];
+        for &m in &SOLUTION {
+            step(&mut game, Some(m));
+        }
+
+        assert!(is_won(&game));
+    }
+}
