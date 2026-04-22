@@ -17,9 +17,9 @@ pub const fn destination_color() -> Color {
 pub const fn cube_color(kind: Kind) -> Color {
     match kind {
         Kind::White /* **/ => Color::srgb(1.000, 1.000, 1.000),
-        Kind::Red /*   **/ => Color::srgb(0.988, 0.512, 0.512),
-        Kind::Blue /*  **/ => Color::srgb(0.582, 0.727, 0.945),
-        Kind::Green /* **/ => Color::srgb(0.533, 0.859, 0.425),
+        Kind::Red /*   **/ => Color::srgb(0.925, 0.510, 0.475),
+        Kind::Blue /*  **/ => Color::srgb(0.380, 0.620, 0.870),
+        Kind::Green /* **/ => Color::srgb(0.650, 0.870, 0.500),
     }
 }
 
