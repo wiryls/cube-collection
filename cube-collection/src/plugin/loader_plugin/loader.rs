@@ -58,7 +58,7 @@ impl AssetLoader for SeedsAssetLoader {
                 for name in source.name_list {
                     let path = folder.join([&name, ".", &source.extension].concat());
                     let load: LoadedAsset<LevelSeeds> =
-                        load_context.loader().immediate().load(path).await?;
+                        load_context.load_builder().load_value(path).await?;
                     output.0.append(&mut load.take().0);
                 }
                 return anyhow::Ok(output);
