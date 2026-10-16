@@ -5,14 +5,14 @@
 Two-crate Cargo workspace (`resolver = "2"` for wgpu/Bevy):
 
 - **`cube-core`** — pure Rust game logic library (no dependencies). LGPL 3.0.
-- **`cube-collection`** — Bevy 0.18.1 frontend, depends on `cube-core`. MIT.
+- **`cube-collection`** — Bevy 0.20.0 frontend, depends on `cube-core`. MIT.
 
 ## Commands
 
 ```sh
 cargo run --release -p cube-collection   # run the game (--release needed; Bevy unusably slow in debug)
-cargo test -p cube-core                   # all tests live here (inline in cube-core/src/lib.rs)
-cargo test                                # workspace-wide (equivalent; cube-collection has no tests)
+cargo test -p cube-core                   # core logic tests (inline in cube-core/src/lib.rs)
+cargo test                                # workspace-wide tests, including frontend loader/render helpers
 ```
 
 The `-p` flag is required; this is a workspace, not a single crate.
@@ -30,7 +30,7 @@ Full workflow from `current` branch to published `gh-pages`:
 cargo build --profile wasm-release --target wasm32-unknown-unknown -p cube-collection
 
 # 2. Generate JS/WASM bindings
-wasm-bindgen --out-name cube-collection --out-dir out --target web target/wasm32-unknown-unknown/release/cube-collection.wasm
+wasm-bindgen --out-name cube-collection --out-dir out --target web target/wasm32-unknown-unknown/wasm-release/cube-collection.wasm
 
 # 3. Optimize WASM binary
 wasm-opt -Oz --output out/cube-collection_bg.wasm out/cube-collection_bg.wasm
@@ -49,7 +49,7 @@ git checkout current
 Key constraints:
 
 - wasm-bindgen CLI version must match the `wasm-bindgen` crate version exactly, else build fails. Install matching version: `cargo install wasm-bindgen-cli --version <crate_version>`
-- The build uses a custom `wasm-release` profile (`lto = "fat"`, `opt-level = 'z'`) defined in workspace `Cargo.toml` for smaller WASM output. The `out/` dir path under `target/` will be `release/` (it inherits from release).
+- The build uses a custom `wasm-release` profile (`lto = "fat"`, `opt-level = 'z'`) defined in workspace `Cargo.toml` for smaller WASM output. Its target directory is `target/wasm32-unknown-unknown/wasm-release/`.
 - `gh-pages` branch holds only: `index.html`, `cube-collection.js`, `cube-collection_bg.wasm`, `*.d.ts`, and `assets/`. Do not commit build tools, Rust source, or `server.ps1` there.
 - `fit_canvas_to_parent: true` is set in `main.rs` for responsive WASM canvas; the HTML must have `html/body` at 100% width/height with no margin.
 

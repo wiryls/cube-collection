@@ -1,14 +1,13 @@
 use std::time::Duration;
 
 use bevy::prelude::*;
-use bevy_prototype_lyon::entity::Shape;
-use bevy_prototype_lyon::prelude::*;
 use cube_core::cube::{Constraint, Kind, Movement, Neighborhood, Point};
 
 use super::{
     super::{model::World, view::ViewMapper},
     adaption::AutoRescale,
     marker::Earthbound,
+    polygon::Polygon,
     style::{self, BoundaryBuilder},
     translate::TranslateAlpha,
 };
@@ -17,7 +16,7 @@ use super::{
 struct DestinationBundle {
     bound: Earthbound,
     scale: AutoRescale,
-    shape: Shape,
+    polygon: Polygon,
     transform: Transform,
 }
 
@@ -35,7 +34,7 @@ struct CubeBundle {
     cubic: Cubic,
     bound: Earthbound,
     scale: AutoRescale,
-    shape: Shape,
+    polygon: Polygon,
     transform: Transform,
 }
 
@@ -43,20 +42,11 @@ struct CubeBundle {
 pub struct FloorBundle {
     bound: Earthbound,
     scale: AutoRescale,
-    shape: Shape,
+    polygon: Polygon,
     transform: Transform,
 }
 
 pub fn hello_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) {
-    fn make_polygon(points: Vec<Vec2>, color: Color) -> Shape {
-        ShapeBuilder::with(&shapes::Polygon {
-            points,
-            closed: true,
-        })
-        .fill(color)
-        .build()
-    }
-
     let scale = mapper.unit();
 
     // draw background color
@@ -72,7 +62,7 @@ pub fn hello_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
                     point: goal,
                     offset: 0.5,
                 },
-                shape: make_polygon(
+                polygon: Polygon::new(
                     style::cube_boundaries(Neighborhood::new(), 0.95),
                     style::destination_color(),
                 ),
@@ -102,7 +92,7 @@ pub fn hello_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
                 point: item.position,
                 offset: 0.5,
             },
-            shape: make_polygon(
+            polygon: Polygon::new(
                 style::cube_boundaries(item.neighborhood, 0.95),
                 style::cube_color(item.kind),
             ),
@@ -122,7 +112,7 @@ pub fn hello_world(commands: &mut Commands, state: &World, mapper: &ViewMapper) 
             point: bottom_left,
             offset: 0.,
         },
-        shape: make_polygon(boundary_builder.build(0.05), style::floor_color()),
+        polygon: Polygon::new(boundary_builder.build(0.05), style::floor_color()),
         transform: Transform {
             translation: mapper.locate(&bottom_left).extend(0.),
             scale: Vec3::new(scale, scale, 0.),

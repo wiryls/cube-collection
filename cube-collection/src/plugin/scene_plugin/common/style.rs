@@ -60,12 +60,12 @@ pub fn cube_boundaries(pattern: Neighborhood, scale: f32) -> Vec<Vec2> {
     ];
 
     for i in 0..4 {
-        for j in 0..4 {
-            (v[j].x, v[j].y) = (v[j].y, -v[j].x);
+        for point in &mut v {
+            (point.x, point.y) = (point.y, -point.x);
         }
 
         match (
-            is_occupied[2 * i + 0],
+            is_occupied[2 * i],
             is_occupied[2 * i + 1],
             is_occupied[(2 * i + 2) % is_occupied.len()],
         ) {

@@ -1,10 +1,17 @@
+use bevy::prelude::*;
+
 mod adaption;
 mod marker;
+mod polygon;
 mod state;
 mod style;
 mod translate;
 
 pub mod bundle;
+
+pub fn setup(app: &mut App) {
+    polygon::setup(app);
+}
 
 pub mod system {
     use super::*;

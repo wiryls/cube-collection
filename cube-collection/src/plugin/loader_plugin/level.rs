@@ -297,7 +297,10 @@ impl LevelParser {
 
     fn bind_command(&mut self, x: i32, y: i32, command: seed::Command) -> Result<(), LevelError> {
         match self.m.get(x, y).and_then(|i| self.cs.get_mut(i)) {
-            Some(x) => Ok(x.command = Some(command)),
+            Some(x) => {
+                x.command = Some(command);
+                Ok(())
+            }
             None => Err(LevelError::InvalidLocation { position: (x, y) }),
         }
     }

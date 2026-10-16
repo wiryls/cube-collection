@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::*;
 use cube_core::{
     cube::{Constraint, Kind, Neighborhood, Point},
     Diff,
@@ -10,6 +9,7 @@ use cube_core::{
 use super::{
     super::{common::style, view::GridView},
     bundle::Cubic,
+    polygon::Polygon,
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -34,11 +34,11 @@ impl TranslateColor {
 
 pub fn recolor_system(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut TranslateColor, &mut Shape)>,
+    mut query: Query<(Entity, &mut TranslateColor, &mut Polygon)>,
     time: Res<Time>,
 ) {
     let delta = time.delta();
-    for (id, mut translate, mut shape) in &mut query {
+    for (id, mut translate, mut polygon) in &mut query {
         let next = if translate.elapse.tick(delta).is_finished() {
             commands.entity(id).remove::<TranslateColor>();
             translate.target
@@ -53,9 +53,7 @@ pub fn recolor_system(
             let h = (source.hue + d * percent).rem_euclid(360.0);
             Hsla::hsl(h, s, l)
         };
-        if let Some(fill) = &mut shape.fill {
-            fill.color = Color::Srgba(Srgba::from(next))
-        }
+        polygon.set_color(Color::Srgba(Srgba::from(next)));
     }
 }
 
@@ -75,20 +73,11 @@ impl TranslateShape {
 
 pub fn reshape_system(
     mut commands: Commands,
-    mut query: Query<(Entity, &TranslateShape, &mut Shape)>,
+    mut query: Query<(Entity, &TranslateShape, &mut Polygon)>,
 ) {
-    for (id, translate, mut shape) in &mut query {
+    for (id, translate, mut polygon) in &mut query {
         commands.entity(id).remove::<TranslateShape>();
-
-        if let Some(fill) = shape.fill {
-            let points = style::cube_boundaries(translate.to, 0.95);
-            let polygon = shapes::Polygon {
-                points,
-                closed: true,
-            };
-
-            *shape = ShapeBuilder::with(&polygon).fill(fill.color).build();
-        }
+        polygon.set_points(style::cube_boundaries(translate.to, 0.95));
     }
 }
 
@@ -214,9 +203,9 @@ impl TranslateAlpha {
     }
 }
 
-pub fn realpha_system(mut query: Query<(&mut TranslateAlpha, &mut Shape)>, time: Res<Time>) {
+pub fn realpha_system(mut query: Query<(&mut TranslateAlpha, &mut Polygon)>, time: Res<Time>) {
     let delta = time.delta();
-    for (mut translate, mut shape) in &mut query {
+    for (mut translate, mut polygon) in &mut query {
         let alpha = if translate.elapse.tick(delta).is_finished() {
             translate.source
         } else {
@@ -226,8 +215,6 @@ pub fn realpha_system(mut query: Query<(&mut TranslateAlpha, &mut Shape)>, time:
             from + (to - from) * percent
         };
 
-        if let Some(fill) = &mut shape.fill {
-            fill.color.set_alpha(alpha);
-        }
+        polygon.set_alpha(alpha);
     }
 }
